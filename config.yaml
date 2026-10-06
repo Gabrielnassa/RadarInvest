@@ -1,0 +1,66 @@
+# Radar de Investimentos - configuracao da etapa 1 (coleta e banco de dados)
+# Tudo aqui pode ser alterado sem mexer no codigo.
+
+banco: dados/radar.db
+pasta_cache: dados/cache
+
+rede:
+  timeout_segundos: 90
+  tentativas: 4
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
+
+# Cotacoes diarias oficiais da B3 (arquivo COTAHIST)
+b3:
+  ativo: true
+  url_base: "https://bvmf.bmfbovespa.com.br/InstDados/SerHist"
+  anos_historico: 6
+  # 02 = lote padrao (acoes, units, BDRs) | 12 = fundos imobiliarios
+  codbdi: ["02", "12"]
+  # Se a coleta da B3 falhar com "erro de certificado (SSL)", troque para false.
+  # Isso desliga a conferencia do certificado so para este site da B3.
+  verificar_certificado: true
+
+# Cadastro das empresas e demonstrativos financeiros (dados abertos da CVM)
+cvm:
+  ativo: true
+  url_base: "https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC"
+  anos_fundamentos: 6
+  demonstrativos: [BPA, BPP, DRE, DFC_MI]
+  # 1 = so totais (ex.: "3"), 2 = "3.01", 3 = "3.01.01"
+  nivel_max_conta: 3
+  # true guarda so empresas com codigo de negociacao no cadastro da CVM
+  somente_listadas: false
+  cache_horas: 24
+
+# Dividendos e JCP por acao (fonte nao oficial: Yahoo Finance)
+dividendos:
+  ativo: true
+  url_base: "https://query1.finance.yahoo.com/v8/finance/chart"
+  anos: 6
+  # so busca acoes com volume medio diario acima deste valor (R$, ultimos 60 pregoes)
+  volume_medio_minimo: 500000
+  pausa_segundos: 0.5
+  atualizar_apos_dias: 7
+
+# Criptomoedas (CoinGecko)
+cripto:
+  ativo: true
+  url_base: "https://api.coingecko.com/api/v3"
+  moeda: brl
+  top_n: 30
+  dias_historico: 365
+  # sem chave a CoinGecko aceita poucas chamadas por minuto
+  pausa_segundos: 6
+  # stablecoins e versoes "embrulhadas" de outras moedas ficam fora do ranking
+  excluir_simbolos: [usdt, usdc, dai, fdusd, usde, usds, pyusd, tusd, usd1, usdd, busd, susde, susds, usdtb, bsc-usd, usdt0, wbtc, weth, steth, wsteth, wbeth, weeth, cbbtc, reth, lbtc, wbnb, jitosol, bnsol]
+
+# Indicadores do Banco Central (codigos das series do SGS)
+macro:
+  ativo: true
+  url_base: "https://api.bcb.gov.br/dados/serie"
+  anos: 10
+  series:
+    selic_meta: 432
+    ipca_mensal: 433
+    dolar_ptax: 1
+    cdi_anual: 4389
