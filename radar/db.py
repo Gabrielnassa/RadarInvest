@@ -62,6 +62,15 @@ CREATE TABLE IF NOT EXISTS demonstrativos (
     PRIMARY KEY (cnpj, origem, demonstrativo, dt_refer, dt_ini_exerc, cd_conta)
 ) WITHOUT ROWID;
 
+CREATE TABLE IF NOT EXISTS capital (
+    cnpj     TEXT NOT NULL,
+    dt_refer TEXT NOT NULL,
+    versao   INTEGER NOT NULL DEFAULT 1,
+    on_total REAL, pn_total REAL, total REAL,       -- acoes emitidas
+    on_tes   REAL, pn_tes   REAL, tes   REAL,       -- acoes em tesouraria
+    PRIMARY KEY (cnpj, dt_refer)
+) WITHOUT ROWID;
+
 CREATE TABLE IF NOT EXISTS dividendos (
     ticker TEXT NOT NULL,
     data   TEXT NOT NULL,

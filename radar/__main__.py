@@ -161,6 +161,64 @@ def cmd_diagnostico(cfg) -> int:
     return 1 if falhas else 0
 
 
+def cmd_inspecionar(cfg) -> int:
+    """Mostra os arquivos baixados por dentro: nomes, cabecalhos e uma linha de exemplo."""
+    import json
+    import zipfile
+    cache = Path(cfg["_cache"])
+    vistos = set()
+    for caminho in sorted((cache / "cvm").glob("*.zip"), reverse=True):
+        tipo = caminho.name.split("_")[0]
+        if tipo in vistos:
+            continue
+        vistos.add(tipo)
+        print(f"\n=== {caminho.name} ({caminho.stat().st_size // 1024} KB)")
+        try:
+            with zipfile.ZipFile(caminho) as zf:
+                for nome in zf.namelist():
+                    with zf.open(nome) as f:
+                        cab = f.readline().decode("latin-1").strip()
+                        linha = f.readline().decode("latin-1").strip()
+                    print(f"- {nome}\n    colunas: {cab[:600]}\n    exemplo: {linha[:300]}")
+        except Exception as e:
+            print(f"  erro ao abrir: {e}")
+    for caminho in sorted((cache / "b3").glob("*.ZIP"), reverse=True)[:1]:
+        print(f"\n=== {caminho.name} ({caminho.stat().st_size // 1024} KB)")
+        with zipfile.ZipFile(caminho) as zf:
+            print("  membros:", zf.namelist())
+            with zf.open(zf.namelist()[0]) as f:
+                for i, bruto in enumerate(f):
+                    if i < 2 or (bruto[12:17] in (b"PETR4", b"SAPR1") and bruto[10:12] == b"02" and i % 50 == 0):
+                        print("  " + bruto.decode("latin-1").rstrip()[:245])
+                    if i > 400000:
+                        break
+    rede = Rede(cfg.get("rede"))
+    amostras = [
+        ("Yahoo", f"{cfg['dividendos']['url_base'].rstrip('/')}/PETR4.SA", {"range": "1y", "interval": "1mo", "events": "div"}),
+        ("CoinGecko", f"{cfg['cripto']['url_base'].rstrip('/')}/coins/markets", {"vs_currency": "brl", "per_page": 2, "page": 1}),
+        ("BCB", f"{cfg['macro']['url_base'].rstrip('/')}/bcdata.sgs.432/dados/ultimos/3", {"formato": "json"}),
+    ]
+    for nome, url, params in amostras:
+        print(f"\n=== {nome}: {url}")
+        try:
+            r = rede.sessao.get(url, params=params, timeout=30)
+            print(f"  HTTP {r.status_code}")
+            texto = r.text
+            try:
+                dado = r.json()
+                if nome == "Yahoo":
+                    res = (dado.get("chart", {}).get("result") or [{}])[0]
+                    dado = {"chaves": list(res.keys()), "meta_moeda": res.get("meta", {}).get("currency"),
+                            "eventos": res.get("events"), "erro": dado.get("chart", {}).get("error")}
+                texto = json.dumps(dado, ensure_ascii=False)
+            except ValueError:
+                pass
+            print("  " + texto[:1500])
+        except Exception as e:
+            print(f"  falhou: {type(e).__name__}: {str(e)[:200]}")
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="radar", description="Radar de Investimentos - coleta de dados")
     p.add_argument("--config", help="caminho do config.yaml")
@@ -169,6 +227,7 @@ def main(argv=None) -> int:
     c.add_argument("--fonte", action="append", choices=ORDEM, help="coleta so esta fonte (pode repetir)")
     sub.add_parser("status", help="mostra o que ha no banco")
     sub.add_parser("diagnostico", help="testa o acesso a cada fonte")
+    sub.add_parser("inspecionar", help="mostra o formato dos arquivos baixados")
     args = p.parse_args(argv)
 
     config.carregar_env()
@@ -177,6 +236,8 @@ def main(argv=None) -> int:
         return cmd_coletar(cfg, args.fonte or ORDEM)
     if args.comando == "diagnostico":
         return cmd_diagnostico(cfg)
+    if args.comando == "inspecionar":
+        return cmd_inspecionar(cfg)
     return cmd_status(cfg)
 
 

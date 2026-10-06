@@ -13,7 +13,7 @@ rede:
 b3:
   ativo: true
   url_base: "https://bvmf.bmfbovespa.com.br/InstDados/SerHist"
-  anos_historico: 6
+  anos_historico: 2
   # 02 = lote padrao (acoes, units, BDRs) | 12 = fundos imobiliarios
   codbdi: ["02", "12"]
   # Se a coleta da B3 falhar com "erro de certificado (SSL)", troque para false.
