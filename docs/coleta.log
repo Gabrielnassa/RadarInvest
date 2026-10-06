@@ -1,4 +1,4 @@
-Coleta iniciada em 2026-10-06 19:51 UTC
+Coleta iniciada em 2026-10-06 19:54 UTC
 
 Diagnostico das fontes de dados
 
@@ -7,21 +7,20 @@ Diagnostico das fontes de dados
   OK     CVM (demonstrativos)   HTTP 200, application/zip
   OK     Yahoo (dividendos)     HTTP 200, application/json;charset=utf-8
   OK     CoinGecko (cripto)     HTTP 200, application/json; charset=utf-8
-  FALHA  Banco Central          HTTP 502, text/html
-         https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1
+  OK     Banco Central          HTTP 200, application/json; charset=utf-8
 
-1 fonte(s) com problema. Copie esta tela para quem for corrigir.
-[19:51:47] Cotacoes da B3: coletando...
-[19:51:47] Cotacoes da B3: 0 registros
-[19:51:47] Cadastro e demonstrativos da CVM: coletando...
-[19:53:01] Cadastro e demonstrativos da CVM: 1759620 registros
-[19:53:01] Dividendos (Yahoo, nao oficial): coletando...
-[19:53:01] Dividendos (Yahoo, nao oficial): 0 registros
-[19:53:01] Criptomoedas (CoinGecko): coletando...
-[19:53:02] Criptomoedas (CoinGecko): 30 registros
-[19:53:02] Indicadores do Banco Central: coletando...
-[19:53:03] Indicadores do Banco Central: 1 registros
-[19:53:03] Acoes ligadas a empresas: 376 pelo codigo, 20 pelas 4 letras iniciais
+Todas as fontes responderam.
+[19:54:12] Cotacoes da B3: coletando...
+[19:57:28] Cotacoes da B3: 274492 registros
+[19:57:28] Cadastro e demonstrativos da CVM: coletando...
+[19:59:32] Cadastro e demonstrativos da CVM: 1759620 registros
+[19:59:32] Dividendos (Yahoo, nao oficial): coletando...
+[20:01:46] Dividendos (Yahoo, nao oficial): 3329 registros
+[20:01:46] Criptomoedas (CoinGecko): coletando...
+[20:09:58] Criptomoedas (CoinGecko): 10913 registros
+[20:09:58] Indicadores do Banco Central: coletando...
+[20:10:21] Indicadores do Banco Central: 2634 registros
+[20:10:21] Acoes ligadas a empresas: 376 pelo codigo, 20 pelas 4 letras iniciais
 
 Radar de Investimentos 0.1.0 - situacao do banco
 Arquivo: /home/runner/work/RadarInvest/RadarInvest/dados/radar.db
@@ -50,16 +49,16 @@ Cripto
 
 Banco Central (valor mais recente)
   cdi_anual         13.6500   em 2026-10-05
-  dolar_ptax         4.9859   em 2026-10-05
+  dolar_ptax         4.9698   em 2026-10-06
   ipca_mensal       -0.3200   em 2026-08-01
   selic_meta        13.7500   em 2026-10-06
 
 Ultima coleta de cada fonte
-  b3          2026-10-06T19:51:47  ok      0 registros
-  cripto      2026-10-06T19:53:02  ok      30 registros
-  cvm         2026-10-06T19:53:01  ok      1759620 registros
-  dividendos  2026-10-06T19:53:01  ok      0 registros
-  macro       2026-10-06T19:53:03  ok      1 registros
+  b3          2026-10-06T19:57:28  ok      274492 registros
+  cripto      2026-10-06T20:09:58  ok      10913 registros
+  cvm         2026-10-06T19:59:32  ok      1759620 registros
+  dividendos  2026-10-06T20:01:46  ok      3329 registros
+  macro       2026-10-06T20:10:21  ok      2634 registros
 
 181 acoes e 30 criptos gravadas em /home/runner/work/RadarInvest/RadarInvest/docs/dados.json
   ALLD3   nota  96.0  P/L 1.451  P/VP 0.3347  DY 0.4224  {'barsi': 100, 'bazin': 100, 'qualidade': 88, 'graham': 100, 'greenblatt': 99}
