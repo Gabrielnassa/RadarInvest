@@ -154,7 +154,7 @@ def coletar(conn, rede, cfg, cache: Path, hoje: date | None = None):
         if caminho is None:
             avisos.append(f"{nome} ainda nao publicado pela B3")
             continue
-        if ano in presentes and caminho.stat().st_mtime <= lido_em + 1:   # 'fim' e gravado sem fracao de segundo
+        if ano in presentes and not rede.baixou_agora and caminho.stat().st_mtime <= lido_em + 1:
             continue  # mesmo arquivo ja lido na coleta anterior
         total += gravar(conn, ler_zip(caminho, cfg.get("codbdi", ["02", "12"])))
     return total, avisos
