@@ -1,4 +1,4 @@
-Coleta iniciada em 2026-10-06 19:39 UTC
+Coleta iniciada em 2026-10-06 19:46 UTC
 
 Diagnostico das fontes de dados
 
@@ -11,17 +11,17 @@ Diagnostico das fontes de dados
   OK     Banco Central          HTTP 200, application/json; charset=utf-8
 
 1 fonte(s) com problema. Copie esta tela para quem for corrigir.
-[19:39:14] Cotacoes da B3: coletando...
-[19:39:14] Cotacoes da B3: 0 registros
-[19:39:14] Cadastro e demonstrativos da CVM: coletando...
-[19:40:28] Cadastro e demonstrativos da CVM: 1759620 registros
-[19:40:28] Dividendos (Yahoo, nao oficial): coletando...
-[19:42:43] Dividendos (Yahoo, nao oficial): 3329 registros
-[19:42:43] Criptomoedas (CoinGecko): coletando...
-[19:42:43] Criptomoedas (CoinGecko): 30 registros
-[19:42:43] Indicadores do Banco Central: coletando...
-[19:42:45] Indicadores do Banco Central: 1 registros
-[19:42:45] Acoes ligadas a empresas: 376 pelo codigo, 20 pelas 4 letras iniciais
+[19:46:28] Cotacoes da B3: coletando...
+[19:46:29] Cotacoes da B3: 0 registros
+[19:46:29] Cadastro e demonstrativos da CVM: coletando...
+[19:47:45] Cadastro e demonstrativos da CVM: 1759620 registros
+[19:47:45] Dividendos (Yahoo, nao oficial): coletando...
+[19:49:58] Dividendos (Yahoo, nao oficial): 3329 registros
+[19:49:58] Criptomoedas (CoinGecko): coletando...
+[19:49:59] Criptomoedas (CoinGecko): 30 registros
+[19:49:59] Indicadores do Banco Central: coletando...
+[19:49:59] Indicadores do Banco Central: 1 registros
+[19:49:59] Acoes ligadas a empresas: 376 pelo codigo, 20 pelas 4 letras iniciais
 
 Radar de Investimentos 0.1.0 - situacao do banco
 Arquivo: /home/runner/work/RadarInvest/RadarInvest/dados/radar.db
@@ -55,20 +55,20 @@ Banco Central (valor mais recente)
   selic_meta        13.7500   em 2026-10-06
 
 Ultima coleta de cada fonte
-  b3          2026-10-06T19:39:14  ok      0 registros
-  cripto      2026-10-06T19:42:43  ok      30 registros
-  cvm         2026-10-06T19:40:28  ok      1759620 registros
-  dividendos  2026-10-06T19:42:43  ok      3329 registros
-  macro       2026-10-06T19:42:45  ok      1 registros
+  b3          2026-10-06T19:46:29  ok      0 registros
+  cripto      2026-10-06T19:49:59  ok      30 registros
+  cvm         2026-10-06T19:47:45  ok      1759620 registros
+  dividendos  2026-10-06T19:49:58  ok      3329 registros
+  macro       2026-10-06T19:49:59  ok      1 registros
 
 181 acoes e 30 criptos gravadas em /home/runner/work/RadarInvest/RadarInvest/docs/dados.json
-  ALLD3   nota  95.9  P/L 1.451  P/VP 0.3347  DY 0.4224  {'barsi': 100, 'bazin': 100, 'qualidade': 88, 'graham': 100, 'greenblatt': 98}
-  POMO4   nota  94.9  P/L 4.8387  P/VP 1.3702  DY 0.1975  {'barsi': 88, 'bazin': 100, 'qualidade': 100, 'graham': 96, 'greenblatt': 90}
-  VULC3   nota  94.0  P/L 4.9558  P/VP 1.7376  DY 0.2194  {'barsi': 100, 'bazin': 100, 'qualidade': 100, 'graham': 88, 'greenblatt': 79}
-  BRBI11  nota  90.3  P/L None  P/VP None  DY 0.0793  {'barsi': 84, 'bazin': 79, 'qualidade': 100, 'graham': None, 'greenblatt': None}
-  RIAA3   nota  89.1  P/L 2.8224  P/VP 0.8001  DY 0.385  {'barsi': 87, 'bazin': 96, 'qualidade': 75, 'graham': 100, 'greenblatt': 99}
+  ALLD3   nota  96.0  P/L 1.451  P/VP 0.3347  DY 0.4224  {'barsi': 100, 'bazin': 100, 'qualidade': 88, 'graham': 100, 'greenblatt': 99}
+  POMO4   nota  94.4  P/L 4.8387  P/VP 1.3702  DY 0.1975  {'barsi': 88, 'bazin': 96, 'qualidade': 100, 'graham': 96, 'greenblatt': 90}
+  VULC3   nota  94.1  P/L 4.9558  P/VP 1.7376  DY 0.2194  {'barsi': 100, 'bazin': 100, 'qualidade': 100, 'graham': 88, 'greenblatt': 79}
+  BRBI11  nota  90.4  P/L None  P/VP None  DY 0.0793  {'barsi': 84, 'bazin': 79, 'qualidade': 100, 'graham': None, 'greenblatt': None}
   CMIG4   nota  88.2  P/L 7.4581  P/VP 1.1744  DY 0.0951  {'barsi': 100, 'bazin': 95, 'qualidade': 100, 'graham': 88, 'greenblatt': 54}
   RECV3   nota  86.0  P/L 6.8202  P/VP 0.7679  DY 0.147  {'barsi': 100, 'bazin': 100, 'qualidade': 88, 'graham': 100, 'greenblatt': 49}
-  DIRR3   nota  85.8  P/L 6.8958  P/VP 2.5365  DY 0.1366  {'barsi': 62, 'bazin': 100, 'qualidade': 100, 'graham': 62, 'greenblatt': 96}
-  PETR4   nota  84.3  P/L 5.3497  P/VP 1.4836  DY 0.0662  {'barsi': 100, 'bazin': 66, 'qualidade': 75, 'graham': 91, 'greenblatt': 92}
-  CSUD3   nota  83.1  P/L 6.5306  P/VP 1.305  DY 0.1674  {'barsi': 80, 'bazin': 100, 'qualidade': 75, 'graham': 88, 'greenblatt': 81}
+  PETR4   nota  84.1  P/L 5.3497  P/VP 1.4836  DY 0.0662  {'barsi': 98, 'bazin': 66, 'qualidade': 75, 'graham': 91, 'greenblatt': 92}
+  DIRR3   nota  83.5  P/L 6.8958  P/VP 2.5365  DY 0.1366  {'barsi': 69, 'bazin': 74, 'qualidade': 100, 'graham': 62, 'greenblatt': 96}
+  PLPL3   nota  81.7  P/L 5.5172  P/VP 1.5072  DY 0.0594  {'barsi': 49, 'bazin': 59, 'qualidade': 100, 'graham': 89, 'greenblatt': 98}
+  LEVE3   nota  81.6  P/L 7.0082  P/VP 5.0664  DY 0.0791  {'barsi': 98, 'bazin': 64, 'qualidade': 100, 'graham': 24, 'greenblatt': 94}
