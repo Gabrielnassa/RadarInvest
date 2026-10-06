@@ -78,7 +78,7 @@ python -m unittest discover -s tests -t .
 Conferido:
 
 - A coleta roda contra as cinco fontes reais nos servidores do GitHub.
-- Preço sobre o lucro, preço sobre o patrimônio, retorno sobre o patrimônio, dividendos e dívida de Sanepar, BB Seguridade e Cemig batem com os valores publicados em sites de mercado na mesma data.
+- Preço sobre o lucro, preço sobre o patrimônio, retorno sobre o patrimônio e dividendos de Sanepar e BB Seguridade batem com os valores de um site de mercado na mesma data. Na Cemig o retorno bate e o preço sobre o lucro ficou cerca de 6% acima do site.
 - Os testes automatizados cobrem a leitura de cada fonte e as fórmulas das notas, com casos calculados à mão.
 
 Não conferido:
