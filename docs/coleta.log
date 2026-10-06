@@ -1,0 +1,63 @@
+Coleta iniciada em 2026-10-06 19:14 UTC
+
+Diagnostico das fontes de dados
+
+  FALHA  B3 (cotacoes)          HTTP 404, text/html
+         https://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_M102026.ZIP
+  OK     CVM (cadastro)         HTTP 200, application/zip
+  OK     CVM (demonstrativos)   HTTP 200, application/zip
+  OK     Yahoo (dividendos)     HTTP 200, application/json;charset=utf-8
+  OK     CoinGecko (cripto)     HTTP 200, application/json; charset=utf-8
+  OK     Banco Central          HTTP 200, application/json; charset=utf-8
+
+1 fonte(s) com problema. Copie esta tela para quem for corrigir.
+[19:14:09] Cotacoes da B3: coletando...
+[19:15:35] Cotacoes da B3: 274492 registros
+[19:15:35] Cadastro e demonstrativos da CVM: coletando...
+[19:18:03] Cadastro e demonstrativos da CVM: 1759620 registros
+[19:18:03] Dividendos (Yahoo, nao oficial): coletando...
+[19:20:59] Dividendos (Yahoo, nao oficial): 3243 registros
+[19:20:59] Criptomoedas (CoinGecko): coletando...
+[19:29:13] Criptomoedas (CoinGecko): 10913 registros
+[19:29:13] Indicadores do Banco Central: coletando...
+[19:29:43] Indicadores do Banco Central: 5131 registros (avisos: selic_meta (serie 432): api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados respondeu HTTP 200 sem JSON)
+[19:29:43] Acoes ligadas a empresas: 374 pelo codigo, 20 pelas 4 letras iniciais
+
+Radar de Investimentos 0.1.0 - situacao do banco
+Arquivo: /home/runner/work/RadarInvest/RadarInvest/dados/radar.db
+
+B3
+  cotacoes diarias ........    274.492   (2025-01-02 a 2026-10-05)
+  ativos tipo fii                 490
+  ativos tipo acao                432
+  ativos tipo unit                 13
+  ativos tipo outro                 2
+  acoes/units negociadas nos ultimos 10 dias: 351
+    ligadas a uma empresa da CVM ............ 327
+    com demonstrativos no banco ............. 327
+
+CVM
+  empresas no cadastro ....        724
+  codigos de negociacao ...        467
+  linhas de demonstrativos   1.733.011   (2020-02-29 a 2026-06-30, 882 empresas)
+
+Dividendos
+  pagamentos ..............       3243   (194 acoes)
+
+Cripto
+  moedas no universo ......         30
+  cotacoes diarias ........      10883   (2025-10-07 a 2026-10-06)
+
+Banco Central (valor mais recente)
+  cdi_anual         13.6500   em 2026-10-05
+  dolar_ptax         4.9859   em 2026-10-05
+  ipca_mensal       -0.3200   em 2026-08-01
+
+Ultima coleta de cada fonte
+  b3          2026-10-06T19:15:35  ok      274492 registros
+  cripto      2026-10-06T19:29:13  ok      10913 registros
+  cvm         2026-10-06T19:18:03  ok      1759620 registros
+  dividendos  2026-10-06T19:20:59  ok      3243 registros
+  macro       2026-10-06T19:29:43  avisos  5131 registros
+      selic_meta (serie 432): api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados respondeu HTTP 200 sem JSON
+
