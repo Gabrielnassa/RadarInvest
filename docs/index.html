@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Radar de Investimentos</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
+body{margin:0}img{max-width:100%}[hidden]{display:none!important}
 /* Layout: cabecalho compacto, abas, e em Acoes uma tabela de ranking ao lado de um painel de detalhe fixo. */
 :root {
   --bg: #f3f5f7; --surface: #ffffff; --surface-2: #eef1f4;
@@ -170,224 +170,173 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
   .dest-item .btn { grid-column: 3; }
 }
 @media (prefers-reduced-motion: no-preference) { .barra i { transition: width .25s ease; } }
+
+.macro { display: flex; flex-wrap: wrap; gap: 6px 26px; font-size: 13px; color: var(--ink-2); }
+.macro b { color: var(--ink); font-weight: 600; }
+.vazio { padding: 22px; display: flex; flex-direction: column; gap: 8px; }
+.vazio p { color: var(--ink-2); max-width: 65ch; }
+.check { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--ink-2); }
+.check li { display: grid; grid-template-columns: 62px minmax(0, 1fr); gap: 8px; align-items: baseline; }
+.ck { font-size: 11px; font-weight: 600; text-align: center; border-radius: 4px; padding: 1px 0; border: 1px solid var(--line-strong); color: var(--ink-2); }
+.ck.ok { background: var(--sel); color: var(--accent-ink); border-color: transparent; }
+.ck.nao { background: var(--note-bg); color: var(--note-ink); border-color: transparent; }
+.carteira-campos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.carteira-campos input { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong); border-radius: 6px; padding: 6px 9px; width: 100%; min-width: 0; }
+@media (max-width: 720px) { .carteira-campos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 </style>
 </head>
 <body>
-
 <div class="wrap">
   <header class="top">
     <div>
       <h1>Radar de Investimentos</h1>
-      <p>Triagem de ações da B3 e criptomoedas. Dados de <span class="num">02/10/2026</span>.</p>
+      <p id="sub">Carregando dados…</p>
     </div>
     <div class="fontes" id="fontes" aria-label="Situação das fontes de dados"></div>
   </header>
 
+  <div class="macro" id="macro" aria-label="Indicadores do Banco Central"></div>
+
   <div class="aviso" role="note">
-    <strong>Prévia com dados fictícios.</strong> As empresas, moedas, preços, notas e textos desta página são inventados para mostrar o desenho do painel. Nada aqui se refere a um ativo real. Os números verdadeiros entram quando as etapas de cálculo e de IA rodarem sobre a sua coleta.
+    <strong>Como ler.</strong> As notas saem de regras fixas aplicadas a dados públicos. Elas mostram se o ativo passa nos critérios de cada método, não se o preço vai subir. As regras ainda não foram testadas contra o passado. Não é recomendação de investimento.
   </div>
 
-  <nav class="tabs" role="tablist" aria-label="Seções do painel">
-    <button role="tab" id="aba-destaques" data-aba="destaques" aria-selected="true">Destaques</button>
-    <button role="tab" id="aba-acoes" data-aba="acoes" aria-selected="false">Ações</button>
-    <button role="tab" id="aba-cripto" data-aba="cripto" aria-selected="false">Cripto</button>
-    <button role="tab" id="aba-carteira" data-aba="carteira" aria-selected="false">Carteira</button>
-    <button role="tab" id="aba-coleta" data-aba="coleta" aria-selected="false">Coleta</button>
-  </nav>
+  <div class="painel vazio" id="vazio" hidden></div>
 
-  <section class="secao" id="sec-destaques" role="tabpanel" aria-labelledby="aba-destaques">
-    <div class="bloco">
-      <h2>Maiores notas para cada objetivo</h2>
-      <p class="texto">Nota alta indica que o ativo passa nos critérios dos métodos. Não é previsão de alta. Ficam fora os ativos com menos de 8 dos 10 dados disponíveis.</p>
-    </div>
-    <div class="dest-cab">
-      <div class="seg" role="group" aria-label="Objetivo">
-        <button type="button" data-obj="equilibrio" aria-pressed="true">Equilíbrio</button>
-        <button type="button" data-obj="renda" aria-pressed="false">Dividendos</button>
-        <button type="button" data-obj="valor" aria-pressed="false">Desconto</button>
+  <div id="app" class="secao" hidden>
+    <nav class="tabs" role="tablist" aria-label="Seções do painel">
+      <button role="tab" id="aba-destaques" data-aba="destaques" aria-selected="true">Destaques</button>
+      <button role="tab" id="aba-acoes" data-aba="acoes" aria-selected="false">Ações</button>
+      <button role="tab" id="aba-cripto" data-aba="cripto" aria-selected="false">Cripto</button>
+      <button role="tab" id="aba-carteira" data-aba="carteira" aria-selected="false">Carteira</button>
+      <button role="tab" id="aba-coleta" data-aba="coleta" aria-selected="false">Coleta</button>
+    </nav>
+
+    <section class="secao" id="sec-destaques" role="tabpanel" aria-labelledby="aba-destaques">
+      <div class="bloco">
+        <h2>Maiores notas para cada objetivo</h2>
+        <p class="texto">Entram aqui só as ações com nota em todos os métodos que se aplicam a elas e sem sinal de evento isolado, como dividendo extraordinário ou lucro fora do padrão. O ranking completo está na aba Ações.</p>
       </div>
-      <p id="dest-txt"></p>
-    </div>
-    <div class="bloco">
-      <h3>Ações</h3>
-      <div class="painel"><ul class="dest-lista" id="dest-acoes"></ul></div>
-    </div>
-    <div class="bloco">
-      <h3>Cripto</h3>
-      <div class="painel"><ul class="dest-lista" id="dest-cripto"></ul></div>
-      <div><button type="button" class="btn" data-ir="cripto">Ver ranking completo de cripto</button></div>
-    </div>
-    <div class="bloco">
-      <h3>Classes de investimento</h3>
+      <div class="dest-cab">
+        <div class="seg" role="group" aria-label="Objetivo">
+          <button type="button" data-obj="equilibrio" aria-pressed="true">Equilíbrio</button>
+          <button type="button" data-obj="renda" aria-pressed="false">Dividendos</button>
+          <button type="button" data-obj="valor" aria-pressed="false">Desconto</button>
+        </div>
+        <p id="dest-txt"></p>
+      </div>
+      <div class="bloco">
+        <h3>Ações</h3>
+        <div class="painel"><ul class="dest-lista" id="dest-acoes"></ul></div>
+      </div>
+      <div class="bloco">
+        <h3>Cripto</h3>
+        <div class="painel"><ul class="dest-lista" id="dest-cripto"></ul></div>
+        <div><button type="button" class="btn" data-ir="cripto">Ver ranking completo de cripto</button></div>
+      </div>
+      <div class="bloco">
+        <h3>Classes de investimento</h3>
+        <div class="painel rolagem">
+          <table>
+            <thead><tr><th>Classe</th><th>Para que serve</th><th>Risco</th><th>No painel</th></tr></thead>
+            <tbody>
+              <tr><td><b>Caixa e renda fixa</b></td><td class="txt">Reserva e previsibilidade. Rende perto da taxa Selic.</td><td>Baixo</td><td class="txt">Selic e CDI aparecem no topo da página.</td></tr>
+              <tr><td><b>Fundos imobiliários</b></td><td class="txt">Renda mensal vinda de aluguéis.</td><td>Médio</td><td class="txt">Cotações coletadas. Ainda sem nota.</td></tr>
+              <tr><td><b>Ações</b></td><td class="txt">Participação em empresas, com dividendos e valorização.</td><td>Alto</td><td class="txt">Ranking completo na aba Ações.</td></tr>
+              <tr><td><b>Internacional</b></td><td class="txt">Proteção contra a desvalorização do real.</td><td>Alto, com câmbio</td><td class="txt">Fora do painel por enquanto.</td></tr>
+              <tr><td><b>Cripto</b></td><td class="txt">Parcela pequena, de maior risco.</td><td>Muito alto</td><td class="txt">Ranking na aba Cripto.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="secao" id="sec-acoes" role="tabpanel" aria-labelledby="aba-acoes" hidden>
+      <div class="filtros">
+        <label class="campo">Buscar<input type="search" id="f-busca" placeholder="Código ou nome"></label>
+        <label class="campo">Setor<select id="f-setor"><option value="">Todos</option></select></label>
+        <label class="campo">Ordenar por<select id="f-ordem">
+          <option value="final">Nota final</option><option value="barsi">Barsi</option><option value="bazin">Bazin</option>
+          <option value="qualidade">Qualidade</option><option value="graham">Graham</option><option value="greenblatt">Greenblatt</option>
+          <option value="margemTeto">Margem sobre o preço-teto</option><option value="dy">Dividendos sobre o preço</option></select></label>
+        <label class="campo"><span>Nota mínima: <b class="num" id="f-min-val">0</b></span><input type="range" id="f-min" min="0" max="90" step="5" value="0"></label>
+        <span class="conta" id="conta"></span>
+      </div>
+      <div class="grade">
+        <div class="painel rolagem">
+          <table>
+            <thead><tr>
+              <th>#</th><th>Ativo</th><th>Nota final</th><th class="d so-largo">Preço</th>
+              <th class="d met">Barsi</th><th class="d met">Bazin</th><th class="d met">Qualid.</th><th class="d met">Graham</th><th class="d met">Greenb.</th>
+              <th class="d so-largo">Margem teto</th><th>Alertas</th>
+            </tr></thead>
+            <tbody id="corpo-acoes"></tbody>
+          </table>
+        </div>
+        <aside class="painel detalhe" id="detalhe" aria-live="polite"></aside>
+      </div>
+      <div class="bloco">
+        <h3>Pesos da nota final</h3>
+        <div class="pesos" id="pesos"></div>
+        <p class="texto">A nota final é a média ponderada dos métodos que se aplicam ao ativo. Método sem dado fica de fora da média e reduz a confiança. Entram no ranking as ações com volume médio acima de R$ 500 mil por dia, uma por empresa.</p>
+      </div>
+    </section>
+
+    <section class="secao" id="sec-cripto" role="tabpanel" aria-labelledby="aba-cripto" hidden>
+      <p class="texto">Cripto usa regras próprias: tendência em relação à média de 200 dias (45% da nota), volatilidade dos últimos 30 dias (30%) e tamanho (25%). O núcleo fica separado do restante, que carrega risco maior. Preços em reais.</p>
       <div class="painel rolagem">
         <table>
-          <thead><tr><th>Classe</th><th>Para que serve</th><th>Risco</th><th>No painel</th></tr></thead>
-          <tbody>
-            <tr><td><b>Caixa e renda fixa</b></td><td class="txt">Reserva e previsibilidade. Rende perto da taxa Selic.</td><td>Baixo</td><td class="txt">Selic e CDI entram na coleta como referência.</td></tr>
-            <tr><td><b>Fundos imobiliários</b></td><td class="txt">Renda mensal vinda de aluguéis.</td><td>Médio</td><td class="txt">Cotações já coletadas. Notas ficam para uma etapa futura.</td></tr>
-            <tr><td><b>Ações</b></td><td class="txt">Participação em empresas, com dividendos e valorização.</td><td>Alto</td><td class="txt">Ranking completo na aba Ações.</td></tr>
-            <tr><td><b>Internacional</b></td><td class="txt">Proteção contra a desvalorização do real.</td><td>Alto, com câmbio</td><td class="txt">Fora do painel por enquanto.</td></tr>
-            <tr><td><b>Cripto</b></td><td class="txt">Parcela pequena, de maior risco.</td><td>Muito alto</td><td class="txt">Ranking na aba Cripto.</td></tr>
-          </tbody>
+          <thead><tr><th>#</th><th>Moeda</th><th>Nota</th><th class="d">Preço</th><th class="so-largo">Grupo</th><th class="d so-largo">Média de 200 dias</th><th class="d so-largo">Da máxima</th><th class="d so-largo">Volatilidade 30d</th><th class="so-largo">12 meses</th><th>Alertas</th></tr></thead>
+          <tbody id="corpo-cripto"></tbody>
         </table>
       </div>
-      <p class="texto">A aba Carteira mostra quanto você tem em cada classe e a distância para a divisão de 25%.</p>
-    </div>
-  </section>
+    </section>
 
-  <section class="secao" id="sec-acoes" role="tabpanel" aria-labelledby="aba-acoes" hidden>
-    <div class="filtros">
-      <label class="campo">Buscar<input type="search" id="f-busca" placeholder="Código ou nome"></label>
-      <label class="campo">Setor<select id="f-setor"><option value="">Todos</option></select></label>
-      <label class="campo">Ordenar por<select id="f-ordem">
-        <option value="final">Nota final</option><option value="barsi">Barsi</option><option value="bazin">Bazin</option>
-        <option value="qualidade">Qualidade</option><option value="graham">Graham</option><option value="greenblatt">Greenblatt</option>
-        <option value="margemTeto">Margem sobre o preço-teto</option></select></label>
-      <label class="campo"><span>Nota mínima: <b class="num" id="f-min-val">0</b></span><input type="range" id="f-min" min="0" max="90" step="5" value="0"></label>
-      <span class="conta" id="conta"></span>
-    </div>
-    <div class="grade">
+    <section class="secao" id="sec-carteira" role="tabpanel" aria-labelledby="aba-carteira" hidden>
+      <p class="texto">Informe quanto você tem em cada classe para comparar com a divisão ARCA, de 25% em cada uma. Os valores ficam guardados só neste navegador.</p>
+      <div class="painel arca">
+        <div class="carteira-campos" id="carteira-campos"></div>
+      </div>
+      <div class="painel arca" id="arca-painel" hidden>
+        <div class="legenda">
+          <span><i style="width:18px;height:10px;background:var(--accent);border-radius:0 3px 3px 0"></i>Participação atual</span>
+          <span><i style="width:2px;height:14px;background:var(--ink)"></i>Meta de 25%</span>
+        </div>
+        <div id="arca"></div>
+      </div>
+      <div class="painel rolagem" id="arca-tabela" hidden>
+        <table>
+          <thead><tr><th>Classe</th><th class="d">Valor atual</th><th class="d">Participação</th><th class="d">Diferença para a meta</th><th>Ajuste para voltar a 25%</th></tr></thead>
+          <tbody id="corpo-arca"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="secao" id="sec-coleta" role="tabpanel" aria-labelledby="aba-coleta" hidden>
+      <p class="texto">Uma linha por fonte, com a última coleta, a quantidade de registros novos e os avisos. A coleta roda sozinha de terça a sábado, de manhã cedo.</p>
       <div class="painel rolagem">
         <table>
-          <thead><tr>
-            <th>#</th><th>Ativo</th><th>Nota final</th><th class="d so-largo">Preço</th>
-            <th class="d met">Barsi</th><th class="d met">Bazin</th><th class="d met">Qualid.</th><th class="d met">Graham</th><th class="d met">Greenb.</th>
-            <th class="d so-largo">Margem teto</th><th>Alertas</th>
-          </tr></thead>
-          <tbody id="corpo-acoes"></tbody>
+          <thead><tr><th>Fonte</th><th>O que traz</th><th>Última coleta</th><th>Situação</th><th class="d">Registros</th><th>Observação</th></tr></thead>
+          <tbody id="corpo-coleta"></tbody>
         </table>
       </div>
-      <aside class="painel detalhe" id="detalhe" aria-live="polite"></aside>
-    </div>
-    <div class="bloco">
-      <h3>Pesos da nota final</h3>
-      <div class="pesos" id="pesos"></div>
-      <p class="texto">A nota final é a média ponderada dos métodos que se aplicam ao ativo. Método sem dado fica de fora da média e reduz a confiança.</p>
-    </div>
-  </section>
+      <p class="texto" id="sem-vinculo"></p>
+    </section>
+  </div>
 
-  <section class="secao" id="sec-cripto" role="tabpanel" aria-labelledby="aba-cripto" hidden>
-    <p class="texto">Cripto usa regras próprias: tendência em relação à média de 200 dias, distância da máxima histórica e volatilidade. O núcleo fica separado do restante, que carrega risco maior.</p>
-    <div class="painel rolagem">
-      <table>
-        <thead><tr><th>#</th><th>Moeda</th><th>Nota</th><th class="d">Preço</th><th class="so-largo">Grupo</th><th class="d so-largo">Média de 200 dias</th><th class="d so-largo">Da máxima</th><th class="d so-largo">Volatilidade 30d</th><th class="so-largo">12 meses</th><th>Alertas</th></tr></thead>
-        <tbody id="corpo-cripto"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <section class="secao" id="sec-carteira" role="tabpanel" aria-labelledby="aba-carteira" hidden>
-    <p class="texto">Comparação da carteira com a divisão ARCA, de 25% em cada classe. Carteira de exemplo de <b class="num" id="arca-total"></b>.</p>
-    <div class="painel arca">
-      <div class="legenda">
-        <span><i style="width:18px;height:10px;background:var(--accent);border-radius:0 3px 3px 0"></i>Participação atual</span>
-        <span><i style="width:2px;height:14px;background:var(--ink)"></i>Meta de 25%</span>
-      </div>
-      <div id="arca"></div>
-    </div>
-    <div class="painel rolagem">
-      <table>
-        <thead><tr><th>Classe</th><th class="d">Valor atual</th><th class="d">Participação</th><th class="d">Diferença para a meta</th><th>Ajuste para voltar a 25%</th></tr></thead>
-        <tbody id="corpo-arca"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <section class="secao" id="sec-coleta" role="tabpanel" aria-labelledby="aba-coleta" hidden>
-    <p class="texto">Esta aba mostra o que a etapa 1 grava: uma linha por fonte, com a última coleta, a quantidade de registros e os avisos. É o mesmo conteúdo do resumo que o <span class="mono">iniciar.bat</span> imprime.</p>
-    <div class="painel rolagem">
-      <table>
-        <thead><tr><th>Fonte</th><th>O que traz</th><th>Última coleta</th><th>Situação</th><th class="d">Registros</th><th>Observação</th></tr></thead>
-        <tbody id="corpo-coleta"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <footer>Conteúdo informativo. Não é recomendação de compra ou venda.</footer>
+  <footer>Conteúdo informativo. Não é recomendação de compra ou venda. Fontes: B3, CVM, Yahoo Finance, CoinGecko e Banco Central.</footer>
 </div>
-
 <script>
 (function () {
   "use strict";
 
-  // ---------- dados de exemplo (ficticios) ----------
-  var PESOS = { barsi: 20, bazin: 15, qualidade: 30, graham: 15, greenblatt: 20 };
   var METODOS = [["barsi", "Barsi"], ["bazin", "Bazin"], ["qualidade", "Qualidade"], ["graham", "Graham"], ["greenblatt", "Greenblatt"]];
-
-  var ACOES = [
-    { t: "EXSG3", n: "Seguradora Exemplo", s: "Seguros", p: 38.20, dpa: 3.30, lpa: 4.10, vpa: 5.6, m: { barsi: 88, bazin: 90, qualidade: 86, graham: 22, greenblatt: null }, dados: 9, al: [], tend: 0.10, nulo: { greenblatt: "Greenblatt não se aplica a bancos e seguradoras." } },
-    { t: "EXBN3", n: "Banco Exemplo", s: "Bancos", p: 28.40, dpa: 2.10, lpa: 4.90, vpa: 31.0, m: { barsi: 76, bazin: 74, qualidade: 68, graham: 88, greenblatt: null }, dados: 9, al: [], tend: 0.14, nulo: { greenblatt: "Greenblatt não se aplica a bancos e seguradoras." } },
-    { t: "EXEL4", n: "Elétrica Exemplo", s: "Energia", p: 11.80, dpa: 0.98, lpa: 1.62, vpa: 9.4, m: { barsi: 84, bazin: 82, qualidade: 70, graham: 79, greenblatt: 72 }, dados: 10, al: ["Empresa estatal: decisões de governo afetam o resultado"], tend: 0.06 },
-    { t: "EXPG3", n: "Pagamentos Exemplo", s: "Tecnologia", p: 15.10, dpa: 1.48, lpa: 2.15, vpa: 11.2, m: { barsi: 58, bazin: 85, qualidade: 80, graham: 78, greenblatt: 84 }, dados: 10, al: ["Pouca liquidez: volume médio abaixo de R$ 1 milhão por dia"], tend: -0.04 },
-    { t: "EXSN11", n: "Saneamento Exemplo", s: "Saneamento", p: 34.90, dpa: 1.75, lpa: 5.20, vpa: 39.0, m: { barsi: 41, bazin: 44, qualidade: 66, graham: 86, greenblatt: 64 }, dados: 10, al: ["Revisão de tarifa em andamento"], tend: 0.09 },
-    { t: "EXIN4", n: "Indústria Exemplo", s: "Indústria", p: 8.60, dpa: 0, lpa: 0.95, vpa: 7.3, m: { barsi: 0, bazin: 0, qualidade: 52, graham: 74, greenblatt: 69 }, dados: 10, al: ["Lucro do último trimestre inclui ganho que não se repete"], tend: 0.42 },
-    { t: "EXTL3", n: "Telecom Exemplo", s: "Telecomunicações", p: 5.60, dpa: 0.12, lpa: 0.52, vpa: 4.1, m: { barsi: 12, bazin: 15, qualidade: 62, graham: 64, greenblatt: 77 }, dados: 10, al: ["Oferta de compra em andamento"], tend: -0.18 },
-    { t: "EXMD3", n: "Moda Exemplo", s: "Varejo", p: 19.20, dpa: 0.85, lpa: 1.90, vpa: 28.5, m: { barsi: 20, bazin: 32, qualidade: 45, graham: 84, greenblatt: 58 }, dados: 10, al: ["Cisão da empresa em andamento"], tend: -0.36 },
-    { t: "EXLG3", n: "Logística Exemplo", s: "Logística", p: 22.30, dpa: 0.67, lpa: 1.45, vpa: 9.8, m: { barsi: 14, bazin: 24, qualidade: 71, graham: 28, greenblatt: 66 }, dados: 10, al: [], tend: 0.22 },
-    { t: "EXAG3", n: "Sementes Exemplo", s: "Agro", p: 7.40, dpa: 0.10, lpa: 0.38, vpa: 6.9, m: { barsi: 8, bazin: 10, qualidade: 38, graham: 52, greenblatt: 41 }, dados: 10, al: ["Prejuízo em 2 dos últimos 20 trimestres", "Dívida líquida acima de 3 vezes o Ebitda"], tend: -0.30 },
-    { t: "EXVJ3", n: "Varejo Exemplo", s: "Varejo", p: 3.10, dpa: 0, lpa: 0.11, vpa: 2.4, m: { barsi: null, bazin: null, qualidade: 34, graham: 26, greenblatt: 30 }, dados: 7, al: ["Histórico de dividendos não veio na coleta"], tend: -0.22, nulo: { barsi: "Barsi sem nota: faltam os dividendos.", bazin: "Bazin sem nota: faltam os dividendos." } },
-    { t: "EXSD3", n: "Saúde Exemplo", s: "Saúde", p: 13.90, dpa: 0.21, lpa: -0.40, vpa: 10.2, m: { barsi: 6, bazin: 9, qualidade: 30, graham: null, greenblatt: 22 }, dados: 9, al: ["Prejuízo no último ano"], tend: -0.28, nulo: { graham: "Graham sem nota: lucro por ação negativo." } }
-  ];
-
-  var CRIPTO = [
-    { id: "ALFA", n: "Cripto Alfa", nucleo: true, p: 432000, ma: 8.2, max: -21, vol: 38, nota: 74, tend: 0.35, al: [] },
-    { id: "BETA", n: "Cripto Beta", nucleo: true, p: 15200, ma: 3.1, max: -34, vol: 52, nota: 66, tend: 0.12, al: [] },
-    { id: "DELT", n: "Cripto Delta", nucleo: false, p: 3.42, ma: 14.8, max: -39, vol: 83, nota: 58, tend: 0.50, al: [] },
-    { id: "ZETA", n: "Cripto Zeta", nucleo: false, p: 61.5, ma: 1.2, max: -55, vol: 78, nota: 47, tend: -0.05, al: [] },
-    { id: "GAMA", n: "Cripto Gama", nucleo: false, p: 890, ma: -6.4, max: -48, vol: 71, nota: 44, tend: -0.15, al: [] },
-    { id: "TETA", n: "Cripto Teta", nucleo: false, p: 0.031, ma: 22.4, max: -63, vol: 131, nota: 35, tend: 0.30, al: ["Volatilidade muito alta"] },
-    { id: "EPSI", n: "Cripto Épsilon", nucleo: false, p: 0.87, ma: -18.9, max: -72, vol: 96, nota: 21, tend: -0.45, al: ["Abaixo da média de 200 dias"] },
-    { id: "IOTA", n: "Cripto Iota", nucleo: false, p: 12.9, ma: -9.7, max: -81, vol: 104, nota: 17, tend: -0.55, al: ["Abaixo da média de 200 dias", "Volume em queda"] }
-  ];
-
-  var CARTEIRA = [
-    { c: "Ações Brasil", d: "ações e units da B3", v: 38000 },
-    { c: "Imóveis", d: "fundos imobiliários", v: 22000 },
-    { c: "Caixa", d: "renda fixa e reserva", v: 12000 },
-    { c: "Internacional", d: "ativos no exterior e cripto", v: 28000 }
-  ];
-
-  var COLETA = [
-    { f: "B3", o: "Cotações diárias", q: "06/10/2026 08:02", s: "ok", r: 1012340, m: "" },
-    { f: "CVM", o: "Cadastro e demonstrativos", q: "06/10/2026 08:06", s: "ok", r: 1284903, m: "" },
-    { f: "Dividendos", o: "Proventos por ação", q: "06/10/2026 08:09", s: "av", r: 9421, m: "12 de 287 ações sem resposta" },
-    { f: "Cripto", o: "30 maiores moedas", q: "06/10/2026 08:12", s: "ok", r: 10980, m: "" },
-    { f: "Banco Central", o: "Selic, IPCA, dólar, CDI", q: "06/10/2026 08:12", s: "ok", r: 7412, m: "" }
-  ];
-  var SITUACAO = { ok: "Em dia", av: "Com avisos", er: "Com erro" };
-
-  // ---------- calculos ----------
-  function notaFinal(m) {
-    var soma = 0, peso = 0;
-    for (var k in PESOS) { if (m[k] != null) { soma += m[k] * PESOS[k]; peso += PESOS[k]; } }
-    return peso ? soma / peso : null;
-  }
-  ACOES.forEach(function (a) {
-    a.final = notaFinal(a.m);
-    a.teto = a.dpa > 0 ? a.dpa / 0.06 : null;                         // preco-teto: dividendo medio / 6%
-    a.margemTeto = a.teto ? (a.teto - a.p) / a.teto : null;
-    a.graham = (a.lpa > 0 && a.vpa > 0) ? Math.sqrt(22.5 * a.lpa * a.vpa) : null;
-    a.margemGraham = a.graham ? (a.graham - a.p) / a.graham : null;
-    a.dy = a.dpa > 0 ? a.dpa / a.p : null;
-    a.serie = serie(a.t, a.p, a.tend);
-  });
-  CRIPTO.forEach(function (c) { c.serie = serie(c.id, c.p, c.tend); });
-
-  // serie semanal de 52 pontos, reprodutivel, terminando no preco atual
-  function serie(semente, precoFinal, tendencia) {
-    var h = 2166136261;
-    for (var i = 0; i < semente.length; i++) { h ^= semente.charCodeAt(i); h = Math.imul(h, 16777619); }
-    function rnd() { h += 0x6D2B79F5; var t = h; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }
-    var n = 52, v = [1];
-    for (var j = 1; j < n; j++) { v.push(v[j - 1] * (1 + tendencia / n + (rnd() - 0.5) * 0.07)); }
-    var k = precoFinal / v[n - 1];
-    return v.map(function (x) { return x * k; });
-  }
+  var D = null, ACOES = [], CRIPTO = [], PESOS = {};
 
   // ---------- formatacao ----------
   function brl(v) {
     if (v == null) return "sem dado";
-    var casas = Math.abs(v) < 0.1 ? 3 : 2;
+    var casas = Math.abs(v) < 0.1 ? 4 : 2;
     return "R$ " + v.toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas });
   }
   function pct(v, casas) {
@@ -395,22 +344,31 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
     var s = (v * 100).toLocaleString("pt-BR", { minimumFractionDigits: casas || 0, maximumFractionDigits: casas || 0 });
     return (v > 0 ? "+" : "") + s + "%";
   }
+  function semSinal(v, casas) { return v == null ? "sem dado" : pct(Math.abs(v), casas).replace("+", ""); }
+  function vezes(v) { return v == null ? "sem dado" : v.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }); }
   function inteiro(v) { return v == null ? "–" : Math.round(v).toLocaleString("pt-BR"); }
-  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function dataBR(iso) { return iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) + "/" + iso.slice(0, 4) : "sem dado"; }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function barra(v) { return '<span class="barra"><i style="width:' + Math.max(0, Math.min(100, v || 0)) + '%"></i></span>'; }
   var ICONE = '<svg width="13" height="13" viewBox="0 0 13 13" aria-hidden="true"><path d="M6.5 1.2 12.3 11.6H.7z" fill="var(--warning)"/><rect x="5.9" y="4.6" width="1.2" height="3.8" fill="#3a2a00"/><rect x="5.9" y="9.1" width="1.2" height="1.2" fill="#3a2a00"/></svg>';
   function alertas(lista, curto) {
-    if (!lista.length) return '<span class="sem">' + (curto ? "–" : "nenhum") + "</span>";
+    if (!lista || !lista.length) return '<span class="sem">' + (curto ? "–" : "sem alertas") + "</span>";
     var rotulo = lista.length + (lista.length > 1 ? " alertas" : " alerta");
     return '<span class="alerta" title="' + esc(lista.join(" · ")) + '" aria-label="' + rotulo + '">' + ICONE + (curto ? lista.length : rotulo) + "</span>";
   }
   function spark(v) {
+    if (!v || v.length < 2) return '<span class="sem">–</span>';
     var w = 92, h = 26, min = Math.min.apply(null, v), max = Math.max.apply(null, v), amp = (max - min) || 1;
     var pts = v.map(function (y, i) { return (2 + i * (w - 8) / (v.length - 1)).toFixed(1) + "," + (h - 4 - (y - min) / amp * (h - 8)).toFixed(1); });
     var fim = pts[pts.length - 1].split(",");
     return '<svg class="spark" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + " " + h + '" role="img" aria-label="Preço em 12 meses">' +
       '<polyline points="' + pts.join(" ") + '" fill="none" stroke="var(--accent)" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round"/>' +
       '<circle cx="' + fim[0] + '" cy="' + fim[1] + '" r="3" fill="var(--accent)" stroke="var(--surface)" stroke-width="1.5"/></svg>';
+  }
+  function notaCom(m, pesos) {
+    var soma = 0, peso = 0;
+    for (var k in pesos) { if (m[k] != null) { soma += m[k] * pesos[k]; peso += pesos[k]; } }
+    return peso ? soma / peso : null;
   }
 
   // ---------- acoes ----------
@@ -420,14 +378,13 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
   function filtradas() {
     var b = estado.busca.trim().toLowerCase();
     var lista = ACOES.filter(function (a) {
-      return (!b || a.t.toLowerCase().indexOf(b) >= 0 || a.n.toLowerCase().indexOf(b) >= 0) &&
+      return (!b || a.t.toLowerCase().indexOf(b) >= 0 || (a.n || "").toLowerCase().indexOf(b) >= 0 || (a.razao || "").toLowerCase().indexOf(b) >= 0) &&
         (!estado.setor || a.s === estado.setor) && (a.final || 0) >= estado.min;
     });
     var k = estado.ordem;
-    function val(a) { var x = (k === "final" || k === "margemTeto") ? a[k] : a.m[k]; return x == null ? -Infinity : x; }
+    function val(a) { var x = (k === "final" || k === "margemTeto" || k === "dy") ? a[k] : a.m[k]; return x == null ? -Infinity : x; }
     return lista.sort(function (x, y) { return val(y) - val(x); });
   }
-
   function celMetodo(v) { return '<td class="d num met">' + (v == null ? '<span class="sem">–</span>' : v) + "</td>"; }
 
   function desenharAcoes() {
@@ -440,7 +397,7 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
         '<td><span class="nota"><b class="num">' + inteiro(a.final) + "</b>" + barra(a.final) + "</span></td>" +
         '<td class="d num so-largo">' + brl(a.p) + "</td>" +
         celMetodo(a.m.barsi) + celMetodo(a.m.bazin) + celMetodo(a.m.qualidade) + celMetodo(a.m.graham) + celMetodo(a.m.greenblatt) +
-        '<td class="d num so-largo">' + (a.margemTeto == null ? '<span class="sem">sem dado</span>' : pct(a.margemTeto)) + "</td>" +
+        '<td class="d num so-largo">' + (a.margemTeto == null ? '<span class="sem">sem dado</span>' : pct(Math.max(a.margemTeto, -9.99))) + "</td>" +
         "<td>" + alertas(a.al, true) + "</td></tr>";
     }).join("") || '<tr><td colspan="11" class="sem">Nenhuma ação passa nos filtros. Reduza a nota mínima ou limpe a busca.</td></tr>';
     document.getElementById("conta").textContent = lista.length + " de " + ACOES.length + " ações";
@@ -449,37 +406,39 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
 
   function leitura(a) {
     var favor = [], contra = [], semDado = [];
+    var okCheck = (a.check || []).filter(function (c) { return c[1] === true; }).length;
+    var comCheck = (a.check || []).filter(function (c) { return c[1] != null; }).length;
     METODOS.forEach(function (par) {
       var k = par[0], v = a.m[k];
-      if (v == null) { semDado.push((a.nulo && a.nulo[k]) || (par[1] + " sem nota.")); return; }
+      if (v == null) { semDado.push(par[1] + ": " + ((a.nulo && a.nulo[k]) || "sem nota.")); return; }
       var alto = v >= 70, baixo = v <= 40;
       if (!alto && !baixo) return;
       var txt = "";
-      if (k === "barsi") txt = alto ? "Preço " + pct(a.margemTeto).replace("+", "") + " abaixo do preço-teto de " + brl(a.teto) + "."
-        : (a.teto ? "Preço acima do preço-teto de " + brl(a.teto) + "." : "Não paga dividendos de forma regular, então não há preço-teto.");
-      if (k === "bazin") txt = a.dy ? "Dividendos equivalem a " + pct(a.dy, 1).replace("+", "") + " do preço, " + (alto ? "acima" : "abaixo") + " do mínimo de 6%."
-        : "Sem dividendos nos últimos anos.";
-      if (k === "qualidade") txt = alto ? "Atende a maior parte do checklist: lucro recorrente, bom retorno sobre o patrimônio e dívida controlada."
-        : "Falha em vários itens do checklist de qualidade.";
-      if (k === "graham") txt = alto ? "Negocia " + pct(a.margemGraham).replace("+", "") + " abaixo do valor de Graham (" + brl(a.graham) + ")."
+      if (k === "barsi") txt = !a.teto ? "Sem dividendos nos últimos 5 anos."
+        : a.margemTeto > 0 ? "Preço " + semSinal(a.margemTeto) + " abaixo do preço-teto de " + brl(a.teto) + "."
+        : "Preço acima do preço-teto de " + brl(a.teto) + ".";
+      if (k === "bazin") txt = a.dy ? "Dividendos de 12 meses equivalem a " + semSinal(a.dy, 1) + " do preço, " + (a.dy >= 0.06 ? "acima" : "abaixo") + " do mínimo de 6%."
+        : "Sem dividendos nos últimos 12 meses.";
+      if (k === "qualidade") txt = "Passa em " + okCheck + " de " + comCheck + " itens do checklist de qualidade.";
+      if (k === "graham") txt = !a.graham ? "Lucro ou patrimônio negativo: não passa em Graham."
+        : a.margemGraham > 0 ? "Negocia " + semSinal(a.margemGraham) + " abaixo do valor de Graham (" + brl(a.graham) + ")."
         : "Negocia acima do valor de Graham (" + brl(a.graham) + ").";
-      if (k === "greenblatt") txt = alto ? "Bem colocada no ranking de retorno sobre o capital e preço em relação ao lucro operacional."
-        : "Mal colocada no ranking de retorno sobre o capital.";
+      if (k === "greenblatt") txt = alto ? "Bem colocada no ranking de retorno sobre o capital e de lucro operacional em relação ao valor da empresa."
+        : "Mal colocada no ranking de retorno sobre o capital, ou com lucro operacional negativo.";
       (alto ? favor : contra).push(txt);
     });
     var faixa = a.final >= 70 ? "Nota alta" : a.final >= 50 ? "Nota intermediária" : "Nota baixa";
+    var n = (a.al || []).length;
     var resumo = faixa + ": " + favor.length + (favor.length === 1 ? " método a favor e " : " métodos a favor e ") + contra.length + " contra. " +
-      (a.al.length ? "Há " + a.al.length + (a.al.length > 1 ? " alertas que pedem" : " alerta que pede") + " leitura antes de qualquer decisão." : "Sem alertas no momento.");
-    var muda = [];
-    if (a.margemTeto != null && a.margemTeto > 0) muda.push("Dividendo médio abaixo de " + brl(a.p * 0.06) + " por ação zera a margem sobre o preço-teto.");
-    a.al.forEach(function (x) { muda.push("Desfecho de: " + x.charAt(0).toLowerCase() + x.slice(1) + "."); });
-    muda.push("Dois trimestres seguidos de queda no lucro.");
-    return { resumo: resumo, favor: favor, contra: contra, semDado: semDado, muda: muda };
+      (n ? "Há " + n + (n > 1 ? " alertas que pedem" : " alerta que pede") + " leitura antes de qualquer decisão." : "Sem alertas no momento.");
+    return { resumo: resumo, favor: favor, contra: contra, semDado: semDado };
   }
-
   function lista(titulo, itens) {
-    if (!itens.length) return "";
+    if (!itens || !itens.length) return "";
     return '<div class="bloco"><h3>' + titulo + "</h3><ul>" + itens.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></div>";
+  }
+  function par(rotulo, valor, nota) {
+    return '<div class="par"><span>' + rotulo + '</span><b class="num">' + valor + "</b><small>" + (nota || "&nbsp;") + "</small></div>";
   }
 
   function desenharDetalhe() {
@@ -488,37 +447,48 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
     if (!a) { el.innerHTML = '<p class="sem">Selecione uma ação na tabela para ver o detalhe.</p>'; return; }
     var L = leitura(a);
     el.innerHTML =
-      '<div class="det-topo"><div><div class="tk">' + a.t + '</div><div class="sub">' + esc(a.n) + " · " + esc(a.s) + '</div><div class="sub num">' + brl(a.p) + "</div></div>" +
+      '<div class="det-topo"><div><div class="tk">' + a.t + '</div><div class="sub">' + esc(a.razao || a.n) + '</div><div class="sub">' + esc(a.s) + '</div><div class="sub num">' + brl(a.p) +
+        (a.var12 == null ? "" : " · " + pct(a.var12) + " em 12 meses") + "</div></div>" +
       '<div class="notao"><b class="num">' + inteiro(a.final) + "</b><span>nota final de 0 a 100</span></div></div>" +
-      '<div class="bloco"><h3>Notas por método</h3>' + METODOS.map(function (par) {
-        var v = a.m[par[0]];
-        return '<div class="metodo"><span>' + par[1] + "</span>" + barra(v) + '<b class="num">' + (v == null ? '<span class="sem">–</span>' : v) + "</b></div>";
+      '<div class="bloco"><h3>Notas por método</h3>' + METODOS.map(function (p) {
+        var v = a.m[p[0]];
+        return '<div class="metodo"><span>' + p[1] + "</span>" + barra(v) + '<b class="num">' + (v == null ? '<span class="sem">–</span>' : v) + "</b></div>";
       }).join("") + "</div>" +
       '<div class="pares">' +
-        '<div class="par"><span>Preço-teto (Barsi)</span><b class="num">' + brl(a.teto) + "</b><small>" + (a.margemTeto == null ? "sem dividendos" : "margem de " + pct(a.margemTeto)) + "</small></div>" +
-        '<div class="par"><span>Valor de Graham</span><b class="num">' + brl(a.graham) + "</b><small>" + (a.margemGraham == null ? "lucro negativo" : "margem de " + pct(a.margemGraham)) + "</small></div>" +
-        '<div class="par"><span>Dividendos sobre o preço</span><b class="num">' + (a.dy == null ? "sem dado" : pct(a.dy, 1).replace("+", "")) + "</b><small>média de 5 anos</small></div>" +
-        '<div class="par"><span>Confiança</span><b class="num">' + a.dados + " de 10</b><small>dados disponíveis</small></div>" +
+        par("Preço-teto (Barsi)", brl(a.teto), a.margemTeto == null ? "sem dividendos" : "margem de " + pct(Math.max(a.margemTeto, -9.99))) +
+        par("Valor de Graham", brl(a.graham), a.margemGraham == null ? "lucro ou patrimônio negativo" : "margem de " + pct(Math.max(a.margemGraham, -9.99))) +
+        par("Dividendos em 12 meses", a.dy == null ? "sem dado" : semSinal(a.dy, 1), a.anosDiv == null ? "" : "do preço · pagou em " + a.anosDiv + " de 5 anos") +
+        par("Dividendo típico", a.dyTipico == null ? "sem dado" : semSinal(a.dyTipico, 1), "do preço · mediana de 5 anos") +
+        par("Preço sobre o lucro", vezes(a.pl), "vezes o lucro de 12 meses") +
+        par("Preço sobre o patrimônio", vezes(a.pvp), "vezes o patrimônio") +
+        par("Retorno sobre o patrimônio", a.roe == null ? "sem dado" : pct(a.roe, 1).replace("+", ""), "lucro de 12 meses") +
+        par("Dívida líquida", a.divEbit == null ? "sem dado" : vezes(a.divEbit), a.divEbit == null ? "" : "vezes o lucro operacional") +
+        par("Valor de mercado", a.valorMercado == null ? "sem dado" : "R$ " + (a.valorMercado / 1e9).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + " bi", "") +
+        par("Confiança", a.conf[0] + " de " + a.conf[1], "dados disponíveis") +
       "</div>" +
       '<div class="bloco"><h3>Preço em 12 meses</h3><div class="graf" id="graf"></div></div>' +
-      '<div class="bloco ia"><h3>Leitura da IA<span class="etq">texto de exemplo</span></h3><p>' + esc(L.resumo) + "</p>" +
-        lista("A favor", L.favor) + lista("Contra", L.contra) + lista("Alertas", a.al) + lista("Sem dado", L.semDado) + lista("O que mudaria a leitura", L.muda) + "</div>" +
-      '<div class="rodape-det">Cotação de 02/10/2026 · balanço do 2º trimestre de 2026 · dividendos até set/2026</div>';
-    grafico(document.getElementById("graf"), a.serie);
+      '<div class="bloco"><h3>Checklist de qualidade</h3><ul class="check">' + (a.check || []).map(function (c) {
+        var r = c[1] === true ? ["sim", "ok"] : c[1] === false ? ["não", "nao"] : ["sem dado", "nd"];
+        return '<li><span class="ck ' + r[1] + '">' + r[0] + "</span>" + esc(c[0]) + "</li>";
+      }).join("") + "</ul></div>" +
+      '<div class="bloco ia"><h3>Leitura automática</h3><p>' + esc(L.resumo) + "</p>" +
+        lista("A favor", L.favor) + lista("Contra", L.contra) + lista("Alertas", a.al) + lista("Sem dado", L.semDado) + "</div>" +
+      '<div class="rodape-det">Cotação de ' + dataBR(a.data) + " · balanço de " + dataBR(a.balancoEm) +
+        (a.lucroAte ? " · lucro até " + dataBR(a.lucroAte) + (a.lucroBase === "ultimo ano" ? " (ano fechado)" : " (12 meses)") : "") + "</div>";
+    grafico(document.getElementById("graf"), a.serie || [], a.data);
   }
 
   // grafico de linha com eixo, linha de referencia sob o ponteiro e dica
-  function grafico(alvo, v) {
+  function grafico(alvo, v, dataFim) {
+    if (v.length < 2) { alvo.innerHTML = '<p class="sem">Sem histórico de preço.</p>'; return; }
     var W = 340, H = 150, ml = 46, mr = 10, mt = 10, mb = 22;
     var min = Math.min.apply(null, v), max = Math.max.apply(null, v), folga = (max - min) * 0.08 || 1;
     min -= folga; max += folga;
     function x(i) { return ml + i * (W - ml - mr) / (v.length - 1); }
     function y(val) { return mt + (max - val) / (max - min) * (H - mt - mb); }
-    var fim = new Date(2026, 9, 2);
-    function data(i) { var d = new Date(fim); d.setDate(d.getDate() - (v.length - 1 - i) * 7); return d.toLocaleDateString("pt-BR"); }
     var pts = v.map(function (val, i) { return x(i).toFixed(1) + "," + y(val).toFixed(1); }).join(" ");
     var ticks = [min + folga, (min + max) / 2, max - folga];
-    var s = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Preço semanal nos últimos 12 meses">';
+    var s = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Preço nos últimos 12 meses">';
     ticks.forEach(function (t) {
       s += '<line x1="' + ml + '" x2="' + (W - mr) + '" y1="' + y(t).toFixed(1) + '" y2="' + y(t).toFixed(1) + '" stroke="var(--line)" stroke-width="1"/>' +
         '<text x="' + (ml - 6) + '" y="' + (y(t) + 3.5).toFixed(1) + '" text-anchor="end" font-size="10" fill="var(--muted)" font-family="var(--sans)">' +
@@ -529,17 +499,18 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
       '<polyline points="' + pts + '" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
       '<line id="g-cursor" y1="' + mt + '" y2="' + (H - mb) + '" stroke="var(--line-strong)" stroke-width="1" visibility="hidden"/>' +
       '<circle id="g-ponto" cx="' + x(v.length - 1).toFixed(1) + '" cy="' + y(v[v.length - 1]).toFixed(1) + '" r="4" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/>' +
-      '<text x="' + ml + '" y="' + (H - 6) + '" font-size="10" fill="var(--muted)" font-family="var(--sans)">' + data(0) + "</text>" +
-      '<text x="' + (W - mr) + '" y="' + (H - 6) + '" text-anchor="end" font-size="10" fill="var(--muted)" font-family="var(--sans)">' + data(v.length - 1) + "</text></svg>" +
+      '<text x="' + ml + '" y="' + (H - 6) + '" font-size="10" fill="var(--muted)" font-family="var(--sans)">12 meses atrás</text>' +
+      '<text x="' + (W - mr) + '" y="' + (H - 6) + '" text-anchor="end" font-size="10" fill="var(--muted)" font-family="var(--sans)">' + dataBR(dataFim) + "</text></svg>" +
       '<div class="dica num" id="g-dica" hidden></div>';
     alvo.innerHTML = s;
     var svg = alvo.querySelector("svg"), cursor = alvo.querySelector("#g-cursor"), ponto = alvo.querySelector("#g-ponto"), dica = alvo.querySelector("#g-dica");
     function mover(e) {
       var r = svg.getBoundingClientRect(), px = (e.clientX - r.left) * W / r.width;
       var i = Math.max(0, Math.min(v.length - 1, Math.round((px - ml) / ((W - ml - mr) / (v.length - 1)))));
+      var semanas = Math.round((v.length - 1 - i) * 52 / (v.length - 1));
       cursor.setAttribute("x1", x(i)); cursor.setAttribute("x2", x(i)); cursor.setAttribute("visibility", "visible");
       ponto.setAttribute("cx", x(i)); ponto.setAttribute("cy", y(v[i]));
-      dica.hidden = false; dica.textContent = data(i) + " · " + brl(v[i]);
+      dica.hidden = false; dica.textContent = brl(v[i]) + (semanas ? " · há " + semanas + (semanas > 1 ? " semanas" : " semana") : " · último");
       var esq = x(i) * r.width / W, meio = dica.offsetWidth / 2;
       dica.style.left = Math.max(meio, Math.min(r.width - meio, esq)) + "px";
       dica.style.top = (y(v[i]) * r.height / H) + "px";
@@ -564,115 +535,69 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
     if (e.key !== "Enter" && e.key !== " ") return;
     var tr = e.target.closest("tr[data-t]"); if (tr) { e.preventDefault(); selecionar(tr.dataset.t, true); }
   });
-
-  var setores = ACOES.map(function (a) { return a.s; }).filter(function (s, i, l) { return l.indexOf(s) === i; }).sort(function (a, b) { return a.localeCompare(b, "pt-BR"); });
-  document.getElementById("f-setor").insertAdjacentHTML("beforeend", setores.map(function (s) { return "<option>" + esc(s) + "</option>"; }).join(""));
   document.getElementById("f-busca").addEventListener("input", function (e) { estado.busca = e.target.value; desenharAcoes(); });
   document.getElementById("f-setor").addEventListener("change", function (e) { estado.setor = e.target.value; desenharAcoes(); });
   document.getElementById("f-ordem").addEventListener("change", function (e) { estado.ordem = e.target.value; desenharAcoes(); });
   document.getElementById("f-min").addEventListener("input", function (e) { estado.min = +e.target.value; document.getElementById("f-min-val").textContent = e.target.value; desenharAcoes(); });
-  document.getElementById("pesos").innerHTML = METODOS.map(function (p) { return '<span class="chip">' + p[1] + ' <b class="num">' + PESOS[p[0]] + "%</b></span>"; }).join("");
-
-  // ---------- cripto ----------
-  document.getElementById("corpo-cripto").innerHTML = CRIPTO.map(function (c, i) {
-    return "<tr><td class=\"pos num\">" + (i + 1) + "</td>" +
-      '<td class="c-ativo"><span class="ativo"><b>' + c.id + "</b><span>" + esc(c.n) + "</span></span></td>" +
-      '<td><span class="nota"><b class="num">' + c.nota + "</b>" + barra(c.nota) + "</span></td>" +
-      '<td class="d num">' + brl(c.p) + "</td>" +
-      '<td class="so-largo">' + (c.nucleo ? "Núcleo" : '<span class="sem">Outras</span>') + "</td>" +
-      '<td class="d num so-largo">' + pct(c.ma / 100, 1) + "</td>" +
-      '<td class="d num so-largo">' + pct(c.max / 100) + "</td>" +
-      '<td class="d num so-largo">' + c.vol + "%</td>" +
-      '<td class="so-largo">' + spark(c.serie) + "</td><td>" + alertas(c.al, true) + "</td></tr>";
-  }).join("");
-
-  // ---------- carteira ----------
-  var total = CARTEIRA.reduce(function (s, x) { return s + x.v; }, 0), ESCALA = 50; // eixo de 0 a 50%
-  document.getElementById("arca-total").textContent = brl(total);
-  document.getElementById("arca").innerHTML = CARTEIRA.map(function (x) {
-    var part = x.v / total * 100;
-    return '<div class="arca-linha"><div class="arca-nome"><b>' + esc(x.c) + "</b><span>" + esc(x.d) + "</span></div>" +
-      '<div class="arca-faixa" title="' + esc(x.c) + ": " + part.toFixed(0) + '% da carteira, meta de 25%"><div class="eixo"></div>' +
-      '<div class="bar" style="width:' + (part / ESCALA * 100) + '%"></div><div class="meta" style="left:' + (25 / ESCALA * 100) + '%"></div>' +
-      '<div class="val num" style="left:' + (Math.max(part, 25) / ESCALA * 100) + '%"><b>' + part.toFixed(0) + "%</b></div></div></div>";
-  }).join("");
-  document.getElementById("corpo-arca").innerHTML = CARTEIRA.map(function (x) {
-    var part = x.v / total, dif = part - 0.25, ajuste = total * 0.25 - x.v;
-    return "<tr><td>" + esc(x.c) + '</td><td class="d num">' + brl(x.v) + '</td><td class="d num">' + (part * 100).toFixed(0) + '%</td>' +
-      '<td class="d num">' + (dif > 0 ? "+" : "") + (dif * 100).toFixed(0) + " p.p.</td><td>" +
-      (Math.abs(ajuste) < 1 ? "nenhum" : (ajuste > 0 ? "aportar " : "reduzir ") + brl(Math.abs(ajuste))) + "</td></tr>";
-  }).join("");
-
-  // ---------- coleta ----------
-  document.getElementById("fontes").innerHTML = COLETA.map(function (c) {
-    return '<span class="chip" title="' + esc(SITUACAO[c.s] + (c.m ? ": " + c.m : "")) + '"><span class="dot ' + c.s + '"></span>' + esc(c.f) + (c.s === "ok" ? "" : " · " + SITUACAO[c.s].toLowerCase()) + "</span>";
-  }).join("");
-  document.getElementById("corpo-coleta").innerHTML = COLETA.map(function (c) {
-    return "<tr><td><b>" + esc(c.f) + "</b></td><td>" + esc(c.o) + '</td><td class="num">' + c.q + "</td>" +
-      '<td><span class="alerta"><span class="dot ' + c.s + '"></span>' + SITUACAO[c.s] + '</span></td><td class="d num">' + inteiro(c.r) + "</td><td>" +
-      (c.m ? esc(c.m) : '<span class="sem">–</span>') + "</td></tr>";
-  }).join("");
 
   // ---------- destaques ----------
   var OBJETIVOS = {
-    equilibrio: { pesos: PESOS, txt: "Usa os pesos padrão da nota final." },
+    equilibrio: { pesos: null, txt: "Usa os pesos padrão da nota final." },
     renda: { pesos: { barsi: 35, bazin: 30, qualidade: 25, graham: 5, greenblatt: 5 }, txt: "Barsi e Bazin somam 65% da nota: pesa mais quem paga dividendos." },
     valor: { pesos: { barsi: 5, bazin: 5, qualidade: 25, graham: 35, greenblatt: 30 }, txt: "Graham e Greenblatt somam 65% da nota: pesa mais o preço abaixo do valor." }
   };
   var objetivo = "equilibrio";
-  function notaCom(m, pesos) {
-    var soma = 0, peso = 0;
-    for (var k in pesos) { if (m[k] != null) { soma += m[k] * pesos[k]; peso += pesos[k]; } }
-    return peso ? soma / peso : null;
-  }
   function motivo(a) {
     if (objetivo === "renda") {
-      if (!a.dy) return "Sem dividendos regulares.";
-      return "Dividendos de " + pct(a.dy, 1).replace("+", "") + " do preço. " +
-        (a.margemTeto > 0 ? "Preço " + pct(a.margemTeto).replace("+", "") + " abaixo do preço-teto." : "Preço acima do preço-teto.");
+      if (!a.dy) return "Sem dividendos nos últimos 12 meses.";
+      return "Dividendos de " + semSinal(a.dy, 1) + " do preço em 12 meses, " + semSinal(a.dyTipico || 0, 1) + " no ano típico. " +
+        (a.margemTeto > 0 ? "Preço " + semSinal(a.margemTeto) + " abaixo do preço-teto." : "Preço acima do preço-teto.");
     }
     if (objetivo === "valor") {
-      if (!a.graham) return "Sem valor de Graham: lucro por ação negativo.";
-      return (a.margemGraham > 0 ? "Negocia " + pct(a.margemGraham).replace("+", "") + " abaixo do valor de Graham." : "Negocia acima do valor de Graham.") +
+      if (!a.graham) return "Sem valor de Graham: lucro ou patrimônio negativo.";
+      return (a.margemGraham > 0 ? "Negocia " + semSinal(a.margemGraham) + " abaixo do valor de Graham." : "Negocia acima do valor de Graham.") +
         (a.m.greenblatt != null ? " Nota " + a.m.greenblatt + " em Greenblatt." : " Greenblatt não se aplica.");
     }
     var com = 0, altos = 0;
-    METODOS.forEach(function (par) { var v = a.m[par[0]]; if (v != null) { com++; if (v >= 70) altos++; } });
+    METODOS.forEach(function (p) { var v = a.m[p[0]]; if (v != null) { com++; if (v >= 70) altos++; } });
     return altos + " de " + com + " métodos com nota 70 ou mais.";
   }
   function itemDestaque(pos, codigo, nome, nota, texto, lista, botao) {
     return '<li class="dest-item"><span class="pos num">' + pos + "</span>" +
-      '<span class="ativo"><b>' + codigo + "</b><span>" + esc(nome) + "</span></span>" +
+      '<span class="ativo"><b>' + esc(codigo) + "</b><span>" + esc(nome) + "</span></span>" +
       '<span class="nota"><b class="num">' + inteiro(nota) + "</b>" + barra(nota) + "</span>" +
       '<span class="dest-motivo">' + esc(texto) + "</span>" +
-      '<span class="dest-al">' + (lista.length ? alertas(lista) : '<span class="sem">sem alertas</span>') + "</span>" + botao + "</li>";
+      '<span class="dest-al">' + alertas(lista) + "</span>" + botao + "</li>";
   }
   function desenharDestaques() {
-    var o = OBJETIVOS[objetivo];
+    var o = OBJETIVOS[objetivo], pesos = o.pesos || PESOS;
     document.getElementById("dest-txt").textContent = o.txt;
     Array.prototype.forEach.call(document.querySelectorAll(".seg button"), function (b) { b.setAttribute("aria-pressed", b.dataset.obj === objetivo); });
     document.getElementById("dest-acoes").innerHTML = ACOES
-      .filter(function (a) { return a.dados >= 8; })
-      .map(function (a) { return { a: a, nota: notaCom(a.m, o.pesos) }; })
-      .sort(function (x, y) { return y.nota - x.nota; }).slice(0, 5)
+      .filter(function (a) {
+        var com = METODOS.filter(function (p) { return a.m[p[0]] != null; }).length;
+        return com >= (a.aplicaveis || 5) && a.conf[0] / a.conf[1] >= 0.8 && !a.distorcao;
+      })
+      .map(function (a) { return { a: a, nota: notaCom(a.m, pesos) }; })
+      .filter(function (x) { return x.nota != null; })
+      .sort(function (x, y) { return y.nota - x.nota; }).slice(0, 10)
       .map(function (x, i) {
         return itemDestaque(i + 1, x.a.t, x.a.n + " · " + x.a.s, x.nota, motivo(x.a), x.a.al,
           '<button type="button" class="btn" data-ver="' + x.a.t + '">Ver detalhe</button>');
-      }).join("");
+      }).join("") || '<li class="dest-item"><span class="sem" style="grid-column:1/-1">Nenhuma ação com dados suficientes.</span></li>';
   }
-  document.getElementById("dest-cripto").innerHTML = CRIPTO.slice().sort(function (x, y) { return y.nota - x.nota; }).slice(0, 3).map(function (c, i) {
-    var texto = pct(Math.abs(c.ma) / 100, 1).replace("+", "") + (c.ma >= 0 ? " acima" : " abaixo") + " da média de 200 dias e " +
-      pct(Math.abs(c.max) / 100).replace("+", "") + " abaixo da máxima.";
-    return itemDestaque(i + 1, c.id, c.n + " · " + (c.nucleo ? "núcleo" : "outras"), c.nota, texto, c.al, "");
-  }).join("");
-
+  function textoCripto(c) {
+    if (c.ma == null) return "Menos de 200 dias de histórico.";
+    return semSinal(c.ma / 100, 1) + (c.ma >= 0 ? " acima" : " abaixo") + " da média de 200 dias" +
+      (c.max == null ? "." : " e " + semSinal(c.max / 100) + " abaixo da máxima.");
+  }
   function verAcao(t) {
     estado.busca = ""; estado.setor = ""; estado.min = 0; estado.sel = t;
     document.getElementById("f-busca").value = ""; document.getElementById("f-setor").value = "";
     document.getElementById("f-min").value = 0; document.getElementById("f-min-val").textContent = "0";
     desenharAcoes(); abrir("acoes");
     if (window.matchMedia("(max-width: 1000px)").matches) selecionar(t, true);
-    else { try { window.scrollTo(0, 0); } catch (e) { /* sem rolagem no visualizador */ } }
+    else { try { window.scrollTo(0, 0); } catch (e) { /* sem rolagem */ } }
   }
   document.getElementById("sec-destaques").addEventListener("click", function (e) {
     var b = e.target.closest("button"); if (!b) return;
@@ -680,7 +605,40 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
     else if (b.dataset.ver) verAcao(b.dataset.ver);
     else if (b.dataset.ir) { abrir(b.dataset.ir); try { window.scrollTo(0, 0); } catch (e2) { /* idem */ } }
   });
-  desenharDestaques();
+
+  // ---------- carteira ----------
+  var CLASSES = [["acoes", "Ações Brasil", "ações e units da B3"], ["imoveis", "Imóveis", "fundos imobiliários"],
+                 ["caixa", "Caixa", "renda fixa e reserva"], ["exterior", "Internacional", "ativos no exterior e cripto"]];
+  var carteira = {};
+  try { carteira = JSON.parse(localStorage.getItem("radar-carteira") || "{}") || {}; } catch (e) { carteira = {}; }
+  document.getElementById("carteira-campos").innerHTML = CLASSES.map(function (c) {
+    return '<label class="campo">' + c[1] + ' (R$)<input type="number" inputmode="decimal" min="0" step="100" id="cart-' + c[0] + '" data-classe="' + c[0] +
+      '" value="' + (carteira[c[0]] > 0 ? carteira[c[0]] : "") + '" placeholder="0"></label>';
+  }).join("");
+  function desenharCarteira() {
+    var total = CLASSES.reduce(function (s, c) { return s + (carteira[c[0]] > 0 ? +carteira[c[0]] : 0); }, 0), ESCALA = 100;
+    document.getElementById("arca-painel").hidden = document.getElementById("arca-tabela").hidden = !(total > 0);
+    if (!(total > 0)) return;
+    document.getElementById("arca").innerHTML = CLASSES.map(function (c) {
+      var part = (+carteira[c[0]] || 0) / total * 100;
+      return '<div class="arca-linha"><div class="arca-nome"><b>' + c[1] + "</b><span>" + c[2] + "</span></div>" +
+        '<div class="arca-faixa" title="' + c[1] + ": " + part.toFixed(0) + '% da carteira, meta de 25%"><div class="eixo"></div>' +
+        '<div class="bar" style="width:' + (part / ESCALA * 100) + '%"></div><div class="meta" style="left:' + (25 / ESCALA * 100) + '%"></div>' +
+        '<div class="val num" style="' + (part > 80 ? "right:8px;color:#fff" : "left:" + (Math.max(part, 25) / ESCALA * 100) + "%") + '"><b>' + part.toFixed(0) + "%</b></div></div></div>";
+    }).join("");
+    document.getElementById("corpo-arca").innerHTML = CLASSES.map(function (c) {
+      var v = +carteira[c[0]] || 0, part = v / total, dif = part - 0.25, ajuste = total * 0.25 - v;
+      return "<tr><td>" + c[1] + '</td><td class="d num">' + brl(v) + '</td><td class="d num">' + (part * 100).toFixed(0) + '%</td>' +
+        '<td class="d num">' + (dif > 0 ? "+" : "") + (dif * 100).toFixed(0) + " p.p.</td><td>" +
+        (Math.abs(ajuste) < 1 ? "nenhum" : (ajuste > 0 ? "aportar " : "reduzir ") + brl(Math.abs(ajuste))) + "</td></tr>";
+    }).join("");
+  }
+  document.getElementById("carteira-campos").addEventListener("input", function (e) {
+    var k = e.target.dataset.classe; if (!k) return;
+    carteira[k] = Math.max(0, +e.target.value || 0);
+    try { localStorage.setItem("radar-carteira", JSON.stringify(carteira)); } catch (e2) { /* sem armazenamento */ }
+    desenharCarteira();
+  });
 
   // ---------- abas ----------
   var ABAS = ["destaques", "acoes", "cripto", "carteira", "coleta"];
@@ -690,12 +648,80 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
       document.getElementById("sec-" + a).hidden = a !== nome;
       document.getElementById("aba-" + a).setAttribute("aria-selected", a === nome);
     });
-    try { history.replaceState(null, "", "#" + nome); } catch (e) { /* sem historico no visualizador */ }
+    try { history.replaceState(null, "", "#" + nome); } catch (e) { /* sem historico */ }
   }
   document.querySelector(".tabs").addEventListener("click", function (e) { var b = e.target.closest("button[data-aba]"); if (b) abrir(b.dataset.aba); });
 
-  desenharAcoes();
-  abrir((location.hash || "").replace("#", "") || "destaques");
+  // ---------- carga ----------
+  var FONTES = { b3: ["B3", "Cotações diárias"], cvm: ["CVM", "Cadastro e demonstrativos"], dividendos: ["Dividendos", "Proventos por ação (Yahoo)"],
+                 cripto: ["Cripto", "Maiores moedas (CoinGecko)"], macro: ["Banco Central", "Selic, IPCA, dólar e CDI"] };
+  var SITUACAO = { ok: ["Em dia", "ok"], avisos: ["Com avisos", "av"], erro: ["Com erro", "er"] };
+
+  function iniciar(dados) {
+    D = dados; ACOES = D.acoes || []; CRIPTO = D.cripto || []; PESOS = D.pesos || {};
+    var gerado = D.geradoEm ? new Date(D.geradoEm) : null;
+    document.getElementById("sub").textContent = "Triagem de ações da B3 e criptomoedas. Cotações de " + dataBR(D.dataCotacao) +
+      (gerado ? ", atualizado em " + gerado.toLocaleDateString("pt-BR") + " às " + gerado.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "") + ".";
+
+    var m = D.macro || {}, itens = [];
+    if (m.selic_meta) itens.push(["Selic", m.selic_meta.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 }) + "% ao ano"]);
+    if (m.cdi_anual) itens.push(["CDI", m.cdi_anual.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 }) + "% ao ano"]);
+    if (m.ipca_12m) itens.push(["IPCA em 12 meses", m.ipca_12m.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%"]);
+    if (m.dolar_ptax) itens.push(["Dólar", "R$ " + m.dolar_ptax.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 4 })]);
+    document.getElementById("macro").innerHTML = itens.map(function (i) { return "<span>" + i[0] + ' <b class="num">' + i[1] + "</b></span>"; }).join("");
+
+    var coleta = D.coleta || [];
+    document.getElementById("fontes").innerHTML = coleta.map(function (c) {
+      var f = FONTES[c.fonte] || [c.fonte, ""], s = SITUACAO[c.situacao] || [c.situacao, "av"];
+      return '<span class="chip" title="' + esc(s[0] + (c.mensagem ? ": " + c.mensagem : "")) + '"><span class="dot ' + s[1] + '"></span>' + esc(f[0]) +
+        (s[1] === "ok" ? "" : " · " + s[0].toLowerCase()) + "</span>";
+    }).join("");
+    document.getElementById("corpo-coleta").innerHTML = coleta.map(function (c) {
+      var f = FONTES[c.fonte] || [c.fonte, ""], s = SITUACAO[c.situacao] || [c.situacao, "av"];
+      var quando = c.fim ? dataBR(c.fim.slice(0, 10)) + " " + c.fim.slice(11, 16) : "sem dado";
+      return "<tr><td><b>" + esc(f[0]) + "</b></td><td>" + esc(f[1]) + '</td><td class="num">' + quando + "</td>" +
+        '<td><span class="alerta"><span class="dot ' + s[1] + '"></span>' + s[0] + '</span></td><td class="d num">' + inteiro(c.registros) + '</td><td class="txt">' +
+        (c.mensagem ? esc(c.mensagem) : '<span class="sem">–</span>') + "</td></tr>";
+    }).join("") || '<tr><td colspan="6" class="sem">Nenhuma coleta registrada.</td></tr>';
+
+    var setores = ACOES.map(function (a) { return a.s; }).filter(function (s, i, l) { return s && l.indexOf(s) === i; }).sort(function (a, b) { return a.localeCompare(b, "pt-BR"); });
+    document.getElementById("f-setor").insertAdjacentHTML("beforeend", setores.map(function (s) { return "<option>" + esc(s) + "</option>"; }).join(""));
+    document.getElementById("pesos").innerHTML = METODOS.map(function (p) { return '<span class="chip">' + p[1] + ' <b class="num">' + (PESOS[p[0]] || 0) + "%</b></span>"; }).join("");
+
+    document.getElementById("corpo-cripto").innerHTML = CRIPTO.map(function (c, i) {
+      return '<tr><td class="pos num">' + (i + 1) + "</td>" +
+        '<td class="c-ativo"><span class="ativo"><b>' + esc(c.id) + "</b><span>" + esc(c.n) + "</span></span></td>" +
+        '<td><span class="nota"><b class="num">' + (c.nota == null ? "–" : c.nota) + "</b>" + barra(c.nota) + "</span></td>" +
+        '<td class="d num">' + brl(c.p) + "</td>" +
+        '<td class="so-largo">' + (c.nucleo ? "Núcleo" : '<span class="sem">Outras</span>') + "</td>" +
+        '<td class="d num so-largo">' + (c.ma == null ? '<span class="sem">sem dado</span>' : pct(c.ma / 100, 1)) + "</td>" +
+        '<td class="d num so-largo">' + (c.max == null ? '<span class="sem">sem dado</span>' : pct(c.max / 100)) + "</td>" +
+        '<td class="d num so-largo">' + (c.vol == null ? '<span class="sem">sem dado</span>' : Math.round(c.vol) + "%") + "</td>" +
+        '<td class="so-largo">' + spark(c.serie) + "</td><td>" + alertas(c.al, true) + "</td></tr>";
+    }).join("") || '<tr><td colspan="10" class="sem">Sem dados de cripto nesta coleta.</td></tr>';
+    document.getElementById("dest-cripto").innerHTML = CRIPTO.filter(function (c) { return c.nota != null; }).slice(0, 3).map(function (c, i) {
+      return itemDestaque(i + 1, c.id, c.n + " · " + (c.nucleo ? "núcleo" : "outras"), c.nota, textoCripto(c), c.al, "");
+    }).join("") || '<li class="dest-item"><span class="sem" style="grid-column:1/-1">Sem dados de cripto nesta coleta.</span></li>';
+
+    var fora = D.semVinculo || [];
+    document.getElementById("sem-vinculo").textContent = fora.length
+      ? "Ações negociadas que ficaram fora do ranking porque o cadastro da CVM não informa o código delas: " + fora.join(", ") + "."
+      : "";
+    desenharAcoes(); desenharDestaques(); desenharCarteira();
+    document.getElementById("app").hidden = false;
+    abrir((location.hash || "").replace("#", "") || "destaques");
+  }
+
+  fetch("dados.json", { cache: "no-store" })
+    .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+    .then(iniciar)
+    .catch(function (e) {
+      document.getElementById("sub").textContent = "Triagem de ações da B3 e criptomoedas.";
+      var v = document.getElementById("vazio");
+      v.hidden = false;
+      v.innerHTML = "<h2>Os dados ainda não foram publicados</h2><p>O painel lê o arquivo <span class=\"mono\">dados.json</span>, gerado pela coleta. " +
+        "Ele não foi encontrado (" + esc(e.message) + "). Rode a coleta e a exportação, ou aguarde a próxima atualização automática.</p>";
+    });
 })();
 </script>
 </body>

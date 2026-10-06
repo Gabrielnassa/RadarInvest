@@ -6,7 +6,7 @@ Os precos vem com duas casas decimais implicitas e por lote de FATCOT unidades.
 from __future__ import annotations
 
 import zipfile
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 MERCADO_A_VISTA = "010"
@@ -97,30 +97,18 @@ def ler_zip(caminho: Path, codbdi_aceitos) -> "iter[dict]":
                     yield reg
 
 
-def planejar_arquivos(anos_presentes: set[int], ultima: date | None, hoje: date, anos: int) -> list[tuple]:
-    """Decide o que baixar. Devolve tuplas ('A', ano, None) para arquivo anual ou ('M', ano, mes) para mensal.
-
-    - anos passados que faltam no banco: arquivo anual;
-    - ano passado que estava incompleto na ultima coleta: arquivo anual de novo;
-    - ano corrente sem dados: arquivo anual; com dados: so os meses desde a ultima data.
-    """
-    plano: list[tuple] = []
+def planejar_arquivos(anos_presentes: set[int], ultima: date | None, hoje: date, anos: int) -> list[int]:
+    """Anos cujo arquivo anual precisa ser lido: os que faltam no banco, o ano corrente
+    (o arquivo dele muda todo dia) e o ano anterior, se a ultima coleta parou nele."""
     primeiro = hoje.year - max(1, anos) + 1
-    for ano in range(primeiro, hoje.year):
-        incompleto = ultima is not None and ultima.year == ano
-        if ano not in anos_presentes or incompleto:
-            plano.append(("A", ano, None))
-    if hoje.year not in anos_presentes:
-        plano.append(("A", hoje.year, None))
-    else:
-        mes_inicial = ultima.month if (ultima and ultima.year == hoje.year) else 1
-        for mes in range(mes_inicial, hoje.month + 1):
-            plano.append(("M", hoje.year, mes))
+    plano = [a for a in range(primeiro, hoje.year)
+             if a not in anos_presentes or (ultima is not None and ultima.year == a)]
+    plano.append(hoje.year)
     return plano
 
 
-def nome_arquivo(tipo: str, ano: int, mes: int | None) -> str:
-    return f"COTAHIST_A{ano}.ZIP" if tipo == "A" else f"COTAHIST_M{mes:02d}{ano}.ZIP"
+def nome_arquivo(ano: int) -> str:
+    return f"COTAHIST_A{ano}.ZIP"
 
 
 def gravar(conn, registros) -> int:
@@ -152,17 +140,21 @@ def coletar(conn, rede, cfg, cache: Path, hoje: date | None = None):
     presentes = {int(a) for (a,) in conn.execute("SELECT DISTINCT substr(data, 1, 4) FROM cotacoes")}
     ultima_txt = conn.execute("SELECT max(data) FROM cotacoes").fetchone()[0]
     ultima = date.fromisoformat(ultima_txt) if ultima_txt else None
-    plano = planejar_arquivos(presentes, ultima, hoje, int(cfg.get("anos_historico", 6)))
+    anterior = conn.execute(
+        "SELECT max(fim) FROM coletas WHERE fonte = 'b3' AND situacao IN ('ok', 'avisos')").fetchone()[0]
+    lido_em = datetime.fromisoformat(anterior).timestamp() if anterior else 0.0
 
     total, avisos = 0, []
-    for tipo, ano, mes in plano:
-        nome = nome_arquivo(tipo, ano, mes)
-        # arquivo de ano encerrado nao muda mais; os do ano corrente mudam todo dia
-        idade = None if (tipo == "A" and ano < hoje.year and not (ultima and ultima.year == ano)) else 6
-        caminho = rede.baixar(f"{base}/{nome}", cache / "b3" / nome, max_idade_horas=idade,
+    for ano in planejar_arquivos(presentes, ultima, hoje, int(cfg.get("anos_historico", 2))):
+        nome = nome_arquivo(ano)
+        # arquivo de ano encerrado nao muda mais; o do ano corrente muda a cada pregao
+        encerrado = ano < hoje.year and not (ultima and ultima.year == ano)
+        caminho = rede.baixar(f"{base}/{nome}", cache / "b3" / nome, max_idade_horas=None if encerrado else 6,
                               verificar=bool(cfg.get("verificar_certificado", True)))
         if caminho is None:
             avisos.append(f"{nome} ainda nao publicado pela B3")
             continue
+        if ano in presentes and not rede.baixou_agora and caminho.stat().st_mtime <= lido_em + 1:
+            continue  # mesmo arquivo ja lido na coleta anterior
         total += gravar(conn, ler_zip(caminho, cfg.get("codbdi", ["02", "12"])))
     return total, avisos

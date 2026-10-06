@@ -20,6 +20,7 @@ class Rede:
         self.timeout = cfg.get("timeout_segundos", 90)
         self.tentativas = max(1, int(cfg.get("tentativas", 4)))
         self.dormir = dormir
+        self.baixou_agora = False   # True quando a ultima chamada a baixar() trouxe arquivo novo
         self.sessao = requests.Session()
         self.sessao.headers.update({"User-Agent": cfg.get("user_agent", UA_PADRAO), "Accept": "*/*"})
 
@@ -63,6 +64,7 @@ class Rede:
         """Baixa para `destino`. Reaproveita o arquivo se for mais novo que `max_idade_horas`
         (None = reaproveita sempre). Devolve None se o servidor responder 404."""
         destino = Path(destino)
+        self.baixou_agora = False
         if destino.exists() and destino.stat().st_size > 0:
             if max_idade_horas is None:
                 return destino
@@ -86,6 +88,7 @@ class Rede:
         finally:
             r.close()
         parcial.replace(destino)
+        self.baixou_agora = True
         return destino
 
     def testar(self, url, params=None, headers=None, verificar=True) -> tuple[bool, str]:

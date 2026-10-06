@@ -45,25 +45,20 @@ class TestParse(unittest.TestCase):
 
 
 class TestPlano(unittest.TestCase):
-    def test_primeira_coleta_baixa_arquivos_anuais(self):
-        plano = b3.planejar_arquivos(set(), None, date(2026, 10, 6), 3)
-        self.assertEqual(plano, [("A", 2024, None), ("A", 2025, None), ("A", 2026, None)])
+    def test_primeira_coleta_le_todos_os_anos(self):
+        self.assertEqual(b3.planejar_arquivos(set(), None, date(2026, 10, 6), 3), [2024, 2025, 2026])
 
-    def test_coleta_seguinte_baixa_so_os_meses_que_faltam(self):
-        plano = b3.planejar_arquivos({2024, 2025, 2026}, date(2026, 8, 28), date(2026, 10, 6), 3)
-        self.assertEqual(plano, [("M", 2026, 8), ("M", 2026, 9), ("M", 2026, 10)])
+    def test_coleta_seguinte_le_so_o_ano_corrente(self):
+        self.assertEqual(b3.planejar_arquivos({2024, 2025, 2026}, date(2026, 10, 5), date(2026, 10, 6), 3), [2026])
 
     def test_virada_de_ano_completa_o_ano_anterior(self):
-        plano = b3.planejar_arquivos({2024, 2025}, date(2025, 12, 19), date(2026, 1, 5), 3)
-        self.assertEqual(plano, [("A", 2025, None), ("A", 2026, None)])
+        self.assertEqual(b3.planejar_arquivos({2024, 2025}, date(2025, 12, 19), date(2026, 1, 5), 3), [2025, 2026])
 
     def test_aumentar_o_historico_busca_os_anos_que_faltam(self):
-        plano = b3.planejar_arquivos({2025, 2026}, date(2026, 10, 5), date(2026, 10, 6), 4)
-        self.assertEqual(plano, [("A", 2023, None), ("A", 2024, None), ("M", 2026, 10)])
+        self.assertEqual(b3.planejar_arquivos({2025, 2026}, date(2026, 10, 5), date(2026, 10, 6), 4), [2023, 2024, 2026])
 
-    def test_nomes_dos_arquivos(self):
-        self.assertEqual(b3.nome_arquivo("A", 2026, None), "COTAHIST_A2026.ZIP")
-        self.assertEqual(b3.nome_arquivo("M", 2026, 3), "COTAHIST_M032026.ZIP")
+    def test_nome_do_arquivo(self):
+        self.assertEqual(b3.nome_arquivo(2026), "COTAHIST_A2026.ZIP")
 
 
 class TestLeituraEGravacao(unittest.TestCase):

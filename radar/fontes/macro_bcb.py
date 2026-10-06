@@ -23,7 +23,7 @@ def extrair_serie(payload) -> list[tuple[str, float]]:
 def coletar(conn, rede, cfg, cache: Path, hoje: date | None = None):
     hoje = hoje or date.today()
     base = cfg["url_base"].rstrip("/")
-    anos = min(10, int(cfg.get("anos", 10)))  # o SGS limita series diarias a janelas de 10 anos
+    anos = min(10, int(cfg.get("anos", 3)))  # o SGS limita series diarias a janelas de 10 anos
     total, avisos = 0, []
     for nome, codigo in (cfg.get("series") or {}).items():
         ultima = conn.execute("SELECT max(data) FROM macro WHERE serie = ?", (nome,)).fetchone()[0]
@@ -33,15 +33,22 @@ def coletar(conn, rede, cfg, cache: Path, hoje: date | None = None):
             inicio = hoje - timedelta(days=365 * anos)
         if inicio > hoje:
             continue
-        try:
-            status, payload = rede.json(
-                f"{base}/bcdata.sgs.{codigo}/dados",
-                params={"formato": "json", "dataInicial": inicio.strftime("%d/%m/%Y"),
-                        "dataFinal": hoje.strftime("%d/%m/%Y")},
-                aceitar=(200, 404),
-            )
-        except Exception as e:
-            avisos.append(f"{nome} (serie {codigo}): {e}")
+        status, payload, erro = None, None, None
+        for tentativa in range(3):  # o servico do Banco Central as vezes devolve pagina de erro com HTTP 200
+            try:
+                status, payload = rede.json(
+                    f"{base}/bcdata.sgs.{codigo}/dados",
+                    params={"formato": "json", "dataInicial": inicio.strftime("%d/%m/%Y"),
+                            "dataFinal": hoje.strftime("%d/%m/%Y")},
+                    aceitar=(200, 404),
+                )
+                erro = None
+                break
+            except Exception as e:
+                erro = e
+                rede.dormir(3 * (tentativa + 1))
+        if erro is not None:
+            avisos.append(f"{nome} (serie {codigo}): {erro}")
             continue
         linhas = extrair_serie(payload) if status == 200 else []
         conn.executemany("INSERT OR REPLACE INTO macro (serie, data, valor) VALUES (?, ?, ?)",

@@ -10,6 +10,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 FONTE = "yahoo"
+FEITO = "ok-2"   # marca de consulta concluida; muda quando a forma de consultar muda, para refazer tudo
 
 
 def extrair_dividendos(payload: dict) -> list[tuple[str, float]]:
@@ -32,6 +33,21 @@ def extrair_dividendos(payload: dict) -> list[tuple[str, float]]:
     return sorted(saida.items())
 
 
+def extrair_desdobramentos(payload: dict) -> list[tuple[str, float]]:
+    """Devolve [(data ISO, acoes depois / acoes antes)] de desdobramentos, bonificacoes e grupamentos."""
+    resultado = ((payload or {}).get("chart") or {}).get("result") or []
+    if not resultado:
+        return []
+    eventos = (resultado[0].get("events") or {}).get("splits") or {}
+    saida = []
+    for item in eventos.values():
+        ts, num, den = item.get("date"), item.get("numerator"), item.get("denominator")
+        if ts is None or not num or not den:
+            continue
+        saida.append((datetime.fromtimestamp(int(ts), tz=timezone.utc).date().isoformat(), float(num) / float(den)))
+    return sorted(saida)
+
+
 def selecionar_tickers(conn, volume_minimo: float, hoje: date, dias_validade: int) -> list[str]:
     """Acoes e units com liquidez minima que ainda nao foram atualizadas dentro da validade."""
     limite = (hoje - timedelta(days=dias_validade)).isoformat()
@@ -46,7 +62,7 @@ def selecionar_tickers(conn, volume_minimo: float, hoje: date, dias_validade: in
         (volume_minimo,),
     ).fetchall()
     feitos = {t for (t,) in conn.execute(
-        "SELECT ticker FROM dividendos_controle WHERE atualizado_em > ? AND situacao = 'ok'", (limite,))}
+        "SELECT ticker FROM dividendos_controle WHERE atualizado_em > ? AND situacao = ?", (limite, FEITO))}
     return [t for (t,) in linhas if t not in feitos]
 
 
@@ -63,16 +79,20 @@ def coletar(conn, rede, cfg, cache: Path, hoje: date | None = None):
     inicio = datetime(hoje.year - anos, 1, 1, tzinfo=timezone.utc)
     fim = datetime(hoje.year, hoje.month, hoje.day, tzinfo=timezone.utc) + timedelta(days=1)
     params = {"period1": int(inicio.timestamp()), "period2": int(fim.timestamp()),
-              "interval": "1mo", "events": "div"}
+              "interval": "1d", "events": "div|split"}
 
     total, falhas, primeira_falha = 0, 0, ""
     for n, ticker in enumerate(tickers, start=1):
-        situacao = "ok"
+        situacao = FEITO
         try:
             _, payload = rede.json(f"{base}/{ticker}.SA", params=params, aceitar=(200, 404))
             linhas = extrair_dividendos(payload)
+            conn.execute("DELETE FROM dividendos WHERE ticker = ? AND fonte = ?", (ticker, FONTE))
             conn.executemany("INSERT OR REPLACE INTO dividendos (ticker, data, valor, fonte) VALUES (?, ?, ?, ?)",
                              [(ticker, d, v, FONTE) for d, v in linhas])
+            conn.execute("DELETE FROM desdobramentos WHERE ticker = ? AND fonte = ?", (ticker, FONTE))
+            conn.executemany("INSERT OR REPLACE INTO desdobramentos (ticker, data, fator, fonte) VALUES (?, ?, ?, ?)",
+                             [(ticker, d, f, FONTE) for d, f in extrair_desdobramentos(payload)])
             total += len(linhas)
         except Exception as e:  # uma acao com problema nao pode parar as outras
             situacao = "erro"

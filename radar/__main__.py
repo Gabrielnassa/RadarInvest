@@ -7,7 +7,7 @@ import traceback
 from datetime import date, datetime
 from pathlib import Path
 
-from . import __version__, config, db
+from . import __version__, config, db, exportar
 from .fontes import b3_cotahist, cripto_coingecko, cvm, dividendos_yahoo, macro_bcb
 from .rede import ErroRede, Rede
 
@@ -140,7 +140,7 @@ def cmd_diagnostico(cfg) -> int:
     rede = Rede(cfg.get("rede"))
     hoje = date.today()
     testes = [
-        ("B3 (cotacoes)", f"{cfg['b3']['url_base'].rstrip('/')}/COTAHIST_M{hoje.month:02d}{hoje.year}.ZIP", None),
+        ("B3 (cotacoes)", f"{cfg['b3']['url_base'].rstrip('/')}/COTAHIST_A{hoje.year}.ZIP", None),
         ("CVM (cadastro)", f"{cfg['cvm']['url_base'].rstrip('/')}/FCA/DADOS/fca_cia_aberta_{hoje.year}.zip", None),
         ("CVM (demonstrativos)", f"{cfg['cvm']['url_base'].rstrip('/')}/ITR/DADOS/itr_cia_aberta_{hoje.year}.zip", None),
         ("Yahoo (dividendos)", f"{cfg['dividendos']['url_base'].rstrip('/')}/PETR4.SA", {"range": "1mo", "interval": "1d", "events": "div"}),
@@ -161,6 +161,89 @@ def cmd_diagnostico(cfg) -> int:
     return 1 if falhas else 0
 
 
+def cmd_inspecionar(cfg) -> int:
+    """Mostra os arquivos baixados por dentro: nomes, cabecalhos e uma linha de exemplo."""
+    import json
+    import zipfile
+    cache = Path(cfg["_cache"])
+    vistos = set()
+    for caminho in sorted((cache / "cvm").glob("*.zip"), reverse=True):
+        tipo = caminho.name.split("_")[0]
+        if tipo in vistos:
+            continue
+        vistos.add(tipo)
+        print(f"\n=== {caminho.name} ({caminho.stat().st_size // 1024} KB)")
+        try:
+            with zipfile.ZipFile(caminho) as zf:
+                for nome in zf.namelist():
+                    with zf.open(nome) as f:
+                        cab = f.readline().decode("latin-1").strip()
+                        linha = f.readline().decode("latin-1").strip()
+                    print(f"- {nome}\n    colunas: {cab[:600]}\n    exemplo: {linha[:300]}")
+        except Exception as e:
+            print(f"  erro ao abrir: {e}")
+    for caminho in sorted((cache / "b3").glob("*.ZIP"), reverse=True)[:1]:
+        print(f"\n=== {caminho.name} ({caminho.stat().st_size // 1024} KB)")
+        with zipfile.ZipFile(caminho) as zf:
+            print("  membros:", zf.namelist())
+            with zf.open(zf.namelist()[0]) as f:
+                for i, bruto in enumerate(f):
+                    if i < 2 or (bruto[12:17] in (b"PETR4", b"SAPR1") and bruto[10:12] == b"02" and i % 50 == 0):
+                        print("  " + bruto.decode("latin-1").rstrip()[:245])
+                    if i > 400000:
+                        break
+    rede = Rede(cfg.get("rede"))
+    amostras = [
+        ("Yahoo", f"{cfg['dividendos']['url_base'].rstrip('/')}/PETR4.SA", {"range": "1y", "interval": "1mo", "events": "div"}),
+        ("CoinGecko", f"{cfg['cripto']['url_base'].rstrip('/')}/coins/markets", {"vs_currency": "brl", "per_page": 2, "page": 1}),
+        ("BCB", f"{cfg['macro']['url_base'].rstrip('/')}/bcdata.sgs.432/dados/ultimos/3", {"formato": "json"}),
+    ]
+    for nome, url, params in amostras:
+        print(f"\n=== {nome}: {url}")
+        try:
+            r = rede.sessao.get(url, params=params, timeout=30)
+            print(f"  HTTP {r.status_code}")
+            texto = r.text
+            try:
+                dado = r.json()
+                if nome == "Yahoo":
+                    res = (dado.get("chart", {}).get("result") or [{}])[0]
+                    dado = {"chaves": list(res.keys()), "meta_moeda": res.get("meta", {}).get("currency"),
+                            "eventos": res.get("events"), "erro": dado.get("chart", {}).get("error")}
+                texto = json.dumps(dado, ensure_ascii=False)
+            except ValueError:
+                pass
+            print("  " + texto[:1500])
+        except Exception as e:
+            print(f"  falhou: {type(e).__name__}: {str(e)[:200]}")
+    return 0
+
+
+def cmd_painel(cfg, porta: int = 8765) -> int:
+    """Abre o painel no navegador, servindo a pasta docs/ neste computador."""
+    import functools
+    import http.server
+    import webbrowser
+    pasta = Path(cfg["_banco"]).parent.parent / "docs"
+    if not (pasta / "dados.json").exists():
+        print("Ainda nao ha dados. Rode antes: python -m radar coletar  e  python -m radar exportar")
+        return 1
+    manipulador = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(pasta))
+    try:
+        servidor = http.server.ThreadingHTTPServer(("127.0.0.1", porta), manipulador)
+    except OSError:
+        print(f"A porta {porta} ja esta em uso. O painel pode ja estar aberto em http://127.0.0.1:{porta}/")
+        return 1
+    endereco = f"http://127.0.0.1:{porta}/"
+    print(f"Painel em {endereco}  (feche esta janela para encerrar)")
+    webbrowser.open(endereco)
+    try:
+        servidor.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="radar", description="Radar de Investimentos - coleta de dados")
     p.add_argument("--config", help="caminho do config.yaml")
@@ -169,6 +252,9 @@ def main(argv=None) -> int:
     c.add_argument("--fonte", action="append", choices=ORDEM, help="coleta so esta fonte (pode repetir)")
     sub.add_parser("status", help="mostra o que ha no banco")
     sub.add_parser("diagnostico", help="testa o acesso a cada fonte")
+    sub.add_parser("inspecionar", help="mostra o formato dos arquivos baixados")
+    sub.add_parser("exportar", help="calcula as notas e grava docs/dados.json para o painel")
+    sub.add_parser("painel", help="abre o painel no navegador")
     args = p.parse_args(argv)
 
     config.carregar_env()
@@ -177,6 +263,16 @@ def main(argv=None) -> int:
         return cmd_coletar(cfg, args.fonte or ORDEM)
     if args.comando == "diagnostico":
         return cmd_diagnostico(cfg)
+    if args.comando == "inspecionar":
+        return cmd_inspecionar(cfg)
+    if args.comando == "painel":
+        return cmd_painel(cfg)
+    if args.comando == "exportar":
+        destino, dados = exportar.exportar(cfg)
+        print(f"{len(dados['acoes'])} acoes e {len(dados['cripto'])} criptos gravadas em {destino}")
+        for a in dados["acoes"][:10]:
+            print(f"  {a['t']:<7} nota {a['final']:5.1f}  P/L {a['pl']}  P/VP {a['pvp']}  DY {a['dy']}  {a['m']}")
+        return 0
     return cmd_status(cfg)
 
 

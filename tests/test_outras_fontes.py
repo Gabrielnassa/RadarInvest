@@ -22,6 +22,14 @@ class TestDividendos(unittest.TestCase):
         with self.assertRaises(ValueError):
             div.extrair_dividendos(payload)
 
+    def test_desdobramentos(self):
+        payload = fabrica.json_yahoo({"2026-08-21": 0.71})
+        payload["chart"]["result"][0]["events"]["splits"] = {
+            "1": {"date": fabrica._ts("2025-12-26"), "numerator": 110.0, "denominator": 100.0, "splitRatio": "110:100"},
+            "2": {"date": fabrica._ts("2024-03-01"), "numerator": 1.0, "denominator": 10.0, "splitRatio": "1:10"}}
+        self.assertEqual(div.extrair_desdobramentos(payload), [("2024-03-01", 0.1), ("2025-12-26", 1.1)])
+        self.assertEqual(div.extrair_desdobramentos(fabrica.json_yahoo({})), [])
+
     def test_selecao_respeita_liquidez_tipo_e_validade(self):
         conn = db.conectar(":memory:")
         self.addCleanup(conn.close)
@@ -30,7 +38,7 @@ class TestDividendos(unittest.TestCase):
         for ticker, volume in (("LIQD3", 5e6), ("POUC3", 1e3), ("FIIX11", 9e6), ("FEIT4", 8e6)):
             conn.executemany("INSERT INTO cotacoes (ticker, data, fechamento, volume) VALUES (?, ?, 10, ?)",
                              [(ticker, f"2026-09-{d:02d}", volume) for d in range(1, 31)])
-        conn.execute("INSERT INTO dividendos_controle VALUES ('FEIT4', '2026-10-05', 'ok')")
+        conn.execute("INSERT INTO dividendos_controle VALUES ('FEIT4', '2026-10-05', ?)", (div.FEITO,))
         # media de 60 pregoes: 30 dias com 5 mi = 2,5 mi/dia
         self.assertEqual(div.selecionar_tickers(conn, 500000, date(2026, 10, 6), 7), ["LIQD3"])
         self.assertEqual(div.selecionar_tickers(conn, 500000, date(2026, 10, 20), 7), ["FEIT4", "LIQD3"])

@@ -14,7 +14,7 @@ from pathlib import Path
 
 from ..db import so_digitos
 
-RE_TICKER = re.compile(r"^[A-Z]{4}\d{1,2}$")
+RE_TICKER = re.compile(r"^[A-Z][A-Z0-9]{3}\d{1,2}$")
 LOTE = 20000
 
 SQL_DEMONSTRATIVO = """INSERT INTO demonstrativos
@@ -188,8 +188,40 @@ def carregar_demonstrativos(conn, caminho: Path, origem: str, demonstrativos, ni
                 if membro:
                     total += _carregar_csv(conn, zf, membro, origem.upper(), dem, consolidado,
                                            nivel_max, permitidos, com_consolidado)
+        membro = _membro(zf, f"{prefixo}_cia_aberta_composicao_capital_")
+        if membro:
+            total += _carregar_capital(conn, zf, membro, permitidos)
     conn.commit()
     return total
+
+
+def _carregar_capital(conn, zf, membro, permitidos) -> int:
+    """Quantidade de acoes emitidas e em tesouraria, por empresa e data."""
+    idx, linhas = _abrir(zf, membro)
+    c_cnpj = _coluna(idx, membro, "CNPJ_CIA")
+    c_ref = _coluna(idx, membro, "DT_REFER")
+    c_ver = _coluna(idx, membro, "VERSAO", obrigatoria=False)
+    cols = [_coluna(idx, membro, nome, obrigatoria=False) for nome in (
+        "QT_ACAO_ORDIN_CAP_INTEGR", "QT_ACAO_PREF_CAP_INTEGR", "QT_ACAO_TOTAL_CAP_INTEGR",
+        "QT_ACAO_ORDIN_TESOURO", "QT_ACAO_PREF_TESOURO", "QT_ACAO_TOTAL_TESOURO")]
+    if cols[2] is None and cols[0] is None:
+        raise ErroFormato(f"colunas de quantidade de acoes nao encontradas em {membro}. Colunas: {sorted(idx)}")
+    lote = []
+    for linha in linhas:
+        cnpj = so_digitos(_campo(linha, c_cnpj))
+        if not cnpj or (permitidos is not None and cnpj not in permitidos):
+            continue
+        versao = _campo(linha, c_ver)
+        lote.append((cnpj, _campo(linha, c_ref), int(versao) if versao.isdigit() else 1,
+                     *[numero(_campo(linha, c)) for c in cols]))
+    conn.executemany(
+        """INSERT INTO capital (cnpj, dt_refer, versao, on_total, pn_total, total, on_tes, pn_tes, tes)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(cnpj, dt_refer) DO UPDATE SET versao = excluded.versao, on_total = excluded.on_total,
+               pn_total = excluded.pn_total, total = excluded.total, on_tes = excluded.on_tes,
+               pn_tes = excluded.pn_tes, tes = excluded.tes
+           WHERE excluded.versao >= capital.versao""", lote)
+    return len(lote)
 
 
 def _carregar_csv(conn, zf, membro, origem, dem, consolidado, nivel_max, permitidos, com_consolidado) -> int:
@@ -292,4 +324,6 @@ def coletar(conn, rede, cfg, cache: Path, hoje: date | None = None):
         except zipfile.BadZipFile:
             caminho.unlink(missing_ok=True)
             avisos.append(f"{nome} veio corrompido; sera baixado de novo na proxima coleta")
+        except ErroFormato as e:
+            avisos.append(str(e)[:300])
     return total, avisos

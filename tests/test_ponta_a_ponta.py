@@ -49,8 +49,7 @@ class TestPontaAPonta(unittest.TestCase):
             linhas.append(L(data=d, ticker="SAPR11", especi="UNT     N2", nome="SANEPAR", ult=3521, isin="BRSAPRCDAM13"))
             linhas.append(L(data=d, ticker="HGLG11", codbdi="12", especi="CI", nome="FII HGLG", ult=14790, isin="BRHGLGCTF004"))
         fabrica.zip_cotahist(site / "b3" / "COTAHIST_A2026.ZIP", linhas)
-        fabrica.zip_cotahist(site / "b3" / "COTAHIST_M102026.ZIP",
-                             [L(data="20261002", ticker="PETR4", ult=3810), L(data="20261005", ticker="PETR4", ult=4100)])
+        cls.linhas_b3 = linhas
 
         fabrica.zip_fca(site / "cvm" / "FCA" / "DADOS" / "fca_cia_aberta_2026.zip", 2026,
                         [[PETRO, "2026-05-30", 1, 1, "PETROLEO BRASILEIRO S.A.", "9512", "Ativo", "Petróleo e Gás"],
@@ -139,12 +138,26 @@ class TestPontaAPonta(unittest.TestCase):
         conn.close()
 
     def test_2_segunda_coleta_e_incremental(self):
-        cache = Path(self.cfg["_cache"])
-        self.assertTrue((cache / "b3" / "COTAHIST_A2026.ZIP").exists())
+        import time
+        L = fabrica.linha_cotahist
+        arquivo = Path(self.cfg["_cache"]) / "b3" / "COTAHIST_A2026.ZIP"
+        self.assertTrue(arquivo.exists())
+        # sem arquivo novo, nada e relido
         codigo, saida = self._coletar()
         self.assertEqual(codigo, 0, saida)
         conn = db.conectar(self.cfg["_banco"])
-        # o arquivo mensal traz um pregao novo (05/10) e corrige o fechamento de 02/10
+        self.assertEqual(conn.execute("SELECT count(*) FROM cotacoes").fetchone()[0], 32 * 3)
+        self.assertEqual(conn.execute("SELECT registros FROM coletas WHERE fonte='b3' ORDER BY id DESC").fetchone()[0], 0)
+        conn.close()
+        # a B3 publica o arquivo do ano com um pregao novo e o cache local ja tem mais de 6 horas
+        novas = [x for x in self.linhas_b3 if not (x[2:10] == "20261002" and x[12:17] == "PETR4")]
+        novas += [L(data="20261002", ticker="PETR4", ult=3810), L(data="20261005", ticker="PETR4", ult=4100)]
+        fabrica.zip_cotahist(self.site / "b3" / "COTAHIST_A2026.ZIP", novas)
+        velho = time.time() - 7 * 3600
+        os.utime(arquivo, (velho, velho))
+        codigo, saida = self._coletar()
+        self.assertEqual(codigo, 0, saida)
+        conn = db.conectar(self.cfg["_banco"])
         self.assertEqual(conn.execute("SELECT count(*) FROM cotacoes").fetchone()[0], 32 * 3 + 1)
         self.assertEqual(conn.execute("SELECT fechamento FROM cotacoes WHERE ticker='PETR4' AND data='2026-10-02'")
                          .fetchone()[0], 38.10)
@@ -152,7 +165,7 @@ class TestPontaAPonta(unittest.TestCase):
         self.assertEqual(conn.execute("SELECT count(*) FROM demonstrativos").fetchone()[0], 4)
         self.assertEqual(conn.execute("SELECT count(*) FROM dividendos").fetchone()[0], 2)
         self.assertEqual(conn.execute("SELECT count(*) FROM macro").fetchone()[0], 4)
-        self.assertEqual(conn.execute("SELECT count(*) FROM coletas").fetchone()[0], 10)
+        self.assertEqual(conn.execute("SELECT count(*) FROM coletas").fetchone()[0], 15)
         conn.close()
 
     def test_3_status_e_fonte_fora_do_ar(self):

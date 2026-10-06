@@ -1,0 +1,57 @@
+name: Atualizar dados
+
+on:
+  schedule:
+    - cron: "15 9 * * 2-6"   # 06:15 em Brasilia, de terca a sabado
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["radar/**", "config.yaml", "requirements.txt", ".github/workflows/atualizar.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: atualizar-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      PYTHONUTF8: "1"
+      COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install --quiet -r requirements.txt
+      - name: Recuperar banco da coleta anterior
+        uses: actions/cache@v4
+        with:
+          path: dados
+          key: dados-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            dados-${{ github.ref_name }}-
+            dados-
+      - name: Coletar
+        run: |
+          mkdir -p docs
+          {
+            date -u "+Coleta iniciada em %Y-%m-%d %H:%M UTC"
+            python -m radar diagnostico || true
+            python -m radar coletar || true
+            python -m radar status || true
+          } 2>&1 | tee docs/coleta.log
+      - name: Calcular notas e exportar
+        run: python -m radar exportar 2>&1 | tee -a docs/coleta.log
+      - name: Publicar
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/
+          git diff --cached --quiet || git commit -m "Atualiza dados da coleta"
+          git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
+          git push
