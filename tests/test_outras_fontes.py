@@ -30,7 +30,7 @@ class TestDividendos(unittest.TestCase):
         for ticker, volume in (("LIQD3", 5e6), ("POUC3", 1e3), ("FIIX11", 9e6), ("FEIT4", 8e6)):
             conn.executemany("INSERT INTO cotacoes (ticker, data, fechamento, volume) VALUES (?, ?, 10, ?)",
                              [(ticker, f"2026-09-{d:02d}", volume) for d in range(1, 31)])
-        conn.execute("INSERT INTO dividendos_controle VALUES ('FEIT4', '2026-10-05', 'ok')")
+        conn.execute("INSERT INTO dividendos_controle VALUES ('FEIT4', '2026-10-05', ?)", (div.FEITO,))
         # media de 60 pregoes: 30 dias com 5 mi = 2,5 mi/dia
         self.assertEqual(div.selecionar_tickers(conn, 500000, date(2026, 10, 6), 7), ["LIQD3"])
         self.assertEqual(div.selecionar_tickers(conn, 500000, date(2026, 10, 20), 7), ["FEIT4", "LIQD3"])

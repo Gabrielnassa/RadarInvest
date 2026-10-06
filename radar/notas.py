@@ -87,7 +87,8 @@ def montar_fundamentos(linhas) -> dict:
         if pais:
             pai = max(pais, key=lambda i: i[0])
             filhos = [i for i in itens if i[0].startswith(pai[0] + ".") and "controladora" in i[1] and "nao control" not in i[1]]
-            lucro[periodo] = (filhos[0] if filhos else pai)[2]
+            # ha empresas que deixam a linha da controladora zerada; nesse caso vale o total
+            lucro[periodo] = filhos[0][2] if (filhos and filhos[0][2] != 0) else pai[2]
         for cd, n, valor in itens:
             if cd == "3.01":
                 receita[periodo] = valor
@@ -286,7 +287,7 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
     divs: dict[str, list] = {}
     for ticker, dia, valor in conn.execute("SELECT ticker, data, valor FROM dividendos ORDER BY data"):
         divs.setdefault(ticker, []).append((dia, valor))
-    consultados = {t for (t,) in conn.execute("SELECT ticker FROM dividendos_controle WHERE situacao = 'ok'")}
+    consultados = {t for (t,) in conn.execute("SELECT ticker FROM dividendos_controle WHERE situacao LIKE 'ok%'")}
 
     resultado, gb_entrada = [], {}
     for cnpj, e in empresas.items():
@@ -306,28 +307,27 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
         divida, caixa = f.get("divida"), f.get("caixa")
         divida_liq = (divida - (caixa or 0.0)) if divida is not None else None
 
-        # valor de mercado: acoes de cada classe x preco da classe
-        valor_mercado = None
+        # valor de mercado: acoes de cada classe x preco da classe.
+        # P/L e P/VP seguem a convencao usual (preco deste papel x todas as acoes); units usam o valor por classe.
+        valor_mercado = valor_papel = None
         cap = capital.get(cnpj)
         if cap:
             _, on_t, pn_t, tot, on_x, pn_x, tes = cap
-            precos = {}
-            for t in sorted(e["tickers"], key=lambda t: mercado[t]["volume"]):
-                precos[_classe(t)] = mercado[t]["preco"]
+            q_on, q_pn = on_t - on_x, pn_t - pn_x
+            q_total = (q_on + q_pn) or (tot - tes)
+            precos = {_classe(t): mercado[t]["preco"] for t in sorted(e["tickers"], key=lambda t: mercado[t]["volume"])}
             p_on = precos.get("on") or precos.get("pn")
             p_pn = precos.get("pn") or precos.get("on")
-            if p_on and (on_t or pn_t):
-                valor_mercado = (on_t - on_x) * p_on + (pn_t - pn_x) * p_pn
-            elif p_on and tot:
-                valor_mercado = (tot - tes) * p_on
-            if valor_mercado and pl and pl > 0:
-                pvp_teste = valor_mercado / pl
-                if pvp_teste < 0.02:                     # quantidade informada em milhares
-                    valor_mercado *= 1000
-                if not (0.02 <= valor_mercado / pl <= 200):
-                    valor_mercado = None
-        p_l = (valor_mercado / lucro12) if (valor_mercado and lucro12) else None
-        p_vp = (valor_mercado / pl) if (valor_mercado and pl) else None
+            if q_total > 0 and p_on:
+                valor_mercado = (q_on * p_on + q_pn * p_pn) if (q_on + q_pn) > 0 else q_total * p_on
+                valor_papel = valor_mercado if _classe(ticker) == "unit" else preco * q_total
+                if pl and pl > 0:
+                    fator = 1000 if valor_mercado / pl < 0.02 else 1          # quantidade informada em milhares
+                    valor_mercado, valor_papel = valor_mercado * fator, valor_papel * fator
+                    if not (0.02 <= valor_mercado / pl <= 200):
+                        valor_mercado = valor_papel = None
+        p_l = (valor_papel / lucro12) if (valor_papel and lucro12) else None
+        p_vp = (valor_papel / pl) if (valor_papel and pl) else None
         roe = (lucro12 / pl) if (lucro12 is not None and pl and pl > 0) else None
 
         # dividendos
@@ -342,12 +342,14 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
         dpa_medio = (sum(janelas) / 5) if tem_div else None
         anos_pagos = sum(1 for j in janelas if j > 0)
         dy12 = (dpa12 / preco) if (dpa12 is not None and preco) else None
+        dy_3anos = (sum(janelas[:3]) / 3 / preco) if (tem_div and preco) else None
+        dy_bazin = min(dy12, dy_3anos) if dy12 is not None else None   # pagamento extraordinario nao infla a nota
 
         # ----- notas
         notas, nulo = {}, {}
         notas["barsi"], teto, margem_teto = nota_barsi(preco, dpa_medio, anos_pagos, besst, p["dy_minimo"])
         divida_pl = (divida_liq / pl) if (divida_liq is not None and pl and pl > 0) else None
-        notas["bazin"] = nota_bazin(dy12, anos_pagos, divida_pl, financeiro, p["dy_minimo"])
+        notas["bazin"] = nota_bazin(dy_bazin, anos_pagos, divida_pl, financeiro, p["dy_minimo"])
         if not tem_div:
             nulo["barsi"] = nulo["bazin"] = "Sem histórico de dividendos na coleta."
         notas["graham"], graham, margem_graham = nota_graham(preco, p_l, p_vp)
@@ -413,6 +415,8 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
             alertas.append("Pouca liquidez: menos de R$ 2 milhões negociados por dia")
         if f.get("balanco_em") and (hoje - date.fromisoformat(f["balanco_em"])).days > 270:
             alertas.append("Último balanço tem mais de 9 meses")
+        if dy12 is not None and dy12 > 0.15:
+            alertas.append(f"Dividendos de 12 meses somam {dy12:.0%} do preço: pode incluir pagamento extraordinário")
         if m["var12"] is not None and m["var12"] <= -0.30:
             alertas.append(f"Caiu {abs(m['var12']):.0%} em 12 meses")
 
@@ -422,7 +426,7 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
             "t": ticker, "n": e["nome"], "razao": e.get("razao"), "s": setor, "p": round(preco, 2), "data": m["data"],
             "vol": round(m["volume"]), "var12": m["var12"], "m": notas, "nulo": nulo,
             "teto": teto, "margemTeto": margem_teto, "graham": graham, "margemGraham": margem_graham,
-            "dy": dy12, "dpa": dpa_medio, "anosDiv": anos_pagos if tem_div else None,
+            "dy": dy12, "dy3": dy_3anos, "dpa": dpa_medio, "anosDiv": anos_pagos if tem_div else None,
             "pl": p_l, "pvp": p_vp, "roe": roe, "divEbit": divida_ebit, "valorMercado": valor_mercado,
             "check": [[txt, ok] for txt, ok in check], "al": alertas,
             "conf": [sum(1 for d in dados if d is not None and d is not False), len(dados)],

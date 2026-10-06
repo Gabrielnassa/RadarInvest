@@ -10,6 +10,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 FONTE = "yahoo"
+FEITO = "ok-1d"   # marca de consulta concluida; muda quando a forma de consultar muda, para refazer tudo
 
 
 def extrair_dividendos(payload: dict) -> list[tuple[str, float]]:
@@ -46,7 +47,7 @@ def selecionar_tickers(conn, volume_minimo: float, hoje: date, dias_validade: in
         (volume_minimo,),
     ).fetchall()
     feitos = {t for (t,) in conn.execute(
-        "SELECT ticker FROM dividendos_controle WHERE atualizado_em > ? AND situacao = 'ok'", (limite,))}
+        "SELECT ticker FROM dividendos_controle WHERE atualizado_em > ? AND situacao = ?", (limite, FEITO))}
     return [t for (t,) in linhas if t not in feitos]
 
 
@@ -63,14 +64,15 @@ def coletar(conn, rede, cfg, cache: Path, hoje: date | None = None):
     inicio = datetime(hoje.year - anos, 1, 1, tzinfo=timezone.utc)
     fim = datetime(hoje.year, hoje.month, hoje.day, tzinfo=timezone.utc) + timedelta(days=1)
     params = {"period1": int(inicio.timestamp()), "period2": int(fim.timestamp()),
-              "interval": "1mo", "events": "div"}
+              "interval": "1d", "events": "div"}
 
     total, falhas, primeira_falha = 0, 0, ""
     for n, ticker in enumerate(tickers, start=1):
-        situacao = "ok"
+        situacao = FEITO
         try:
             _, payload = rede.json(f"{base}/{ticker}.SA", params=params, aceitar=(200, 404))
             linhas = extrair_dividendos(payload)
+            conn.execute("DELETE FROM dividendos WHERE ticker = ? AND fonte = ?", (ticker, FONTE))
             conn.executemany("INSERT OR REPLACE INTO dividendos (ticker, data, valor, fonte) VALUES (?, ?, ?, ?)",
                              [(ticker, d, v, FONTE) for d, v in linhas])
             total += len(linhas)

@@ -133,6 +133,38 @@ class TestFundamentos(unittest.TestCase):
         self.assertIsNone(f.get("divida"))
 
 
+class TestCasosReais(unittest.TestCase):
+    """Situacoes encontradas na primeira coleta real."""
+
+    def test_linha_da_controladora_zerada_usa_o_lucro_total(self):
+        linhas = [
+            ("DRE", "2025-12-31", "2025-01-01", "2025-12-31", "3.11", "Lucro/Prejuízo Consolidado do Período", 90.0),
+            ("DRE", "2025-12-31", "2025-01-01", "2025-12-31", "3.11.01", "Atribuído a Sócios da Empresa Controladora", 0.0),
+        ]
+        self.assertEqual(notas.montar_fundamentos(linhas)["lucro"][("2025-01-01", "2025-12-31")], 90.0)
+
+    def test_duas_classes_de_acao(self):
+        # 100 mi de ON a R$ 30 e 200 mi de PN a R$ 20; lucro de 600 mi e patrimonio de 3 bi
+        conn = db.conectar(":memory:")
+        self.addCleanup(conn.close)
+        cnpj = "22222222000122"
+        conn.execute("INSERT INTO empresas (cnpj, nome, setor) VALUES (?, 'DUAS CLASSES S.A.', 'Bancos')", (cnpj,))
+        for ticker, preco, volume in (("DUAS3", 30.0, 1e6), ("DUAS4", 20.0, 9e6)):
+            conn.execute("INSERT INTO ativos (ticker, tipo, nome_pregao, ultima_data, cnpj) VALUES (?, 'acao', 'DUAS', '2026-10-02', ?)", (ticker, cnpj))
+            conn.executemany("INSERT INTO cotacoes (ticker, data, fechamento, volume) VALUES (?, ?, ?, ?)",
+                             [(ticker, f"2026-09-{d:02d}", preco, volume) for d in range(1, 29)] + [(ticker, "2026-10-02", preco, volume)])
+        conn.execute("INSERT INTO capital (cnpj, dt_refer, on_total, pn_total, total, on_tes, pn_tes, tes) VALUES (?, '2025-12-31', 100e6, 200e6, 300e6, 0, 0, 0)", (cnpj,))
+        conn.execute("INSERT INTO demonstrativos VALUES (?, '2', 'DFP', 'DRE', 1, '2025-12-31', '2025-01-01', '2025-12-31', 1, '3.09', 'Lucro ou Prejuízo Líquido Consolidado do Período', 600e6)", (cnpj,))
+        conn.execute("INSERT INTO demonstrativos VALUES (?, '2', 'DFP', 'BPP', 1, '2025-12-31', '', '2025-12-31', 1, '2.08', 'Patrimônio Líquido Consolidado', 3e9)", (cnpj,))
+        r = notas.calcular_acoes(conn)[0]
+        self.assertEqual(r["t"], "DUAS4")                               # o papel mais negociado representa a empresa
+        self.assertAlmostEqual(r["valorMercado"], 100e6 * 30 + 200e6 * 20)
+        self.assertAlmostEqual(r["pl"], 20 * 300e6 / 600e6)             # preco do papel x todas as acoes / lucro = 10
+        self.assertAlmostEqual(r["pvp"], 2.0)
+        self.assertIsNone(r["m"]["greenblatt"])                         # banco
+        self.assertIsNone(r["m"]["barsi"])                              # dividendos nao consultados
+
+
 class TestCalculoCompleto(unittest.TestCase):
     def test_uma_empresa_do_banco_ao_ranking(self):
         conn = db.conectar(":memory:")

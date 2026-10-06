@@ -43,6 +43,15 @@ def coletas(conn) -> list[dict]:
                    WHERE id IN (SELECT max(id) FROM coletas GROUP BY fonte) ORDER BY fonte""")]
 
 
+def sem_vinculo(conn, volume_minimo: float) -> list[str]:
+    """Acoes com liquidez que ficaram fora do ranking por nao estarem ligadas a uma empresa da CVM."""
+    return [t for (t,) in conn.execute(
+        """WITH ultimos AS (SELECT DISTINCT data FROM cotacoes ORDER BY data DESC LIMIT 60)
+           SELECT a.ticker FROM ativos a JOIN cotacoes c ON c.ticker = a.ticker
+           WHERE a.tipo IN ('acao', 'unit') AND a.cnpj IS NULL AND c.data IN (SELECT data FROM ultimos)
+           GROUP BY a.ticker HAVING sum(c.volume) / 60.0 >= ? ORDER BY sum(c.volume) DESC""", (volume_minimo,))]
+
+
 def montar(conn, cfg: dict) -> dict:
     regras = cfg.get("notas") or {}
     acoes = notas.calcular_acoes(conn, regras)
@@ -55,6 +64,7 @@ def montar(conn, cfg: dict) -> dict:
         "cripto": cripto,
         "macro": macro(conn),
         "coleta": coletas(conn),
+        "semVinculo": sem_vinculo(conn, float(regras.get("volume_minimo", notas.PADRAO["volume_minimo"]))),
     })
 
 

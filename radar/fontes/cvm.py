@@ -14,7 +14,7 @@ from pathlib import Path
 
 from ..db import so_digitos
 
-RE_TICKER = re.compile(r"^[A-Z]{4}\d{1,2}$")
+RE_TICKER = re.compile(r"^[A-Z][A-Z0-9]{3}\d{1,2}$")
 LOTE = 20000
 
 SQL_DEMONSTRATIVO = """INSERT INTO demonstrativos
