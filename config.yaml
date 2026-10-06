@@ -54,11 +54,20 @@ cripto:
   # stablecoins e versoes "embrulhadas" de outras moedas ficam fora do ranking
   excluir_simbolos: [usdt, usdc, dai, fdusd, usde, usds, pyusd, tusd, usd1, usdd, busd, susde, susds, usdtb, bsc-usd, usdt0, wbtc, weth, steth, wsteth, wbeth, weeth, cbbtc, reth, lbtc, wbnb, jitosol, bnsol]
 
+# Regras das notas (etapa 2). Descomente e altere o que quiser.
+notas:
+  volume_minimo: 500000        # R$/dia para a acao entrar no ranking
+  pesos: {barsi: 20, bazin: 15, qualidade: 30, graham: 15, greenblatt: 20}
+  dy_minimo: 0.06              # dividendo minimo de Barsi e Bazin
+  roe_minimo: 0.15
+  divida_ebit_max: 3.0         # divida liquida sobre lucro operacional
+  nucleo_cripto: [bitcoin, ethereum]
+
 # Indicadores do Banco Central (codigos das series do SGS)
 macro:
   ativo: true
   url_base: "https://api.bcb.gov.br/dados/serie"
-  anos: 10
+  anos: 3
   series:
     selic_meta: 432
     ipca_mensal: 433

@@ -25,6 +25,8 @@ echo Coletando os dados. A primeira vez baixa varios anos de historico e pode de
 echo.
 ".venv\Scripts\python.exe" -m radar coletar
 ".venv\Scripts\python.exe" -m radar status
+".venv\Scripts\python.exe" -m radar exportar
+".venv\Scripts\python.exe" -m radar painel
 echo.
 pause
 exit /b 0

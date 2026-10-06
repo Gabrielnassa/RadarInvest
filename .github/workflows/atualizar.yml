@@ -45,8 +45,8 @@ jobs:
             python -m radar coletar || true
             python -m radar status || true
           } 2>&1 | tee docs/coleta.log
-      - name: Inspecionar formatos
-        run: python -m radar inspecionar > docs/formatos.log 2>&1 || true
+      - name: Calcular notas e exportar
+        run: python -m radar exportar 2>&1 | tee -a docs/coleta.log
       - name: Publicar
         run: |
           git config user.name "github-actions[bot]"

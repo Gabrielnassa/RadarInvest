@@ -7,7 +7,7 @@ import traceback
 from datetime import date, datetime
 from pathlib import Path
 
-from . import __version__, config, db
+from . import __version__, config, db, exportar
 from .fontes import b3_cotahist, cripto_coingecko, cvm, dividendos_yahoo, macro_bcb
 from .rede import ErroRede, Rede
 
@@ -219,6 +219,31 @@ def cmd_inspecionar(cfg) -> int:
     return 0
 
 
+def cmd_painel(cfg, porta: int = 8765) -> int:
+    """Abre o painel no navegador, servindo a pasta docs/ neste computador."""
+    import functools
+    import http.server
+    import webbrowser
+    pasta = Path(cfg["_banco"]).parent.parent / "docs"
+    if not (pasta / "dados.json").exists():
+        print("Ainda nao ha dados. Rode antes: python -m radar coletar  e  python -m radar exportar")
+        return 1
+    manipulador = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(pasta))
+    try:
+        servidor = http.server.ThreadingHTTPServer(("127.0.0.1", porta), manipulador)
+    except OSError:
+        print(f"A porta {porta} ja esta em uso. O painel pode ja estar aberto em http://127.0.0.1:{porta}/")
+        return 1
+    endereco = f"http://127.0.0.1:{porta}/"
+    print(f"Painel em {endereco}  (feche esta janela para encerrar)")
+    webbrowser.open(endereco)
+    try:
+        servidor.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="radar", description="Radar de Investimentos - coleta de dados")
     p.add_argument("--config", help="caminho do config.yaml")
@@ -228,6 +253,8 @@ def main(argv=None) -> int:
     sub.add_parser("status", help="mostra o que ha no banco")
     sub.add_parser("diagnostico", help="testa o acesso a cada fonte")
     sub.add_parser("inspecionar", help="mostra o formato dos arquivos baixados")
+    sub.add_parser("exportar", help="calcula as notas e grava docs/dados.json para o painel")
+    sub.add_parser("painel", help="abre o painel no navegador")
     args = p.parse_args(argv)
 
     config.carregar_env()
@@ -238,6 +265,14 @@ def main(argv=None) -> int:
         return cmd_diagnostico(cfg)
     if args.comando == "inspecionar":
         return cmd_inspecionar(cfg)
+    if args.comando == "painel":
+        return cmd_painel(cfg)
+    if args.comando == "exportar":
+        destino, dados = exportar.exportar(cfg)
+        print(f"{len(dados['acoes'])} acoes e {len(dados['cripto'])} criptos gravadas em {destino}")
+        for a in dados["acoes"][:10]:
+            print(f"  {a['t']:<7} nota {a['final']:5.1f}  P/L {a['pl']}  P/VP {a['pvp']}  DY {a['dy']}  {a['m']}")
+        return 0
     return cmd_status(cfg)
 
 
