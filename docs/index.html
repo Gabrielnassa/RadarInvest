@@ -215,7 +215,7 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
     <section class="secao" id="sec-destaques" role="tabpanel" aria-labelledby="aba-destaques">
       <div class="bloco">
         <h2>Maiores notas para cada objetivo</h2>
-        <p class="texto">Entram aqui só as ações com nota em todos os métodos que se aplicam a elas. O ranking completo está na aba Ações.</p>
+        <p class="texto">Entram aqui só as ações com nota em todos os métodos que se aplicam a elas e sem sinal de evento isolado, como dividendo extraordinário ou lucro fora do padrão. O ranking completo está na aba Ações.</p>
       </div>
       <div class="dest-cab">
         <div class="seg" role="group" aria-label="Objetivo">
@@ -576,7 +576,7 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
     document.getElementById("dest-acoes").innerHTML = ACOES
       .filter(function (a) {
         var com = METODOS.filter(function (p) { return a.m[p[0]] != null; }).length;
-        return com >= (a.aplicaveis || 5) && a.conf[0] / a.conf[1] >= 0.8;
+        return com >= (a.aplicaveis || 5) && a.conf[0] / a.conf[1] >= 0.8 && !a.distorcao;
       })
       .map(function (a) { return { a: a, nota: notaCom(a.m, pesos) }; })
       .filter(function (x) { return x.nota != null; })

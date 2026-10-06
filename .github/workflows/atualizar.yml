@@ -5,7 +5,7 @@ on:
     - cron: "15 9 * * 2-6"   # 06:15 em Brasilia, de terca a sabado
   workflow_dispatch:
   push:
-    branches: [dados-reais]
+    branches: [main]
     paths: ["radar/**", "config.yaml", "requirements.txt", ".github/workflows/atualizar.yml"]
 
 permissions:
@@ -45,19 +45,6 @@ jobs:
             python -m radar coletar || true
             python -m radar status || true
           } 2>&1 | tee docs/coleta.log
-      - name: Conferir dividendos (temporario)
-        run: |
-          python - <<'PY' 2>&1 | tee docs/formatos.log
-          import requests, datetime
-          s = requests.Session(); s.headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/126.0"
-          for t in ("ITUB4", "POMO4", "GRND3", "ENJU3", "SAPR11"):
-              for iv in ("1mo", "1d"):
-                  r = s.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{t}.SA", params={"range": "2y", "interval": iv, "events": "div|split"}, timeout=30)
-                  ev = (r.json()["chart"]["result"] or [{}])[0].get("events", {})
-                  d = sorted((v["date"], v["amount"]) for v in ev.get("dividends", {}).values())
-                  print(t, iv, "HTTP", r.status_code, "dividendos:", len(d), "soma 2a:", round(sum(a for _, a in d), 4),
-                        "ultimos:", [(datetime.date.fromtimestamp(x).isoformat(), a) for x, a in d[-6:]], "splits:", list(ev.get("splits", {}).values())[:3])
-          PY
       - name: Calcular notas e exportar
         run: python -m radar exportar 2>&1 | tee -a docs/coleta.log
       - name: Publicar

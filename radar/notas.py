@@ -446,8 +446,13 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
             alertas.append("Último balanço tem mais de 9 meses")
         if dy12 is not None and dy12 > 0.15:
             alertas.append(f"Dividendos de 12 meses somam {dy12:.0%} do preço: pode incluir pagamento extraordinário")
-        if m["var12"] is not None and m["var12"] <= -0.30:
+        variacao_estranha = m["var12"] is not None and (m["var12"] > 1.5 or m["var12"] < -0.6)
+        if variacao_estranha:
+            alertas.append("Variação de 12 meses fora do comum: pode haver desdobramento ou grupamento não ajustado")
+        elif m["var12"] is not None and m["var12"] <= -0.30:
             alertas.append(f"Caiu {abs(m['var12']):.0%} em 12 meses")
+        # sinais de evento isolado: o ativo continua no ranking, mas sai da lista de destaques
+        distorcao = bool(lucro_fora or ebit_fora or variacao_estranha or (dy12 is not None and dy12 > 0.15))
 
         dados = [preco, m["volume"] > 0, lucro12, pl, valor_mercado, dpa12, f.get("balanco_em"),
                  True if financeiro else ebit12, True if financeiro else divida, len(anos) >= 5 or None]
@@ -460,7 +465,7 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
             "check": [[txt, ok] for txt, ok in check], "al": alertas,
             "conf": [sum(1 for d in dados if d is not None and d is not False), len(dados)],
             "serie": m["serie"], "lucroAte": lucro_fim, "lucroBase": lucro_origem, "balancoEm": f.get("balanco_em"),
-            "aplicaveis": 4 if financeiro else 5, "lucroNormalizado": lucro_fora or ebit_fora,
+            "aplicaveis": 4 if financeiro else 5, "lucroNormalizado": lucro_fora or ebit_fora, "distorcao": distorcao,
         })
 
     gb = notas_greenblatt(gb_entrada)

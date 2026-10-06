@@ -214,6 +214,7 @@ class TestAjustes(unittest.TestCase):
         # Graham usa a media de 2023 a 2025 (200 mi): P/L 5 e P/VP 1 => valor = 20 x raiz(22,5 / 5)
         self.assertAlmostEqual(r["graham"], 20 * math.sqrt(22.5 / 5), places=4)
         self.assertTrue(any("média" in a for a in r["al"]))
+        self.assertTrue(r["distorcao"])
 
 
 class TestCalculoCompleto(unittest.TestCase):
@@ -259,6 +260,8 @@ class TestCalculoCompleto(unittest.TestCase):
         self.assertIsNone(ok["Lucro em todos os trimestres dos últimos 5 anos"])
         self.assertEqual(r["al"], ["Último balanço tem mais de 9 meses"])
         self.assertEqual(r["conf"], [10, 10])
+        self.assertFalse(r["distorcao"])
+        self.assertEqual(r["aplicaveis"], 5)
 
 
 if __name__ == "__main__":

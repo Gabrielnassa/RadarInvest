@@ -140,7 +140,7 @@ def cmd_diagnostico(cfg) -> int:
     rede = Rede(cfg.get("rede"))
     hoje = date.today()
     testes = [
-        ("B3 (cotacoes)", f"{cfg['b3']['url_base'].rstrip('/')}/COTAHIST_M{hoje.month:02d}{hoje.year}.ZIP", None),
+        ("B3 (cotacoes)", f"{cfg['b3']['url_base'].rstrip('/')}/COTAHIST_A{hoje.year}.ZIP", None),
         ("CVM (cadastro)", f"{cfg['cvm']['url_base'].rstrip('/')}/FCA/DADOS/fca_cia_aberta_{hoje.year}.zip", None),
         ("CVM (demonstrativos)", f"{cfg['cvm']['url_base'].rstrip('/')}/ITR/DADOS/itr_cia_aberta_{hoje.year}.zip", None),
         ("Yahoo (dividendos)", f"{cfg['dividendos']['url_base'].rstrip('/')}/PETR4.SA", {"range": "1mo", "interval": "1d", "events": "div"}),
