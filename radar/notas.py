@@ -45,7 +45,10 @@ def nivel(conta: str) -> int:
 def classificar_setor(setor_cvm: str) -> tuple[str, bool, bool]:
     """Devolve (rotulo, esta nos setores BESST, usa plano de contas financeiro)."""
     n = norm(setor_cvm)
-    rotulo = re.sub(r"^Emp\. Adm\. Part\.\s*-\s*", "", setor_cvm or "").strip() or "Sem setor"
+    rotulo = re.sub(r"^Emp\. Adm\. Part\.\s*-\s*", "", setor_cvm or "").strip()
+    rotulo = re.split(r"[(,]", rotulo)[0].strip()               # "Comércio (Atacado e Varejo)" vira "Comércio"
+    if not rotulo or norm(rotulo).startswith("sem setor"):
+        rotulo = "Sem setor"
     if "banco" in n or "intermediacao financeira" in n or "arrendamento mercantil" in n:
         return "Bancos", True, True
     if "segur" in n or "previdencia" in n:
@@ -244,6 +247,21 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
             """SELECT c.ticker, c.data, c.fechamento, c.volume FROM cotacoes c JOIN ativos a ON a.ticker = c.ticker
                WHERE a.tipo IN ('acao', 'unit') AND c.data >= ? ORDER BY c.ticker, c.data""", (desde,)):
         mercado.setdefault(ticker, {"dias": []})["dias"].append((dia, fech, vol or 0.0))
+    desdobros: dict[str, list] = {}
+    for ticker, dia, fator in conn.execute("SELECT ticker, data, fator FROM desdobramentos WHERE fator > 0 ORDER BY data"):
+        desdobros.setdefault(ticker, []).append((dia, fator))
+
+    def fator_depois(ticker: str, dia: str) -> float:
+        """Quantas acoes de hoje correspondem a uma acao naquela data."""
+        f = 1.0
+        for quando, fator in desdobros.get(ticker, ()):
+            if quando > dia:
+                f *= fator
+        return f
+
+    for ticker, m in mercado.items():
+        if ticker in desdobros:   # preco antigo na base de hoje: divide pelo fator dos desdobramentos posteriores
+            m["dias"] = [(d, fech / fator_depois(ticker, d), v) for d, fech, v in m["dias"]]
     pregoes = [d for (d,) in conn.execute("SELECT DISTINCT data FROM cotacoes WHERE data >= ? ORDER BY data DESC LIMIT 60", (desde,))]
     corte60 = pregoes[-1] if pregoes else ultima
     recente = (hoje - timedelta(days=7)).isoformat()
@@ -312,7 +330,9 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
         valor_mercado = valor_papel = None
         cap = capital.get(cnpj)
         if cap:
-            _, on_t, pn_t, tot, on_x, pn_x, tes = cap
+            cap_em, on_t, pn_t, tot, on_x, pn_x, tes = cap
+            ajuste = fator_depois(ticker, cap_em)          # desdobramento depois do ultimo balanco
+            on_t, pn_t, tot, on_x, pn_x, tes = (x * ajuste for x in (on_t, pn_t, tot, on_x, pn_x, tes))
             q_on, q_pn = on_t - on_x, pn_t - pn_x
             q_total = (q_on + q_pn) or (tot - tes)
             precos = {_classe(t): mercado[t]["preco"] for t in sorted(e["tickers"], key=lambda t: mercado[t]["volume"])}
@@ -328,6 +348,16 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
                         valor_mercado = valor_papel = None
         p_l = (valor_papel / lucro12) if (valor_papel and lucro12) else None
         p_vp = (valor_papel / pl) if (valor_papel and pl) else None
+
+        # lucro muito acima do historico costuma ter item que nao se repete: Graham e Greenblatt usam a media de 3 anos
+        def normal(valor12, serie_anual):
+            ult = [serie_anual[a] for a in sorted(serie_anual)[-3:]]
+            if valor12 and len(ult) == 3 and all(x > 0 for x in ult) and valor12 > 2 * (sum(ult) / 3):
+                return sum(ult) / 3, True
+            return valor12, False
+        lucro_base, lucro_fora = normal(lucro12, anuais(f["lucro"]))
+        ebit_base, ebit_fora = normal(ebit12, anuais(f["ebit"]))
+        p_l_base = (valor_papel / lucro_base) if (valor_papel and lucro_base) else None
         roe = (lucro12 / pl) if (lucro12 is not None and pl and pl > 0) else None
 
         # dividendos
@@ -339,11 +369,11 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
             b = (hoje - timedelta(days=365 * k)).isoformat()
             janelas.append(sum(v for d, v in pagos if a < d <= b))
         dpa12 = janelas[0] if tem_div else None
-        dpa_medio = (sum(janelas) / 5) if tem_div else None
+        dpa_medio = sorted(janelas)[2] if tem_div else None      # mediana de 5 anos: ignora pagamento fora da curva
         anos_pagos = sum(1 for j in janelas if j > 0)
         dy12 = (dpa12 / preco) if (dpa12 is not None and preco) else None
-        dy_3anos = (sum(janelas[:3]) / 3 / preco) if (tem_div and preco) else None
-        dy_bazin = min(dy12, dy_3anos) if dy12 is not None else None   # pagamento extraordinario nao infla a nota
+        dy_tipico = (dpa_medio / preco) if (tem_div and preco) else None
+        dy_bazin = min(dy12, dy_tipico) if dy12 is not None else None  # pagamento extraordinario nao infla a nota
 
         # ----- notas
         notas, nulo = {}, {}
@@ -352,7 +382,7 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
         notas["bazin"] = nota_bazin(dy_bazin, anos_pagos, divida_pl, financeiro, p["dy_minimo"])
         if not tem_div:
             nulo["barsi"] = nulo["bazin"] = "Sem histórico de dividendos na coleta."
-        notas["graham"], graham, margem_graham = nota_graham(preco, p_l, p_vp)
+        notas["graham"], graham, margem_graham = nota_graham(preco, p_l_base, p_vp)
         if notas["graham"] is None:
             nulo["graham"] = "Falta lucro, patrimônio ou quantidade de ações."
 
@@ -393,7 +423,7 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
             firma = valor_mercado + divida_liq
             capital_inv = f["pl_total"] + divida_liq
             if firma > 0 and capital_inv > 0:
-                gb_entrada[ticker] = (ebit12 / firma, ebit12 / capital_inv)
+                gb_entrada[ticker] = (ebit_base / firma, ebit_base / capital_inv)
             else:
                 notas["greenblatt"] = None
                 nulo["greenblatt"] = "Valor da firma ou capital investido negativo."
@@ -408,9 +438,8 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
             alertas.append("Teve prejuízo em pelo menos um dos últimos 5 anos")
         if divida_ebit is not None and divida_ebit > p["divida_ebit_max"]:
             alertas.append(f"Dívida líquida de {divida_ebit:.1f} vezes o lucro operacional".replace(".", ","))
-        media3 = [lucros_ano[a] for a in anos[-3:]]
-        if lucro12 and len(media3) == 3 and all(x > 0 for x in media3) and lucro12 > 2 * (sum(media3) / 3):
-            alertas.append("Lucro de 12 meses é mais que o dobro da média de 3 anos: pode ter item que não se repete")
+        if lucro_fora or ebit_fora:
+            alertas.append("Lucro de 12 meses é mais que o dobro da média de 3 anos: Graham e Greenblatt usam a média")
         if m["volume"] < p["liquidez_boa"]:
             alertas.append("Pouca liquidez: menos de R$ 2 milhões negociados por dia")
         if f.get("balanco_em") and (hoje - date.fromisoformat(f["balanco_em"])).days > 270:
@@ -426,11 +455,12 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
             "t": ticker, "n": e["nome"], "razao": e.get("razao"), "s": setor, "p": round(preco, 2), "data": m["data"],
             "vol": round(m["volume"]), "var12": m["var12"], "m": notas, "nulo": nulo,
             "teto": teto, "margemTeto": margem_teto, "graham": graham, "margemGraham": margem_graham,
-            "dy": dy12, "dy3": dy_3anos, "dpa": dpa_medio, "anosDiv": anos_pagos if tem_div else None,
+            "dy": dy12, "dyTipico": dy_tipico, "dpa": dpa_medio, "anosDiv": anos_pagos if tem_div else None,
             "pl": p_l, "pvp": p_vp, "roe": roe, "divEbit": divida_ebit, "valorMercado": valor_mercado,
             "check": [[txt, ok] for txt, ok in check], "al": alertas,
             "conf": [sum(1 for d in dados if d is not None and d is not False), len(dados)],
             "serie": m["serie"], "lucroAte": lucro_fim, "lucroBase": lucro_origem, "balancoEm": f.get("balanco_em"),
+            "aplicaveis": 4 if financeiro else 5, "lucroNormalizado": lucro_fora or ebit_fora,
         })
 
     gb = notas_greenblatt(gb_entrada)

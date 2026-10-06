@@ -91,7 +91,9 @@ class TestNotas(unittest.TestCase):
         self.assertEqual(notas.classificar_setor("Bancos"), ("Bancos", True, True))
         self.assertEqual(notas.classificar_setor("Emp. Adm. Part. - Energia Elétrica")[1:], (True, False))
         self.assertEqual(notas.classificar_setor("Seguradoras e Corretoras")[0], "Seguros")
-        self.assertEqual(notas.classificar_setor("Comércio (Atacado e Varejo)"), ("Comércio (Atacado e Varejo)", False, False))
+        self.assertEqual(notas.classificar_setor("Comércio (Atacado e Varejo)"), ("Comércio", False, False))
+        self.assertEqual(notas.classificar_setor("Emp. Adm. Part. - Sem Setor Principal")[0], "Sem setor")
+        self.assertEqual(notas.classificar_setor("Construção Civil, Mat. Constr. e Decoração")[0], "Construção Civil")
 
 
 class TestFundamentos(unittest.TestCase):
@@ -163,6 +165,55 @@ class TestCasosReais(unittest.TestCase):
         self.assertAlmostEqual(r["pvp"], 2.0)
         self.assertIsNone(r["m"]["greenblatt"])                         # banco
         self.assertIsNone(r["m"]["barsi"])                              # dividendos nao consultados
+
+
+class TestAjustes(unittest.TestCase):
+    def _empresa(self, conn, lucros, desdobro=None):
+        cnpj = "33333333000133"
+        conn.execute("INSERT INTO empresas (cnpj, nome, setor) VALUES (?, 'AJUSTE S.A.', 'Comércio')", (cnpj,))
+        conn.execute("INSERT INTO ativos (ticker, tipo, nome_pregao, ultima_data, cnpj) VALUES ('AJUS3', 'acao', 'AJUSTE', '2026-10-02', ?)", (cnpj,))
+        # ate julho de 2026 o papel valia 40; depois do desdobramento de 1 para 2, vale 20
+        dias = [(f"2025-{m:02d}-15", 40.0) for m in (9, 10, 11, 12)] + [(f"2026-{m:02d}-15", 40.0) for m in range(1, 8)]
+        dias += [(f"2026-09-{d:02d}", 20.0) for d in range(1, 29)] + [("2026-10-02", 20.0)]
+        conn.executemany("INSERT INTO cotacoes (ticker, data, fechamento, volume) VALUES ('AJUS3', ?, ?, 5000000)", dias)
+        conn.execute("INSERT INTO capital (cnpj, dt_refer, on_total, pn_total, total, on_tes, pn_tes, tes) VALUES (?, '2026-06-30', 50e6, 0, 50e6, 0, 0, 0)", (cnpj,))
+        for ano, lucro in lucros.items():
+            for cd, ds, v in (("3.05", "Resultado Antes do Resultado Financeiro e dos Tributos", lucro * 1.5), ("3.11", "Lucro/Prejuízo do Período", lucro)):
+                conn.execute("INSERT INTO demonstrativos VALUES (?, '3', 'DFP', 'DRE', 1, ?, ?, ?, 1, ?, ?, ?)",
+                             (cnpj, f"{ano}-12-31", f"{ano}-01-01", f"{ano}-12-31", cd, ds, v))
+        conn.execute("INSERT INTO demonstrativos VALUES (?, '3', 'DFP', 'BPP', 1, '2025-12-31', '', '2025-12-31', 1, '2.03', 'Patrimônio Líquido', 1e9)", (cnpj,))
+        conn.execute("INSERT INTO demonstrativos VALUES (?, '3', 'DFP', 'BPP', 1, '2025-12-31', '', '2025-12-31', 1, '2.01.04', 'Empréstimos e Financiamentos', 0)", (cnpj,))
+        if desdobro:
+            conn.execute("INSERT INTO desdobramentos VALUES ('AJUS3', ?, ?, 'yahoo')", desdobro)
+
+    def test_desdobramento_ajusta_acoes_e_precos_antigos(self):
+        conn = db.conectar(":memory:")
+        self.addCleanup(conn.close)
+        self._empresa(conn, {2023: 100e6, 2024: 100e6, 2025: 100e6}, desdobro=("2026-08-01", 2.0))
+        r = notas.calcular_acoes(conn)[0]
+        self.assertAlmostEqual(r["valorMercado"], 100e6 * 20)      # 50 mi de acoes viraram 100 mi
+        self.assertAlmostEqual(r["pl"], 20.0)
+        self.assertAlmostEqual(r["var12"], 0.0)                    # 40 antes do desdobramento equivale a 20 hoje
+        self.assertFalse(any("Caiu" in a for a in r["al"]))
+
+    def test_sem_ajuste_a_queda_seria_falsa(self):
+        conn = db.conectar(":memory:")
+        self.addCleanup(conn.close)
+        self._empresa(conn, {2023: 100e6, 2024: 100e6, 2025: 100e6})
+        r = notas.calcular_acoes(conn)[0]
+        self.assertAlmostEqual(r["var12"], -0.5)
+        self.assertAlmostEqual(r["valorMercado"], 50e6 * 20)
+
+    def test_lucro_fora_da_curva_usa_a_media_de_tres_anos(self):
+        conn = db.conectar(":memory:")
+        self.addCleanup(conn.close)
+        self._empresa(conn, {2022: 50e6, 2023: 50e6, 2024: 50e6, 2025: 500e6})   # ultimo ano: 10 vezes o normal
+        r = notas.calcular_acoes(conn)[0]
+        self.assertAlmostEqual(r["pl"], 50e6 * 20 / 500e6)         # o P/L mostrado continua sendo o de 12 meses: 2
+        self.assertTrue(r["lucroNormalizado"])
+        # Graham usa a media de 2023 a 2025 (200 mi): P/L 5 e P/VP 1 => valor = 20 x raiz(22,5 / 5)
+        self.assertAlmostEqual(r["graham"], 20 * math.sqrt(22.5 / 5), places=4)
+        self.assertTrue(any("média" in a for a in r["al"]))
 
 
 class TestCalculoCompleto(unittest.TestCase):

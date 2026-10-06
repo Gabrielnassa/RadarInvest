@@ -22,6 +22,14 @@ class TestDividendos(unittest.TestCase):
         with self.assertRaises(ValueError):
             div.extrair_dividendos(payload)
 
+    def test_desdobramentos(self):
+        payload = fabrica.json_yahoo({"2026-08-21": 0.71})
+        payload["chart"]["result"][0]["events"]["splits"] = {
+            "1": {"date": fabrica._ts("2025-12-26"), "numerator": 110.0, "denominator": 100.0, "splitRatio": "110:100"},
+            "2": {"date": fabrica._ts("2024-03-01"), "numerator": 1.0, "denominator": 10.0, "splitRatio": "1:10"}}
+        self.assertEqual(div.extrair_desdobramentos(payload), [("2024-03-01", 0.1), ("2025-12-26", 1.1)])
+        self.assertEqual(div.extrair_desdobramentos(fabrica.json_yahoo({})), [])
+
     def test_selecao_respeita_liquidez_tipo_e_validade(self):
         conn = db.conectar(":memory:")
         self.addCleanup(conn.close)

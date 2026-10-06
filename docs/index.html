@@ -215,7 +215,7 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
     <section class="secao" id="sec-destaques" role="tabpanel" aria-labelledby="aba-destaques">
       <div class="bloco">
         <h2>Maiores notas para cada objetivo</h2>
-        <p class="texto">Ficam fora os ativos com menos de 80% dos dados disponíveis.</p>
+        <p class="texto">Entram aqui só as ações com nota em todos os métodos que se aplicam a elas. O ranking completo está na aba Ações.</p>
       </div>
       <div class="dest-cab">
         <div class="seg" role="group" aria-label="Objetivo">
@@ -320,6 +320,7 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
           <tbody id="corpo-coleta"></tbody>
         </table>
       </div>
+      <p class="texto" id="sem-vinculo"></p>
     </section>
   </div>
 
@@ -456,11 +457,13 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
       '<div class="pares">' +
         par("Preço-teto (Barsi)", brl(a.teto), a.margemTeto == null ? "sem dividendos" : "margem de " + pct(Math.max(a.margemTeto, -9.99))) +
         par("Valor de Graham", brl(a.graham), a.margemGraham == null ? "lucro ou patrimônio negativo" : "margem de " + pct(Math.max(a.margemGraham, -9.99))) +
-        par("Dividendos sobre o preço", a.dy == null ? "sem dado" : semSinal(a.dy, 1), a.anosDiv == null ? "" : "pagou em " + a.anosDiv + " dos últimos 5 anos") +
+        par("Dividendos em 12 meses", a.dy == null ? "sem dado" : semSinal(a.dy, 1), a.anosDiv == null ? "" : "do preço · pagou em " + a.anosDiv + " de 5 anos") +
+        par("Dividendo típico", a.dyTipico == null ? "sem dado" : semSinal(a.dyTipico, 1), "do preço · mediana de 5 anos") +
         par("Preço sobre o lucro", vezes(a.pl), "vezes o lucro de 12 meses") +
         par("Preço sobre o patrimônio", vezes(a.pvp), "vezes o patrimônio") +
         par("Retorno sobre o patrimônio", a.roe == null ? "sem dado" : pct(a.roe, 1).replace("+", ""), "lucro de 12 meses") +
         par("Dívida líquida", a.divEbit == null ? "sem dado" : vezes(a.divEbit), a.divEbit == null ? "" : "vezes o lucro operacional") +
+        par("Valor de mercado", a.valorMercado == null ? "sem dado" : "R$ " + (a.valorMercado / 1e9).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + " bi", "") +
         par("Confiança", a.conf[0] + " de " + a.conf[1], "dados disponíveis") +
       "</div>" +
       '<div class="bloco"><h3>Preço em 12 meses</h3><div class="graf" id="graf"></div></div>' +
@@ -547,7 +550,7 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
   function motivo(a) {
     if (objetivo === "renda") {
       if (!a.dy) return "Sem dividendos nos últimos 12 meses.";
-      return "Dividendos de " + semSinal(a.dy, 1) + " do preço. " +
+      return "Dividendos de " + semSinal(a.dy, 1) + " do preço em 12 meses, " + semSinal(a.dyTipico || 0, 1) + " no ano típico. " +
         (a.margemTeto > 0 ? "Preço " + semSinal(a.margemTeto) + " abaixo do preço-teto." : "Preço acima do preço-teto.");
     }
     if (objetivo === "valor") {
@@ -571,7 +574,10 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
     document.getElementById("dest-txt").textContent = o.txt;
     Array.prototype.forEach.call(document.querySelectorAll(".seg button"), function (b) { b.setAttribute("aria-pressed", b.dataset.obj === objetivo); });
     document.getElementById("dest-acoes").innerHTML = ACOES
-      .filter(function (a) { return a.conf[0] / a.conf[1] >= 0.8; })
+      .filter(function (a) {
+        var com = METODOS.filter(function (p) { return a.m[p[0]] != null; }).length;
+        return com >= (a.aplicaveis || 5) && a.conf[0] / a.conf[1] >= 0.8;
+      })
       .map(function (a) { return { a: a, nota: notaCom(a.m, pesos) }; })
       .filter(function (x) { return x.nota != null; })
       .sort(function (x, y) { return y.nota - x.nota; }).slice(0, 10)
@@ -697,6 +703,10 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
       return itemDestaque(i + 1, c.id, c.n + " · " + (c.nucleo ? "núcleo" : "outras"), c.nota, textoCripto(c), c.al, "");
     }).join("") || '<li class="dest-item"><span class="sem" style="grid-column:1/-1">Sem dados de cripto nesta coleta.</span></li>';
 
+    var fora = D.semVinculo || [];
+    document.getElementById("sem-vinculo").textContent = fora.length
+      ? "Ações negociadas que ficaram fora do ranking porque o cadastro da CVM não informa o código delas: " + fora.join(", ") + "."
+      : "";
     desenharAcoes(); desenharDestaques(); desenharCarteira();
     document.getElementById("app").hidden = false;
     abrir((location.hash || "").replace("#", "") || "destaques");

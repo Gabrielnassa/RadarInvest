@@ -79,6 +79,14 @@ CREATE TABLE IF NOT EXISTS dividendos (
     PRIMARY KEY (ticker, data)
 ) WITHOUT ROWID;
 
+CREATE TABLE IF NOT EXISTS desdobramentos (
+    ticker TEXT NOT NULL,
+    data   TEXT NOT NULL,
+    fator  REAL NOT NULL,                 -- acoes depois / acoes antes (1,1 = bonificacao de 10%; 0,1 = grupamento de 10 para 1)
+    fonte  TEXT NOT NULL,
+    PRIMARY KEY (ticker, data)
+) WITHOUT ROWID;
+
 CREATE TABLE IF NOT EXISTS dividendos_controle (
     ticker        TEXT PRIMARY KEY,
     atualizado_em TEXT NOT NULL,
