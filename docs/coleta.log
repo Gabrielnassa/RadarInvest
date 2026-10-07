@@ -1,4 +1,4 @@
-Coleta iniciada em 2026-10-07 19:40 UTC
+Coleta iniciada em 2026-10-07 19:53 UTC
 
 Diagnostico das fontes de dados
 
@@ -12,21 +12,21 @@ Diagnostico das fontes de dados
   OK     Tesouro Direto         HTTP 200, text/csv
 
 Todas as fontes responderam.
-[19:40:36] Cotacoes da B3: coletando...
-[19:45:42] Cotacoes da B3: 985239 registros
-[19:45:42] Cadastro e demonstrativos da CVM: coletando...
-[19:46:49] Cadastro e demonstrativos da CVM: 2157950 registros
-[19:46:49] Dividendos (Yahoo, nao oficial): coletando...
-[19:47:56] Dividendos (Yahoo, nao oficial): 4417 registros
-[19:47:56] Criptomoedas (CoinGecko): coletando...
-[19:47:56] Criptomoedas (CoinGecko): 30 registros
-[19:47:56] Indicadores do Banco Central: coletando...
-[19:50:01] Indicadores do Banco Central: 6152 registros
-[19:50:01] Informe mensal dos fundos imobiliarios (CVM): coletando...
-[19:50:02] Informe mensal dos fundos imobiliarios (CVM): 24040 registros
-[19:50:02] Tesouro Direto (Tesouro Transparente): coletando...
-[19:50:19] Tesouro Direto (Tesouro Transparente): 16157 registros
-[19:50:19] Acoes ligadas a empresas: 404 pelo codigo, 28 pelas 4 letras iniciais
+[19:53:53] Cotacoes da B3: coletando...
+[19:53:54] Cotacoes da B3: 0 registros
+[19:53:54] Cadastro e demonstrativos da CVM: coletando...
+[19:54:41] Cadastro e demonstrativos da CVM: 2157950 registros
+[19:54:41] Dividendos (Yahoo, nao oficial): coletando...
+[19:54:41] Dividendos (Yahoo, nao oficial): 0 registros
+[19:54:41] Criptomoedas (CoinGecko): coletando...
+[19:54:41] Criptomoedas (CoinGecko): 30 registros
+[19:54:41] Indicadores do Banco Central: coletando...
+[19:54:42] Indicadores do Banco Central: 1 registros
+[19:54:42] Informe mensal dos fundos imobiliarios (CVM): coletando...
+[19:54:43] Informe mensal dos fundos imobiliarios (CVM): 24040 registros
+[19:54:43] Tesouro Direto (Tesouro Transparente): coletando...
+[19:54:44] Tesouro Direto (Tesouro Transparente): 16157 registros
+[19:54:44] Acoes ligadas a empresas: 404 pelo codigo, 28 pelas 4 letras iniciais
 
 Radar de Investimentos 0.1.0 - situacao do banco
 Arquivo: /home/runner/work/RadarInvest/RadarInvest/dados/radar.db
@@ -61,16 +61,16 @@ Banco Central (valor mais recente)
   selic_meta        13.7500   em 2026-10-07
 
 Ultima coleta de cada fonte
-  b3          2026-10-07T19:45:42  ok      985239 registros
-  cripto      2026-10-07T19:47:56  ok      30 registros
-  cvm         2026-10-07T19:46:49  ok      2157950 registros
-  dividendos  2026-10-07T19:47:56  ok      4417 registros
-  fii         2026-10-07T19:50:02  ok      24040 registros
-  macro       2026-10-07T19:50:01  ok      6152 registros
-  tesouro     2026-10-07T19:50:19  ok      16157 registros
+  b3          2026-10-07T19:53:54  ok      0 registros
+  cripto      2026-10-07T19:54:41  ok      30 registros
+  cvm         2026-10-07T19:54:41  ok      2157950 registros
+  dividendos  2026-10-07T19:54:41  ok      0 registros
+  fii         2026-10-07T19:54:43  ok      24040 registros
+  macro       2026-10-07T19:54:42  ok      1 registros
+  tesouro     2026-10-07T19:54:44  ok      16157 registros
 
 181 acoes, 127 FIIs e 30 criptos gravados em /home/runner/work/RadarInvest/RadarInvest/docs/dados.json
-Backtest: 11 periodos; acumulado {'top': 0.199, 'longo': None, 'universo': 0.3394, 'cdi': 0.7458}
+Backtest: 11 periodos; acumulado {'top': 0.199, 'universo': 0.3394, 'cdi': 0.7458}
   ALLD3   nota  96.0  P/L 1.3242  P/VP 0.3054  DY 0.5877  {'barsi': 100, 'bazin': 100, 'qualidade': 88, 'graham': 100, 'greenblatt': 99}
   POMO4   nota  94.2  P/L 4.8594  P/VP 1.376  DY 0.1966  {'barsi': 87, 'bazin': 96, 'qualidade': 100, 'graham': 95, 'greenblatt': 90}
   VULC3   nota  94.0  P/L 5.0369  P/VP 1.766  DY 0.2158  {'barsi': 100, 'bazin': 100, 'qualidade': 100, 'graham': 87, 'greenblatt': 79}
