@@ -1,4 +1,4 @@
-Coleta iniciada em 2026-10-07 16:26 UTC
+Coleta iniciada em 2026-10-07 18:51 UTC
 
 Diagnostico das fontes de dados
 
@@ -7,20 +7,20 @@ Diagnostico das fontes de dados
   OK     CVM (demonstrativos)   HTTP 200, application/zip
   OK     Yahoo (dividendos)     HTTP 200, application/json;charset=utf-8
   OK     CoinGecko (cripto)     HTTP 200, application/json; charset=utf-8
-  OK     Banco Central          HTTP 200, text/html; charset=utf-8
+  OK     Banco Central          HTTP 200, application/json; charset=utf-8
 
 Todas as fontes responderam.
-[16:26:35] Cotacoes da B3: coletando...
-[16:28:17] Cotacoes da B3: 116927 registros
-[16:28:17] Cadastro e demonstrativos da CVM: coletando...
-[16:29:02] Cadastro e demonstrativos da CVM: 1759620 registros
-[16:29:02] Dividendos (Yahoo, nao oficial): coletando...
-[16:29:02] Dividendos (Yahoo, nao oficial): 0 registros
-[16:29:02] Criptomoedas (CoinGecko): coletando...
-[16:37:06] Criptomoedas (CoinGecko): 364 registros
-[16:37:06] Indicadores do Banco Central: coletando...
-[16:37:08] Indicadores do Banco Central: 4 registros
-[16:37:08] Acoes ligadas a empresas: 376 pelo codigo, 20 pelas 4 letras iniciais
+[18:51:22] Cotacoes da B3: coletando...
+[18:51:22] Cotacoes da B3: 0 registros
+[18:51:22] Cadastro e demonstrativos da CVM: coletando...
+[18:52:39] Cadastro e demonstrativos da CVM: 1759620 registros
+[18:52:39] Dividendos (Yahoo, nao oficial): coletando...
+[18:52:39] Dividendos (Yahoo, nao oficial): 0 registros
+[18:52:39] Criptomoedas (CoinGecko): coletando...
+[18:52:39] Criptomoedas (CoinGecko): 30 registros
+[18:52:39] Indicadores do Banco Central: coletando...
+[18:52:40] Indicadores do Banco Central: 1 registros
+[18:52:40] Acoes ligadas a empresas: 376 pelo codigo, 20 pelas 4 letras iniciais
 
 Radar de Investimentos 0.1.0 - situacao do banco
 Arquivo: /home/runner/work/RadarInvest/RadarInvest/dados/radar.db
@@ -54,11 +54,11 @@ Banco Central (valor mais recente)
   selic_meta        13.7500   em 2026-10-07
 
 Ultima coleta de cada fonte
-  b3          2026-10-07T16:28:17  ok      116927 registros
-  cripto      2026-10-07T16:37:06  ok      364 registros
-  cvm         2026-10-07T16:29:02  ok      1759620 registros
-  dividendos  2026-10-07T16:29:02  ok      0 registros
-  macro       2026-10-07T16:37:08  ok      4 registros
+  b3          2026-10-07T18:51:22  ok      0 registros
+  cripto      2026-10-07T18:52:39  ok      30 registros
+  cvm         2026-10-07T18:52:39  ok      1759620 registros
+  dividendos  2026-10-07T18:52:39  ok      0 registros
+  macro       2026-10-07T18:52:40  ok      1 registros
 
 181 acoes e 30 criptos gravadas em /home/runner/work/RadarInvest/RadarInvest/docs/dados.json
   ALLD3   nota  96.0  P/L 1.3242  P/VP 0.3054  DY 0.5877  {'barsi': 100, 'bazin': 100, 'qualidade': 88, 'graham': 100, 'greenblatt': 99}
