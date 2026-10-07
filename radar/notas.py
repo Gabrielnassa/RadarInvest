@@ -637,7 +637,9 @@ def calcular_cripto(conn, cfg: dict | None = None) -> list[dict]:
 def nota_fii(dy12, p_vp, meses_pagos, volume) -> tuple[float | None, dict]:
     """35% dividendos (6% ao ano vale 0, 12% vale 100), 25% preco sobre o patrimonio (1,0 vale 50,
     0,8 vale 100, 1,2 vale 0), 25% regularidade (meses com pagamento nos ultimos 12) e 15% liquidez
-    (R$ 2 milhoes por dia vale 100). Parte sem dado fica fora da media."""
+    (R$ 2 milhoes por dia vale 100). Parte sem dado fica fora da media; sem dividendos ou sem valor
+    patrimonial nao ha nota. Dividendos acima de 18% ou preco abaixo de 0,6 do patrimonio costumam indicar
+    problema nos imoveis ou creditos: a nota fica limitada a 60."""
     partes = {
         "dividendos": None if dy12 is None else limitar((dy12 - 0.06) / 0.06 * 100),
         "desconto": None if not p_vp or p_vp <= 0 else limitar(50 + (1 - p_vp) * 250),
@@ -648,7 +650,10 @@ def nota_fii(dy12, p_vp, meses_pagos, volume) -> tuple[float | None, dict]:
     com = {k: v for k, v in partes.items() if v is not None}
     if "dividendos" not in com or "desconto" not in com or len(com) < 3:
         return None, partes
-    return sum(v * pesos[k] for k, v in com.items()) / sum(pesos[k] for k in com), partes
+    nota = sum(v * pesos[k] for k, v in com.items()) / sum(pesos[k] for k in com)
+    if dy12 > 0.18 or p_vp < 0.6:
+        nota = min(nota, 60.0)
+    return nota, partes
 
 
 def calcular_fiis(conn, cfg: dict | None = None) -> list[dict]:

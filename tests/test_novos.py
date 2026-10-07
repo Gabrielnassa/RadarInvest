@@ -163,6 +163,7 @@ class TestFundosETesouro(unittest.TestCase):
         self.assertEqual(notas.nota_fii(0.13, 0.7, 12, 5e6)[1]["desconto"], 100.0)
         self.assertIsNone(notas.nota_fii(None, 1.0, 12, 1e6)[0])
         self.assertIsNone(notas.nota_fii(0.10, None, 12, 1e6)[0])     # sem valor patrimonial, sem nota
+        self.assertEqual(notas.nota_fii(0.20, 0.45, 12, 5e6)[0], 60.0)   # sinais de risco limitam a nota
 
     def _fundo(self, conn):
         conn.execute("INSERT INTO ativos (ticker, tipo, nome_pregao, isin) VALUES ('FUND11', 'fii', 'FII FUNDO', 'BRFUNDCTF000')")
