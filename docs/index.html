@@ -199,6 +199,29 @@ tbody tr[aria-selected="true"] { background: var(--surface-2); }
 .carteira-campos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .carteira-campos input { width: 100%; }
 
+/* ---- recursos novos ---- */
+.busca-lat { display: flex; flex-direction: column; gap: 6px; }
+.busca-lat input { font: inherit; font-size: 14px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-pill); min-height: 36px; padding: 0 12px; width: 100%; }
+.tabs .rotulo-lat { margin: 14px 0 4px; }
+.tabs .rotulo-lat:first-child { margin-top: 0; }
+.campo-check { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; font-size: 14px; color: var(--ink-2); }
+.campo-check input { width: 16px; height: 16px; accent-color: var(--ink); }
+.estrela { font: inherit; background: none; border: 0; padding: 4px; margin: -4px; cursor: pointer; color: var(--line-strong); line-height: 0; border-radius: 6px; }
+.estrela[aria-pressed="true"] { color: var(--ink); }
+.estrela:hover { color: var(--muted); }
+.det-acoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.cartao-graf { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.leg { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--ink-2); }
+.leg span { display: inline-flex; align-items: center; gap: 6px; }
+.leg i { display: inline-block; width: 14px; height: 0; border-top: 2px solid; }
+.leg i.caixa { height: 10px; border: 0; border-radius: 2px; }
+.positivo { color: var(--ink); }
+.negativo { color: var(--critical); }
+.mais td { background: var(--side); white-space: normal; color: var(--ink-2); font-size: 13px; }
+.sim-campos { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.vazio-msg { padding: 20px; color: var(--muted); }
+.cmp th, .cmp td { white-space: normal; }
+.cmp td:first-child { color: var(--muted); }
 footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 20px; }
 
 @media (max-width: 1100px) {
@@ -238,19 +261,29 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
   <aside class="lateral">
     <div class="marca">
       <svg width="28" height="28" viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="17" cy="17" r="15"/><circle cx="17" cy="17" r="9"/><circle cx="17" cy="17" r="3" fill="currentColor"/><path d="M17 17 L29 8" stroke-linecap="round"/></svg>
-      <div><h1>Radar de Investimentos</h1><small>Ações da B3 e cripto</small></div>
+      <div><h1>Radar de Investimentos</h1><small>Ações, FIIs, renda fixa e cripto</small></div>
     </div>
-    <div>
-      <p class="rotulo-lat">Painel</p>
-      <nav class="tabs" id="abas" role="tablist" aria-label="Seções do painel" hidden>
+    <form class="busca-lat" id="busca-rapida" role="search" autocomplete="off">
+      <label for="busca-ativo" class="rotulo-lat">Buscar ativo</label>
+      <input id="busca-ativo" type="search" list="lista-ativos" placeholder="Código, ex.: PETR4  ( / )">
+      <datalist id="lista-ativos"></datalist>
+    </form>
+    <nav class="tabs" id="abas" role="tablist" aria-label="Seções do painel" hidden>
+      <p class="rotulo-lat" role="presentation">Mercado</p>
       <button role="tab" id="aba-destaques" data-aba="destaques" aria-selected="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg>Destaques</button>
       <button role="tab" id="aba-longo" data-aba="longo" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>Longo prazo</button>
       <button role="tab" id="aba-acoes" data-aba="acoes" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Ações</button>
+      <button role="tab" id="aba-fiis" data-aba="fiis" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg>FIIs</button>
       <button role="tab" id="aba-cripto" data-aba="cripto" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 8h4a2 2 0 010 4h-4m0 0h4.5a2 2 0 010 4h-4.5M9.5 8v8M11 6v2m0 8v2"/></svg>Cripto</button>
+      <button role="tab" id="aba-renda" data-aba="renda" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 9v.01M18 15v.01"/></svg>Renda fixa</button>
+      <p class="rotulo-lat" role="presentation">Ferramentas</p>
+      <button role="tab" id="aba-comparar" data-aba="comparar" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v18M16 3v18"/><path d="M3 8h5M16 16h5"/></svg>Comparar</button>
       <button role="tab" id="aba-carteira" data-aba="carteira" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 012-2h13v4"/><path d="M3 7v11a2 2 0 002 2h15V9H5a2 2 0 01-2-2z"/><circle cx="16" cy="14.5" r="1"/></svg>Carteira</button>
+      <button role="tab" id="aba-simulador" data-aba="simulador" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M8 15h2M12 15h2M16 11v6"/></svg>Simulador</button>
+      <p class="rotulo-lat" role="presentation">Sobre os dados</p>
+      <button role="tab" id="aba-desempenho" data-aba="desempenho" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 109 9h-9z"/><path d="M15 3.5A9 9 0 0120.5 9H15z"/></svg>Desempenho</button>
       <button role="tab" id="aba-coleta" data-aba="coleta" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>Coleta</button>
-      </nav>
-    </div>
+    </nav>
     <div class="fontes" id="fontes" aria-label="Situação das fontes de dados"></div>
   </aside>
   <div class="principal">
@@ -265,7 +298,7 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
 
   <div class="aviso" role="note">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
-    <p><strong>Como ler.</strong> As notas saem de regras fixas aplicadas a dados públicos. Elas mostram se o ativo passa nos critérios de cada método, não se o preço vai subir. As regras ainda não foram testadas contra o passado. Não é recomendação de investimento.</p>
+    <p><strong>Como ler.</strong> As notas saem de regras fixas aplicadas a dados públicos. Elas mostram se o ativo passa nos critérios de cada método, não se o preço vai subir. O teste das regras no passado está na aba Desempenho. Não é recomendação de investimento.</p>
   </div>
 
   <div class="painel vazio" id="vazio" hidden></div>
@@ -337,7 +370,7 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
               <tr><td class="txt">Lucro em todos os trimestres dos últimos 5 anos</td><td class="d num">10</td><td class="txt">Mostra resultado estável, sem sustos no meio do ano.</td></tr>
               <tr><td class="txt">Lucro maior que o de 5 anos atrás</td><td class="d num">15</td><td class="txt">No longo prazo o preço acompanha o lucro.</td></tr>
               <tr><td class="txt">Retorno sobre o patrimônio de 15% ou mais</td><td class="d num">15</td><td class="txt">Cada real reinvestido rende bem, o que faz o patrimônio crescer sozinho.</td></tr>
-              <tr><td class="txt">Dívida líquida de até 3 vezes o lucro operacional</td><td class="d num">10</td><td class="txt">Dívida baixa evita quebra em crise e juro alto. Não se aplica a bancos e seguradoras.</td></tr>
+              <tr><td class="txt">Dívida líquida de até 3 vezes o Ebitda</td><td class="d num">10</td><td class="txt">Dívida baixa evita quebra em crise e juro alto. Não se aplica a bancos e seguradoras.</td></tr>
               <tr><td class="txt">Receita cresceu 5% ao ano ou mais em 5 anos</td><td class="d num">5</td><td class="txt">Crescimento acima da inflação. Não se aplica a bancos e seguradoras.</td></tr>
               <tr><td class="txt">Pagou dividendos em todos os últimos 5 anos</td><td class="d num">15</td><td class="txt">Dividendo reinvestido é o que mais pesa no retorno de quem fica muitos anos.</td></tr>
               <tr><td class="txt">Preço sobre o lucro entre 0 e 15</td><td class="d num">10</td><td class="txt">Mesmo empresa boa rende pouco se for comprada cara.</td></tr>
@@ -368,6 +401,8 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
           <option value="qualidade">Qualidade</option><option value="graham">Graham</option><option value="greenblatt">Greenblatt</option>
           <option value="margemTeto">Margem sobre o preço-teto</option><option value="dy">Dividendos sobre o preço</option></select></label>
         <label class="campo"><span>Nota mínima: <b class="num" id="f-min-val">0</b></span><input type="range" id="f-min" min="0" max="90" step="5" value="0"></label>
+        <label class="campo-check"><input type="checkbox" id="f-fav"> Só favoritos</label>
+        <button type="button" class="btn" id="baixar-acoes">Baixar planilha</button>
         <span class="conta" id="conta"></span>
       </div>
       <div class="grade">
@@ -400,8 +435,144 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
       </div>
     </section>
 
+    <section class="secao" id="sec-fiis" role="tabpanel" aria-labelledby="aba-fiis" hidden>
+      <p class="texto">Fundos imobiliários com mais de R$ 300 mil negociados por dia. A nota soma dividendos dos últimos 12 meses (35%), preço sobre o valor patrimonial da cota (25%), regularidade dos pagamentos (25%) e liquidez (15%). O valor patrimonial e o segmento vêm do informe mensal que o fundo entrega à CVM.</p>
+      <div class="filtros">
+        <label class="campo">Buscar<input type="search" id="ff-busca" placeholder="Código ou nome"></label>
+        <label class="campo">Segmento<select id="ff-seg"><option value="">Todos</option></select></label>
+        <label class="campo">Ordenar por<select id="ff-ordem"><option value="nota">Nota</option><option value="dy">Dividendos sobre o preço</option><option value="pvp">Menor preço sobre o patrimônio</option><option value="vol">Liquidez</option></select></label>
+        <button type="button" class="btn" id="baixar-fiis">Baixar planilha</button>
+        <span class="conta" id="ff-conta"></span>
+      </div>
+      <div class="grade">
+        <div class="painel rolagem">
+          <table>
+            <thead><tr><th>#</th><th>Fundo</th><th>Nota</th><th class="d so-largo">Preço</th><th class="d">Dividendos 12m</th><th class="d so-largo">P/VP</th><th class="d so-largo">Meses pagos</th><th>Alertas</th></tr></thead>
+            <tbody id="corpo-fiis"></tbody>
+          </table>
+        </div>
+        <aside class="painel detalhe" id="fii-detalhe" aria-live="polite"></aside>
+      </div>
+    </section>
+
+    <section class="secao" id="sec-renda" role="tabpanel" aria-labelledby="aba-renda" hidden>
+      <div class="macro" id="rf-resumo"></div>
+      <div class="bloco">
+        <h2>Tesouro Direto hoje</h2>
+        <p class="texto" id="rf-data"></p>
+        <div class="painel rolagem">
+          <table>
+            <thead><tr><th>Título</th><th>Vencimento</th><th class="d">Taxa ao ano</th><th class="d so-largo">Há um ano</th><th class="d so-largo">Preço para comprar</th><th>Leitura</th></tr></thead>
+            <tbody id="corpo-tesouro"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="bloco">
+        <h3>Como ler cada tipo</h3>
+        <div class="painel rolagem">
+          <table>
+            <tbody>
+              <tr><td><b>Tesouro Selic</b></td><td class="txt">Rende a taxa Selic mais o número da coluna. Quase não oscila: serve para reserva de emergência.</td></tr>
+              <tr><td><b>Tesouro IPCA+</b></td><td class="txt">Paga a inflação mais a taxa da coluna, que é o ganho real. Levado até o vencimento, garante esse ganho acima da inflação. Vendido antes, o preço pode subir ou cair.</td></tr>
+              <tr><td><b>Tesouro Prefixado</b></td><td class="txt">A taxa total é travada na compra. Ganha da inflação se ela ficar abaixo da taxa.</td></tr>
+              <tr><td><b>Com juros semestrais</b></td><td class="txt">Mesma taxa, mas paga parte dos juros a cada seis meses, em vez de tudo no vencimento.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="texto">Taxas brutas, antes do imposto de renda (de 22,5% a 15% conforme o prazo) e da taxa de custódia da B3. Fonte: Tesouro Transparente.</p>
+      </div>
+    </section>
+
+    <section class="secao" id="sec-comparar" role="tabpanel" aria-labelledby="aba-comparar" hidden>
+      <p class="texto">Escolha até três ações para ver os números lado a lado. Também dá para adicionar pelo botão Comparar no detalhe de cada ação.</p>
+      <div class="filtros">
+        <label class="campo">Ação 1<input type="search" list="lista-acoes" id="cmp-0" placeholder="Código"></label>
+        <label class="campo">Ação 2<input type="search" list="lista-acoes" id="cmp-1" placeholder="Código"></label>
+        <label class="campo">Ação 3<input type="search" list="lista-acoes" id="cmp-2" placeholder="Código"></label>
+        <button type="button" class="btn" id="cmp-limpar">Limpar</button>
+        <datalist id="lista-acoes"></datalist>
+      </div>
+      <div class="painel rolagem" id="cmp-tabela"></div>
+      <div class="painel cartao-graf" id="cmp-graf-painel" hidden>
+        <h3>Preço em 5 anos, partindo de 100</h3>
+        <div class="graf" id="cmp-graf"></div>
+      </div>
+    </section>
+
+    <section class="secao" id="sec-simulador" role="tabpanel" aria-labelledby="aba-simulador" hidden>
+      <p class="texto">Quanto um investimento mensal em ações pode virar, reinvestindo os dividendos. Mostra três cenários de valorização do preço e, para comparar, a renda fixa rendendo o CDI de hoje. É uma conta, não uma previsão: não inclui impostos, custos nem anos de queda.</p>
+      <div class="painel arca">
+        <div class="carteira-campos sim-campos">
+          <label class="campo">Valor inicial (R$)<input type="number" id="sim-inicial" min="0" step="100" value="1000"></label>
+          <label class="campo">Aporte mensal (R$)<input type="number" id="sim-aporte" min="0" step="50" value="500"></label>
+          <label class="campo">Prazo (anos)<input type="number" id="sim-anos" min="1" max="50" step="1" value="20"></label>
+          <label class="campo">Dividendos ao ano (%)<input type="number" id="sim-dy" min="0" max="30" step="0.1"></label>
+          <label class="campo">Valorização: pessimista (%)<input type="number" id="sim-g0" step="0.5" value="0"></label>
+          <label class="campo">Valorização: base (%)<input type="number" id="sim-g1" step="0.5" value="4"></label>
+          <label class="campo">Valorização: otimista (%)<input type="number" id="sim-g2" step="0.5" value="8"></label>
+          <label class="campo">CDI ao ano (%)<input type="number" id="sim-cdi" min="0" step="0.1"></label>
+        </div>
+        <p class="texto" id="sim-dica"></p>
+      </div>
+      <div class="macro" id="sim-resumo"></div>
+      <div class="painel cartao-graf">
+        <h3>Patrimônio ao longo do tempo</h3>
+        <div class="graf" id="sim-graf"></div>
+      </div>
+    </section>
+
+    <section class="secao" id="sec-desempenho" role="tabpanel" aria-labelledby="aba-desempenho" hidden>
+      <div class="bloco">
+        <h2>As notas teriam funcionado?</h2>
+        <p class="texto">Em maio e novembro de cada ano, as notas foram recalculadas como se fosse aquele dia, só com cotações, dividendos e balanços que já existiam (um balanço só conta 90 dias depois do fim do trimestre). Depois foi medido o retorno dos 12 meses seguintes, somando os dividendos, de três grupos: as 10 maiores notas finais, as 10 maiores notas de longo prazo e todas as ações do ranking. O CDI entra como referência de renda fixa.</p>
+      </div>
+      <div class="macro" id="bt-resumo"></div>
+      <div class="painel cartao-graf" id="bt-graf-painel">
+        <h3>Retorno em cada período de 12 meses</h3>
+        <div class="graf" id="bt-graf"></div>
+      </div>
+      <div class="bloco">
+        <h3>Períodos</h3>
+        <div class="painel rolagem">
+          <table>
+            <thead><tr><th>Início</th><th>Fim</th><th class="d">10 maiores notas</th><th class="d">10 de longo prazo</th><th class="d">Todas as ações</th><th class="d">CDI</th><th class="d so-largo">Ações</th><th></th></tr></thead>
+            <tbody id="corpo-bt"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="aviso">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+        <p><strong>Limites do teste.</strong> O período é curto (os dados começam poucos anos atrás) e só entram empresas que ainda estão no cadastro da CVM: as que fecharam o capital ou quebraram ficam de fora, o que deixa o resultado melhor do que seria. Não há custos de corretagem nem impostos. Resultado passado não garante resultado futuro.</p>
+      </div>
+    </section>
+
     <section class="secao" id="sec-carteira" role="tabpanel" aria-labelledby="aba-carteira" hidden>
-      <p class="texto">Informe quanto você tem em cada classe para comparar com a divisão ARCA, de 25% em cada uma. Os valores ficam guardados só neste navegador.</p>
+      <div class="bloco">
+        <h2>Minhas posições</h2>
+        <p class="texto">Adicione as ações e os fundos imobiliários que você tem. O painel calcula o resultado com o preço de hoje, os dividendos esperados e avisa quando a nota de algum ativo cai. Tudo fica guardado só neste navegador.</p>
+      </div>
+      <form class="painel arca" id="pos-form" autocomplete="off">
+        <div class="carteira-campos">
+          <label class="campo">Ativo<input type="search" list="lista-ativos" id="pos-ativo" placeholder="Código, ex.: BBSE3" required></label>
+          <label class="campo">Quantidade<input type="number" id="pos-qtd" min="0" step="1" required></label>
+          <label class="campo">Preço médio (R$)<input type="number" id="pos-pm" min="0" step="0.01" required></label>
+          <div class="campo"><span>&nbsp;</span><button type="submit" class="btn cheio">Adicionar</button></div>
+        </div>
+        <p class="texto" id="pos-msg" role="status"></p>
+      </form>
+      <div class="macro" id="pos-resumo" hidden></div>
+      <div class="aviso" id="pos-alertas" hidden></div>
+      <div class="painel rolagem" id="pos-tabela" hidden>
+        <table>
+          <thead><tr><th>Ativo</th><th class="d">Quantidade</th><th class="d so-largo">Preço médio</th><th class="d">Preço hoje</th><th class="d">Valor</th><th class="d">Resultado</th><th class="d so-largo">Dividendos/ano</th><th class="d">Nota</th><th></th></tr></thead>
+          <tbody id="corpo-pos"></tbody>
+        </table>
+      </div>
+      <div class="bloco">
+        <h2>Divisão em 4 classes</h2>
+        <p class="texto">Informe quanto você tem em cada classe para comparar com a divisão ARCA, de 25% em cada uma. O valor de ações e FIIs pode vir das posições acima.</p>
+        <div><button type="button" class="btn" id="arca-preencher">Usar o valor das minhas posições</button></div>
+      </div>
       <div class="painel arca">
         <div class="carteira-campos" id="carteira-campos"></div>
       </div>
@@ -446,7 +617,7 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
   // ---------- formatacao ----------
   function brl(v) {
     if (v == null) return "sem dado";
-    var casas = Math.abs(v) < 0.1 ? 4 : 2;
+    var casas = v !== 0 && Math.abs(v) < 0.1 ? 4 : 2;
     return "R$ " + v.toLocaleString("pt-BR", { minimumFractionDigits: casas, maximumFractionDigits: casas });
   }
   function pct(v, casas) {
@@ -482,14 +653,14 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
   }
 
   // ---------- acoes ----------
-  var estado = { busca: "", setor: "", ordem: "final", min: 0, sel: null };
+  var estado = { busca: "", setor: "", ordem: "final", min: 0, sel: null, fav: false };
   var corpo = document.getElementById("corpo-acoes");
 
   function filtradas() {
     var b = estado.busca.trim().toLowerCase();
     var lista = ACOES.filter(function (a) {
       return (!b || a.t.toLowerCase().indexOf(b) >= 0 || (a.n || "").toLowerCase().indexOf(b) >= 0 || (a.razao || "").toLowerCase().indexOf(b) >= 0) &&
-        (!estado.setor || a.s === estado.setor) && (a.final || 0) >= estado.min;
+        (!estado.setor || a.s === estado.setor) && (a.final || 0) >= estado.min && (!estado.fav || ehFav(a.t));
     });
     var k = estado.ordem;
     function val(a) { var x = (k === "final" || k === "margemTeto" || k === "dy") ? a[k] : a.m[k]; return x == null ? -Infinity : x; }
@@ -506,7 +677,7 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
     corpo.innerHTML = lista.map(function (a, i) {
       return '<tr class="clicavel" tabindex="0" role="button" data-t="' + a.t + '" aria-selected="' + (a.t === estado.sel) + '">' +
         '<td class="pos num">' + (i + 1) + "</td>" +
-        '<td class="c-ativo"><span class="ativo"><b>' + a.t + "</b><span>" + esc(a.n) + " · " + esc(a.s) + "</span></span></td>" +
+        '<td class="c-ativo"><span class="ativo"><b>' + botaoFav(a.t) + " " + a.t + "</b><span>" + esc(a.n) + " · " + esc(a.s) + "</span></span></td>" +
         '<td><span class="nota"><b class="num">' + inteiro(a.final) + "</b>" + barra(a.final) + "</span></td>" +
         '<td class="d num so-largo">' + brl(a.p) + "</td>" +
         celMetodo(a.m.barsi) + celMetodo(a.m.bazin) + celMetodo(a.m.qualidade) + celMetodo(a.m.graham) + celMetodo(a.m.greenblatt) +
@@ -563,6 +734,8 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
       '<div class="det-topo"><div><div class="tk">' + a.t + '</div><div class="sub">' + esc(a.razao || a.n) + '</div><div class="sub">' + esc(a.s) + '</div><div class="sub num">' + brl(a.p) +
         (a.var12 == null ? "" : " · " + pct(a.var12) + " em 12 meses") + "</div></div>" +
       '<div class="notao"><b class="num">' + inteiro(a.final) + "</b><span>nota final de 0 a 100</span></div></div>" +
+      '<div class="det-acoes">' + '<button type="button" class="btn" data-fav="' + a.t + '" aria-pressed="' + ehFav(a.t) + '">' + (ehFav(a.t) ? "Nos favoritos" : "Favoritar") + "</button>" +
+        '<button type="button" class="btn" data-cmp="' + a.t + '">Comparar</button></div>' +
       '<div class="bloco"><h3>Notas por método</h3>' + METODOS.map(function (p) {
         var v = a.m[p[0]];
         return '<div class="metodo"><span>' + p[1] + "</span>" + barra(v) + '<b class="num">' + (v == null ? '<span class="sem">–</span>' : v) + "</b></div>";
@@ -575,11 +748,18 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
         par("Preço sobre o lucro", vezes(a.pl), "vezes o lucro de 12 meses") +
         par("Preço sobre o patrimônio", vezes(a.pvp), "vezes o patrimônio") +
         par("Retorno sobre o patrimônio", a.roe == null ? "sem dado" : pct(a.roe, 1).replace("+", ""), "lucro de 12 meses") +
-        par("Dívida líquida", a.divEbit == null ? "sem dado" : vezes(a.divEbit), a.divEbit == null ? "" : "vezes o lucro operacional") +
+        par("Dívida líquida", a.divEbit == null ? "sem dado" : vezes(a.divEbit), a.divEbit == null ? "" : "vezes o " + (a.baseDivida || "lucro operacional")) +
+        par("Retorno em 12 meses", a.tr12 == null ? "sem dado" : pct(a.tr12, 1), "preço mais dividendos recebidos") +
+        par("Dividendos conferidos", a.confDiv == null ? "sem dado" : (a.confDiv >= 0.67 && a.confDiv <= 1.5 ? "batem" : "diferem"),
+          a.confDiv == null ? "com o caixa pago informado à CVM" : "Yahoo e CVM: razão de " + vezes(a.confDiv)) +
         par("Valor de mercado", a.valorMercado == null ? "sem dado" : "R$ " + (a.valorMercado / 1e9).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + " bi", "") +
         par("Confiança", a.conf[0] + " de " + a.conf[1], "dados disponíveis") +
       "</div>" +
       '<div class="bloco"><h3>Preço em 12 meses</h3><div class="graf" id="graf"></div></div>' +
+      ((a.precos5 || []).length > 13 ? '<div class="bloco"><h3>Preço em 5 anos</h3><div class="graf" id="graf5"></div></div>' : "") +
+      (a.anual ? '<div class="bloco"><h3>Lucro por ano</h3><div class="graf" id="graf-lucro"></div></div>' +
+        '<div class="bloco"><h3>Dividendos por ação por ano</h3><div class="graf" id="graf-div"></div></div>' : "") +
+      ((a.hist || []).length > 1 ? '<div class="bloco"><h3>Como a nota mudou</h3><div class="graf" id="graf-hist"></div></div>' : "") +
       '<div class="bloco"><h3>Checklist de qualidade</h3><ul class="check">' + (a.check || []).map(function (c) {
         var r = c[1] === true ? ["sim", "ok"] : c[1] === false ? ["não", "nao"] : ["sem dado", "nd"];
         return '<li><span class="ck ' + r[1] + '">' + r[0] + "</span>" + esc(c[0]) + "</li>";
@@ -593,7 +773,22 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
       '<div class="rodape-det">Cotação de ' + dataBR(a.data) + " · balanço de " + dataBR(a.balancoEm) +
         (a.lucroAte ? " · lucro até " + dataBR(a.lucroAte) + (a.lucroBase === "ultimo ano" ? " (ano fechado)" : " (12 meses)") : "") + "</div>";
     grafico(document.getElementById("graf"), a.serie || [], a.data);
+    var g5 = document.getElementById("graf5");
+    if (g5) linhas(g5, a.precos5.map(function (x) { return mesBR(x[0]); }), [{ nome: "Preço", v: a.precos5.map(function (x) { return x[1]; }) }], function (v) { return numBR(v); });
+    if (a.anual) {
+      colunas(document.getElementById("graf-lucro"), a.anual.anos, [{ nome: "Lucro", v: a.anual.lucro }], function (v) { return grande(v).replace("R$ ", ""); });
+      colunas(document.getElementById("graf-div"), a.anual.anos, [{ nome: "Dividendos por ação", v: a.anual.dpa }], function (v) { return numBR(v); });
+    }
+    var gh = document.getElementById("graf-hist");
+    if (gh) linhas(gh, a.hist.map(function (h) { return mesBR(h[0].slice(0, 7)); }),
+      [{ nome: "Nota final", v: a.hist.map(function (h) { return h[1]; }) }, { nome: "Longo prazo", v: a.hist.map(function (h) { return h[2]; }) }],
+      function (v) { return Math.round(v); });
   }
+  document.getElementById("detalhe").addEventListener("click", function (e) {
+    var f = e.target.closest("[data-fav]"), c = e.target.closest("[data-cmp]");
+    if (f) { alternarFav(f.dataset.fav); desenharAcoes(); }
+    else if (c) { adicionarComparar(c.dataset.cmp); desenharComparar(); abrir("comparar"); try { window.scrollTo(0, 0); } catch (e2) { /* sem rolagem */ } }
+  });
 
   // grafico de linha com eixo, linha de referencia sob o ponteiro e dica
   function grafico(alvo, v, dataFim) {
@@ -647,7 +842,21 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
       document.getElementById("detalhe").scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
     }
   }
-  corpo.addEventListener("click", function (e) { var tr = e.target.closest("tr[data-t]"); if (tr) selecionar(tr.dataset.t, true); });
+  corpo.addEventListener("click", function (e) {
+    var f = e.target.closest("[data-fav]");
+    if (f) { alternarFav(f.dataset.fav); desenharAcoes(); return; }
+    var tr = e.target.closest("tr[data-t]"); if (tr) selecionar(tr.dataset.t, true);
+  });
+  document.getElementById("f-fav").addEventListener("change", function (e) { estado.fav = e.target.checked; desenharAcoes(); });
+  document.getElementById("baixar-acoes").addEventListener("click", function () {
+    baixarCSV("acoes-radar.csv", ["Código", "Empresa", "Setor", "Preço", "Nota final", "Barsi", "Bazin", "Qualidade", "Graham", "Greenblatt", "Longo prazo",
+      "Dividendos 12m (%)", "Dividendo típico (%)", "P/L", "P/VP", "ROE (%)", "Dívida líquida / geração", "Retorno 12m com dividendos (%)", "Alertas"],
+      filtradas().map(function (a) {
+        return [a.t, a.razao || a.n, a.s, numBR(a.p), numBR(a.final, 0), a.m.barsi, a.m.bazin, a.m.qualidade, a.m.graham, a.m.greenblatt, a.lp,
+          numBR(a.dy == null ? null : a.dy * 100, 1), numBR(a.dyTipico == null ? null : a.dyTipico * 100, 1), numBR(a.pl, 1), numBR(a.pvp, 1),
+          numBR(a.roe == null ? null : a.roe * 100, 1), numBR(a.divEbit, 1), numBR(a.tr12 == null ? null : a.tr12 * 100, 1), (a.al || []).join(" | ")];
+      }));
+  });
   corpo.addEventListener("keydown", function (e) {
     if (e.key !== "Enter" && e.key !== " ") return;
     var tr = e.target.closest("tr[data-t]"); if (tr) { e.preventDefault(); selecionar(tr.dataset.t, true); }
@@ -742,9 +951,9 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
       ["Retorno sobre o patrimônio de 15% ou mais",
         "Retorno sobre o patrimônio de " + semSinal(a.roe, 1) + " ao ano: cada R$ 100 do patrimônio gera " + (a.roe == null ? "" : brl(a.roe * 100)) + " de lucro.",
         "Retorno sobre o patrimônio de " + semSinal(a.roe, 1) + ", abaixo de 15%."],
-      ["Dívida líquida de até 3 vezes o lucro operacional",
-        a.divEbit == null ? "Tem mais dinheiro em caixa do que dívida." : "Dívida baixa: " + vezes(a.divEbit) + " vezes o lucro operacional de um ano.",
-        "Dívida alta: " + vezes(a.divEbit) + " vezes o lucro operacional de um ano."],
+      ["Dívida líquida de até 3 vezes o Ebitda",
+        a.divEbit == null ? "Tem mais dinheiro em caixa do que dívida." : "Dívida baixa: " + vezes(a.divEbit) + " vezes o " + (a.baseDivida || "lucro operacional") + " de um ano.",
+        "Dívida alta: " + vezes(a.divEbit) + " vezes o " + (a.baseDivida || "lucro operacional") + " de um ano."],
       ["Receita cresceu 5% ao ano ou mais em 5 anos", "Receita cresceu 5% ao ano ou mais nos últimos 5 anos.", "Receita cresceu menos de 5% ao ano nos últimos 5 anos."],
       ["Pagou dividendos em todos os últimos 5 anos",
         "Pagou dividendos em todos os últimos 5 anos" + (a.dyTipico ? ", em média " + semSinal(a.dyTipico, 1) + " do preço por ano." : "."),
@@ -843,7 +1052,7 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
       return '<div class="arca-linha"><div class="arca-nome"><b>' + c[1] + "</b><span>" + c[2] + "</span></div>" +
         '<div class="arca-faixa" title="' + c[1] + ": " + part.toFixed(0) + '% da carteira, meta de 25%"><div class="eixo"></div>' +
         '<div class="bar" style="width:' + (part / ESCALA * 100) + '%"></div><div class="meta" style="left:' + (25 / ESCALA * 100) + '%"></div>' +
-        '<div class="val num" style="' + (part > 80 ? "right:8px;color:#fff" : "left:" + (Math.max(part, 25) / ESCALA * 100) + "%") + '"><b>' + part.toFixed(0) + "%</b></div></div></div>";
+        '<div class="val num" style="' + (part > 80 ? "left:calc(" + (part / ESCALA * 100) + "% - 52px);color:var(--on-accent)" : "left:" + (Math.max(part, 25) / ESCALA * 100) + "%") + '"><b>' + part.toFixed(0) + "%</b></div></div></div>";
     }).join("");
     document.getElementById("corpo-arca").innerHTML = CLASSES.map(function (c) {
       var v = +carteira[c[0]] || 0, part = v / total, dif = part - 0.25, ajuste = total * 0.25 - v;
@@ -852,6 +1061,14 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
         (Math.abs(ajuste) < 1 ? "nenhum" : (ajuste > 0 ? "aportar " : "reduzir ") + brl(Math.abs(ajuste))) + "</td></tr>";
     }).join("");
   }
+  document.getElementById("arca-preencher").addEventListener("click", function () {
+    desenharPosicoes();
+    var t = POS._tot || { acoes: 0, fiis: 0 };
+    carteira.acoes = Math.round(t.acoes); carteira.imoveis = Math.round(t.fiis);
+    document.getElementById("cart-acoes").value = carteira.acoes || ""; document.getElementById("cart-imoveis").value = carteira.imoveis || "";
+    try { localStorage.setItem("radar-carteira", JSON.stringify(carteira)); } catch (e2) { /* sem armazenamento */ }
+    desenharCarteira();
+  });
   document.getElementById("carteira-campos").addEventListener("input", function (e) {
     var k = e.target.dataset.classe; if (!k) return;
     carteira[k] = Math.max(0, +e.target.value || 0);
@@ -859,9 +1076,395 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
     desenharCarteira();
   });
 
+  // ---------- apoio: armazenamento, planilha e graficos ----------
+  function ler(chave, padrao) {
+    try { var v = JSON.parse(localStorage.getItem(chave)); return v == null ? padrao : v; } catch (e) { return padrao; }
+  }
+  function gravar(chave, valor) { try { localStorage.setItem(chave, JSON.stringify(valor)); } catch (e) { /* sem armazenamento */ } }
+  function numBR(v, casas) { return v == null || isNaN(v) ? "" : (+v).toFixed(casas == null ? 2 : casas).replace(".", ","); }
+  function baixarCSV(nome, cabecalho, linhas) {
+    var q = function (x) { x = x == null ? "" : String(x); return /[;"\n]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x; };
+    var texto = "﻿" + [cabecalho].concat(linhas).map(function (l) { return l.map(q).join(";"); }).join("\r\n");
+    var url = URL.createObjectURL(new Blob([texto], { type: "text/csv;charset=utf-8" }));
+    var a = document.createElement("a");
+    a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+  function grande(v) {
+    if (v == null) return "sem dado";
+    var a = Math.abs(v), s = v < 0 ? "-" : "";
+    if (a >= 1e9) return s + "R$ " + (a / 1e9).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " bi";
+    if (a >= 1e6) return s + "R$ " + (a / 1e6).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " mi";
+    return s + "R$ " + Math.round(a).toLocaleString("pt-BR");
+  }
+  function mesBR(aaaamm) {
+    var M = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+    return M[+aaaamm.slice(5, 7) - 1] + "/" + aaaamm.slice(2, 4);
+  }
+  var TRACOS = [["var(--ink)", ""], ["var(--muted)", ""], ["var(--ink)", "5 4"], ["var(--muted)", "2 3"]];
+  var CAIXAS = ["var(--ink)", "#737373", "#b5b5b5", "#e0e0e0"];
+  function legenda(series, caixa) {
+    return '<div class="leg">' + series.map(function (s, i) {
+      return "<span><i" + (caixa ? ' class="caixa" style="background:' + CAIXAS[i] + '"' :
+        ' style="border-color:' + TRACOS[i][0] + (TRACOS[i][1] ? ";border-top-style:dashed" : "") + '"') + "></i>" + esc(s.nome) + "</span>";
+    }).join("") + "</div>";
+  }
+  // linhas: rotulos no eixo x e ate 4 series [{nome, v: [...]}]; fmt formata o eixo y
+  function linhas(alvo, rotulos, series, fmt) {
+    var todos = [];
+    series.forEach(function (s) { s.v.forEach(function (x) { if (x != null) todos.push(x); }); });
+    if (rotulos.length < 2 || !todos.length) { alvo.innerHTML = '<p class="sem">Sem histórico suficiente.</p>'; return; }
+    var W = Math.max(300, Math.round(alvo.clientWidth || 560)), H = Math.round(Math.min(260, Math.max(170, W * 0.38))), ml = 56, mr = 14, mt = 10, mb = 24;
+    var min = Math.min.apply(null, todos), max = Math.max.apply(null, todos), f = (max - min) * 0.08 || Math.abs(max) * 0.1 || 1;
+    min -= f; max += f;
+    var x = function (i) { return ml + i * (W - ml - mr) / (rotulos.length - 1); };
+    var y = function (v) { return mt + (max - v) / (max - min) * (H - mt - mb); };
+    var s = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="' + esc(series.map(function (z) { return z.nome; }).join(", ")) + '">';
+    [min + f, (min + max) / 2, max - f].forEach(function (t) {
+      s += '<line x1="' + ml + '" x2="' + (W - mr) + '" y1="' + y(t).toFixed(1) + '" y2="' + y(t).toFixed(1) + '" stroke="var(--line)"/>' +
+        '<text x="' + (ml - 6) + '" y="' + (y(t) + 3.5).toFixed(1) + '" text-anchor="end" font-size="10.5" fill="var(--muted)">' + esc(fmt(t)) + "</text>";
+    });
+    var passo = Math.max(1, Math.ceil(rotulos.length / 6));
+    rotulos.forEach(function (r, i) {
+      if (i % passo === 0 || i === rotulos.length - 1) s += '<text x="' + x(i).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="' + (i === 0 ? "start" : i === rotulos.length - 1 ? "end" : "middle") + '" font-size="10.5" fill="var(--muted)">' + esc(r) + "</text>";
+    });
+    series.forEach(function (z, k) {
+      var pts = [];
+      z.v.forEach(function (v, i) { if (v != null) pts.push(x(i).toFixed(1) + "," + y(v).toFixed(1)); });
+      s += '<polyline points="' + pts.join(" ") + '" fill="none" stroke="' + TRACOS[k][0] + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"' +
+        (TRACOS[k][1] ? ' stroke-dasharray="' + TRACOS[k][1] + '"' : "") + "/>";
+    });
+    alvo.innerHTML = s + "</svg>" + (series.length > 1 ? legenda(series) : "");
+  }
+  // colunas agrupadas: rotulos no eixo x e ate 4 series; valores negativos descem do zero
+  function colunas(alvo, rotulos, series, fmt) {
+    var todos = [0];
+    series.forEach(function (s) { s.v.forEach(function (x) { if (x != null) todos.push(x); }); });
+    if (todos.length < 2) { alvo.innerHTML = '<p class="sem">Sem dados.</p>'; return; }
+    var W = Math.max(300, Math.round(alvo.clientWidth || 560)), H = Math.round(Math.min(240, Math.max(160, W * 0.34))), ml = 56, mr = 8, mt = 10, mb = 24;
+    var min = Math.min.apply(null, todos), max = Math.max.apply(null, todos);
+    if (max === min) max = min + 1;
+    var y = function (v) { return mt + (max - v) / (max - min) * (H - mt - mb); };
+    var larg = (W - ml - mr) / rotulos.length, barra = Math.min(28, (larg - 8) / series.length);
+    var s = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="' + esc(series.map(function (z) { return z.nome; }).join(", ")) + '">';
+    [max, (max + min) / 2, min].forEach(function (t) {
+      s += '<line x1="' + ml + '" x2="' + (W - mr) + '" y1="' + y(t).toFixed(1) + '" y2="' + y(t).toFixed(1) + '" stroke="var(--line)"/>' +
+        '<text x="' + (ml - 6) + '" y="' + (y(t) + 3.5).toFixed(1) + '" text-anchor="end" font-size="10.5" fill="var(--muted)">' + esc(fmt(t)) + "</text>";
+    });
+    s += '<line x1="' + ml + '" x2="' + (W - mr) + '" y1="' + y(0).toFixed(1) + '" y2="' + y(0).toFixed(1) + '" stroke="var(--line-strong)"/>';
+    rotulos.forEach(function (r, i) {
+      var x0 = ml + i * larg + (larg - barra * series.length) / 2;
+      series.forEach(function (z, k) {
+        var v = z.v[i];
+        if (v == null) return;
+        var a = y(Math.max(v, 0)), b = y(Math.min(v, 0));
+        s += '<rect x="' + (x0 + k * barra).toFixed(1) + '" y="' + a.toFixed(1) + '" width="' + Math.max(1, barra - 2).toFixed(1) + '" height="' + Math.max(0.5, b - a).toFixed(1) +
+          '" rx="2" fill="' + CAIXAS[k] + '"><title>' + esc(z.nome + " · " + r + ": " + fmt(v)) + "</title></rect>";
+      });
+      s += '<text x="' + (ml + i * larg + larg / 2).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle" font-size="10.5" fill="var(--muted)">' + esc(r) + "</text>";
+    });
+    alvo.innerHTML = s + "</svg>" + (series.length > 1 ? legenda(series, true) : "");
+  }
+  var ESTRELA = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg>';
+
+  // ---------- favoritos ----------
+  var FAV = ler("radar-favoritos", []);
+  function ehFav(t) { return FAV.indexOf(t) >= 0; }
+  function alternarFav(t) {
+    FAV = ehFav(t) ? FAV.filter(function (x) { return x !== t; }) : FAV.concat([t]);
+    gravar("radar-favoritos", FAV);
+  }
+  function botaoFav(t) {
+    return '<button type="button" class="estrela" data-fav="' + esc(t) + '" aria-pressed="' + ehFav(t) + '" aria-label="' + (ehFav(t) ? "Tirar " : "Marcar ") + esc(t) + ' dos favoritos">' + ESTRELA + "</button>";
+  }
+
+  // ---------- fundos imobiliarios ----------
+  var FIIS = [], estadoF = { busca: "", seg: "", ordem: "nota", sel: null };
+  var corpoF = document.getElementById("corpo-fiis");
+  function fiisFiltrados() {
+    var b = estadoF.busca.trim().toLowerCase(), k = estadoF.ordem;
+    return FIIS.filter(function (f) {
+      return (!b || f.t.toLowerCase().indexOf(b) >= 0 || (f.n || "").toLowerCase().indexOf(b) >= 0) && (!estadoF.seg || f.seg === estadoF.seg);
+    }).sort(function (x, y) {
+      if (k === "pvp") return (x.pvp == null ? 99 : x.pvp) - (y.pvp == null ? 99 : y.pvp);
+      return (y[k] == null ? -1 : y[k]) - (x[k] == null ? -1 : x[k]);
+    });
+  }
+  function desenharFiis() {
+    var lista = fiisFiltrados();
+    if (!lista.some(function (f) { return f.t === estadoF.sel; })) estadoF.sel = lista.length ? lista[0].t : null;
+    corpoF.innerHTML = lista.map(function (f, i) {
+      return '<tr class="clicavel" tabindex="0" role="button" data-t="' + f.t + '" aria-selected="' + (f.t === estadoF.sel) + '">' +
+        '<td class="pos num">' + (i + 1) + '</td><td class="c-ativo"><span class="ativo"><b>' + f.t + "</b><span>" + esc(f.n) + " · " + esc(f.seg) + "</span></span></td>" +
+        '<td><span class="nota"><b class="num">' + inteiro(f.nota) + "</b>" + barra(f.nota) + "</span></td>" +
+        '<td class="d num so-largo">' + brl(f.p) + '</td><td class="d num">' + (f.dy == null ? '<span class="sem">sem dado</span>' : semSinal(f.dy, 1)) + "</td>" +
+        '<td class="d num so-largo">' + (f.pvp == null ? '<span class="sem">sem dado</span>' : vezes(f.pvp).replace(/,(\d)$/, ",$10")) + "</td>" +
+        '<td class="d num so-largo">' + (f.meses == null ? "–" : f.meses + " de 12") + "</td><td>" + alertas(f.al, true) + "</td></tr>";
+    }).join("") || '<tr><td colspan="8" class="sem">' + (FIIS.length ? "Nenhum fundo passa nos filtros." : "Os fundos imobiliários aparecem depois da próxima coleta de dados.") + "</td></tr>";
+    document.getElementById("ff-conta").textContent = lista.length + " de " + FIIS.length + " fundos";
+    desenharFii();
+  }
+  function desenharFii() {
+    var el = document.getElementById("fii-detalhe"), f = FIIS.filter(function (x) { return x.t === estadoF.sel; })[0];
+    if (!f) { el.innerHTML = '<p class="sem">Selecione um fundo na tabela.</p>'; return; }
+    var P = [["dividendos", "Dividendos"], ["desconto", "Desconto"], ["regularidade", "Regularidade"], ["liquidez", "Liquidez"]];
+    el.innerHTML = '<div class="det-topo"><div><div class="tk">' + f.t + '</div><div class="sub">' + esc(f.n) + '</div><div class="sub">' + esc(f.seg) + (f.mandato ? " · " + esc(f.mandato) : "") +
+      '</div><div class="sub num">' + brl(f.p) + (f.var12 == null ? "" : " · " + pct(f.var12) + " em 12 meses") + '</div></div><div class="notao"><b class="num">' + inteiro(f.nota) + "</b><span>nota de 0 a 100</span></div></div>" +
+      '<div class="bloco"><h3>Partes da nota</h3>' + P.map(function (p) {
+        var v = f.partes ? f.partes[p[0]] : null;
+        return '<div class="metodo"><span>' + p[1] + "</span>" + barra(v) + '<b class="num">' + (v == null ? '<span class="sem">–</span>' : v) + "</b></div>";
+      }).join("") + "</div>" +
+      '<div class="pares">' + par("Dividendos em 12 meses", f.dy == null ? "sem dado" : semSinal(f.dy, 1), "do preço") +
+        par("Meses com pagamento", f.meses == null ? "sem dado" : f.meses + " de 12", "") +
+        par("Valor patrimonial", brl(f.vp), "por cota") + par("Preço sobre o patrimônio", f.pvp == null ? "sem dado" : f.pvp.toLocaleString("pt-BR", { maximumFractionDigits: 2 }), "") +
+        par("Patrimônio", grande(f.pl), "") + par("Cotistas", inteiro(f.cotistas), "") + "</div>" +
+      '<div class="bloco"><h3>Preço em 12 meses</h3><div class="graf" id="fii-graf"></div></div>' +
+      lista("Alertas", f.al) +
+      '<div class="rodape-det">Cotação de ' + dataBR(f.data) + (f.infoEm ? " · informe da CVM de " + dataBR(f.infoEm) : "") + "</div>";
+    grafico(document.getElementById("fii-graf"), f.serie || [], f.data);
+  }
+  corpoF.addEventListener("click", function (e) { var tr = e.target.closest("tr[data-t]"); if (tr) { estadoF.sel = tr.dataset.t; desenharFiis(); } });
+  corpoF.addEventListener("keydown", function (e) { if (e.key !== "Enter" && e.key !== " ") return; var tr = e.target.closest("tr[data-t]"); if (tr) { e.preventDefault(); estadoF.sel = tr.dataset.t; desenharFiis(); } });
+  document.getElementById("ff-busca").addEventListener("input", function (e) { estadoF.busca = e.target.value; desenharFiis(); });
+  document.getElementById("ff-seg").addEventListener("change", function (e) { estadoF.seg = e.target.value; desenharFiis(); });
+  document.getElementById("ff-ordem").addEventListener("change", function (e) { estadoF.ordem = e.target.value; desenharFiis(); });
+  document.getElementById("baixar-fiis").addEventListener("click", function () {
+    baixarCSV("fiis-radar.csv", ["Código", "Nome", "Segmento", "Preço", "Nota", "Dividendos 12m (%)", "P/VP", "Meses pagos", "Valor patrimonial", "Volume médio", "Alertas"],
+      fiisFiltrados().map(function (f) { return [f.t, f.n, f.seg, numBR(f.p), f.nota, numBR(f.dy == null ? null : f.dy * 100, 1), numBR(f.pvp), f.meses, numBR(f.vp), Math.round(f.vol), (f.al || []).join(" | ")]; }));
+  });
+
+  // ---------- renda fixa ----------
+  function desenharRenda() {
+    var T = D.tesouro || { titulos: [] }, m = D.macro || {};
+    var venda = (T.titulos || []).filter(function (t) { return t.aVenda; });
+    var ipca = venda.filter(function (t) { return /IPCA/.test(t.titulo) && !/Juros/.test(t.titulo); });
+    var melhor = ipca.sort(function (a, b) { return b.taxaCompra - a.taxaCompra; })[0];
+    var dec = function (v, c) { return v.toLocaleString("pt-BR", { minimumFractionDigits: c, maximumFractionDigits: c }); };
+    var cards = [];
+    var selic = venda.filter(function (t) { return /Selic/.test(t.titulo); })[0];
+    var pre = venda.filter(function (t) { return t.titulo === "Tesouro Prefixado"; }).sort(function (a, b) { return a.venc < b.venc ? 1 : -1; })[0];
+    if (selic) cards.push(["Tesouro Selic", "Selic + " + dec(selic.taxaCompra, 2) + "%", "vence em " + selic.venc.slice(0, 4) + " · reserva de emergência"]);
+    if (melhor) cards.push(["Maior IPCA+", "IPCA + " + dec(melhor.taxaCompra, 2) + "%", "vence em " + melhor.venc.slice(0, 4) + " · ganho acima da inflação"]);
+    if (pre) cards.push(["Prefixado mais longo", dec(pre.taxaCompra, 2) + "%", "ao ano até " + pre.venc.slice(0, 4)]);
+    document.getElementById("rf-resumo").innerHTML = cards.map(function (c) { return '<div class="indic"><span>' + c[0] + '</span><b class="num">' + c[1] + "</b><small>" + c[2] + "</small></div>"; }).join("");
+    document.getElementById("rf-data").textContent = T.data ? "Taxas de compra do dia " + dataBR(T.data) + ", na abertura do mercado." : "As taxas do Tesouro aparecem depois da próxima coleta de dados.";
+    var ordem = ["Tesouro Selic", "Tesouro IPCA+", "Tesouro IPCA+ com Juros Semestrais", "Tesouro Prefixado", "Tesouro Prefixado com Juros Semestrais"];
+    venda.sort(function (a, b) { var x = ordem.indexOf(a.titulo), y = ordem.indexOf(b.titulo); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y) || (a.venc < b.venc ? -1 : 1); });
+    document.getElementById("corpo-tesouro").innerHTML = venda.map(function (t) {
+      var taxa = t.taxaCompra, ano = t.venc.slice(0, 4), leit;
+      if (/Selic/.test(t.titulo)) leit = "Selic + " + dec(taxa, 2) + "% até " + ano + ".";
+      else if (/IPCA|IGP/.test(t.titulo)) leit = "Inflação + " + dec(taxa, 2) + "% ao ano até " + ano + ".";
+      else leit = dec(taxa, 2) + "% ao ano travados até " + ano + ".";
+      if (t.taxaAnoAntes != null && t.taxaVenda != null) {
+        var dif = t.taxaVenda - t.taxaAnoAntes;
+        if (Math.abs(dif) >= 0.05) leit += " A taxa " + (dif > 0 ? "subiu " : "caiu ") + dec(Math.abs(dif), 2) + " ponto em um ano.";
+      }
+      return "<tr><td><b>" + esc(t.titulo) + '</b></td><td class="num">' + dataBR(t.venc) + '</td><td class="d num">' + dec(taxa, 2) + "%</td>" +
+        '<td class="d num so-largo">' + (t.taxaAnoAntes == null ? "–" : dec(t.taxaAnoAntes, 2) + "%") + '</td><td class="d num so-largo">' + brl(t.puCompra) + '</td><td class="txt">' + esc(leit) + "</td></tr>";
+    }).join("") || '<tr><td colspan="6" class="sem">Sem títulos nesta coleta.</td></tr>';
+  }
+
+  // ---------- comparar ----------
+  var CMP = ler("radar-comparar", []);
+  function acaoPor(t) { t = (t || "").trim().toUpperCase(); return ACOES.filter(function (a) { return a.t === t; })[0]; }
+  function adicionarComparar(t) {
+    if (CMP.indexOf(t) < 0) CMP = CMP.concat([t]).slice(-3);
+    gravar("radar-comparar", CMP);
+  }
+  function desenharComparar() {
+    CMP = CMP.filter(function (t) { return acaoPor(t); });
+    [0, 1, 2].forEach(function (i) { var el = document.getElementById("cmp-" + i); if (document.activeElement !== el) el.value = CMP[i] || ""; });
+    var sel = CMP.map(acaoPor);
+    var alvo = document.getElementById("cmp-tabela");
+    if (!sel.length) { alvo.innerHTML = '<p class="vazio-msg">Escolha ao menos uma ação acima.</p>'; document.getElementById("cmp-graf-painel").hidden = true; return; }
+    var L = [
+      ["Empresa", function (a) { return esc(a.n) + "<br><span class=\"sem\">" + esc(a.s) + "</span>"; }],
+      ["Preço", function (a) { return brl(a.p); }], ["Nota final", function (a) { return inteiro(a.final); }], ["Longo prazo", function (a) { return a.lp == null ? "–" : a.lp; }]
+    ].concat(METODOS.map(function (m) { return [m[1], function (a) { return a.m[m[0]] == null ? "–" : a.m[m[0]]; }]; })).concat([
+      ["Dividendos em 12 meses", function (a) { return a.dy == null ? "sem dado" : semSinal(a.dy, 1); }],
+      ["Dividendo típico", function (a) { return a.dyTipico == null ? "sem dado" : semSinal(a.dyTipico, 1); }],
+      ["Preço sobre o lucro", function (a) { return vezes(a.pl); }], ["Preço sobre o patrimônio", function (a) { return vezes(a.pvp); }],
+      ["Retorno sobre o patrimônio", function (a) { return a.roe == null ? "sem dado" : semSinal(a.roe, 1); }],
+      ["Dívida líquida", function (a) { return a.divEbit == null ? "sem dado" : vezes(a.divEbit) + "x " + (a.baseDivida || "lucro operacional"); }],
+      ["Retorno em 12 meses com dividendos", function (a) { return a.tr12 == null ? "sem dado" : pct(a.tr12); }],
+      ["Valor de mercado", function (a) { return grande(a.valorMercado); }], ["Alertas", function (a) { return (a.al || []).length ? esc(a.al.join(" · ")) : "nenhum"; }]
+    ]);
+    alvo.innerHTML = '<table class="cmp"><thead><tr><th></th>' + sel.map(function (a) { return "<th>" + a.t + "</th>"; }).join("") + "</tr></thead><tbody>" +
+      L.map(function (l) { return "<tr><td>" + l[0] + "</td>" + sel.map(function (a) { return '<td class="num">' + l[1](a) + "</td>"; }).join("") + "</tr>"; }).join("") + "</tbody></table>";
+    var meses = {};
+    sel.forEach(function (a) { (a.precos5 || []).forEach(function (p) { meses[p[0]] = 1; }); });
+    var rot = Object.keys(meses).sort();
+    var series = sel.map(function (a) {
+      var mapa = {}; (a.precos5 || []).forEach(function (p) { mapa[p[0]] = p[1]; });
+      var base = null;
+      return { nome: a.t, v: rot.map(function (m) { var v = mapa[m]; if (v == null) return null; if (base == null) base = v; return v / base * 100; }) };
+    });
+    document.getElementById("cmp-graf-painel").hidden = rot.length < 2;
+    if (rot.length >= 2) linhas(document.getElementById("cmp-graf"), rot.map(mesBR), series, function (v) { return Math.round(v); });
+  }
+  [0, 1, 2].forEach(function (i) {
+    document.getElementById("cmp-" + i).addEventListener("change", function (e) {
+      var lista = [0, 1, 2].map(function (k) { return (document.getElementById("cmp-" + k).value || "").trim().toUpperCase(); }).filter(function (t) { return acaoPor(t); });
+      CMP = lista.filter(function (t, k) { return lista.indexOf(t) === k; }); gravar("radar-comparar", CMP); desenharComparar();
+    });
+  });
+  document.getElementById("cmp-limpar").addEventListener("click", function () { CMP = []; gravar("radar-comparar", CMP); desenharComparar(); });
+
+  // ---------- carteira: posicoes ----------
+  var POS = ler("radar-posicoes", []);
+  function ativoPor(t) {
+    t = (t || "").trim().toUpperCase();
+    var a = acaoPor(t);
+    if (a) return { t: a.t, tipo: "acao", p: a.p, nota: a.final == null ? null : Math.round(a.final), dpa: a.dpa, al: a.al || [], nome: a.n };
+    var f = FIIS.filter(function (x) { return x.t === t; })[0];
+    if (f) return { t: f.t, tipo: "fii", p: f.p, nota: f.nota, dpa: f.dy == null ? null : f.dy * f.p, al: f.al || [], nome: f.n };
+    return null;
+  }
+  function desenharPosicoes() {
+    var temPos = POS.length > 0;
+    ["pos-resumo", "pos-tabela"].forEach(function (id) { document.getElementById(id).hidden = !temPos; });
+    var memo = ler("radar-notas-vistas", { data: null, notas: {}, antes: {} });
+    var atuais = {};
+    POS.forEach(function (p) { var a = ativoPor(p.t); if (a && a.nota != null) atuais[p.t] = a.nota; });
+    if (memo.data !== D.dataCotacao) { memo.antes = memo.notas || {}; memo.notas = atuais; memo.data = D.dataCotacao; gravar("radar-notas-vistas", memo); }
+    var tot = { valor: 0, custo: 0, div: 0, acoes: 0, fiis: 0 }, avisos = [];
+    document.getElementById("corpo-pos").innerHTML = POS.map(function (p, i) {
+      var a = ativoPor(p.t), custo = p.q * p.pm;
+      if (!a) return "<tr><td><b>" + esc(p.t) + '</b></td><td class="d num">' + inteiro(p.q) + '</td><td class="d num so-largo">' + brl(p.pm) +
+        '</td><td colspan="5" class="sem">Fora do painel nesta coleta</td><td><button type="button" class="btn" data-rem="' + i + '">Remover</button></td></tr>';
+      var valor = p.q * a.p, res = valor - custo, div = a.dpa ? a.dpa * p.q : null;
+      tot.valor += valor; tot.custo += custo; tot.div += div || 0; tot[a.tipo === "fii" ? "fiis" : "acoes"] += valor;
+      var antes = (memo.antes || {})[p.t];
+      if (antes != null && a.nota != null && antes - a.nota >= 10) avisos.push(p.t + ": a nota caiu de " + antes + " para " + a.nota + " desde a coleta anterior.");
+      if (a.nota != null && a.nota < 50) avisos.push(p.t + ": nota " + a.nota + ", abaixo de 50.");
+      if (a.al.length) avisos.push(p.t + ": " + a.al.join("; ") + ".");
+      return "<tr><td><span class=\"ativo\"><b>" + a.t + "</b><span>" + esc(a.nome) + '</span></span></td><td class="d num">' + inteiro(p.q) + '</td><td class="d num so-largo">' + brl(p.pm) +
+        '</td><td class="d num">' + brl(a.p) + '</td><td class="d num">' + grande(valor) + '</td><td class="d num ' + (res < 0 ? "negativo" : "positivo") + '">' + grande(res) +
+        (custo ? " (" + pct(res / custo, 1) + ")" : "") + '</td><td class="d num so-largo">' + (div == null ? "sem dado" : grande(div)) + '</td><td class="d num">' + inteiro(a.nota) +
+        '</td><td><button type="button" class="btn" data-rem="' + i + '" aria-label="Remover ' + a.t + '">Remover</button></td></tr>';
+    }).join("");
+    document.getElementById("pos-resumo").innerHTML = [
+      ["Valor hoje", grande(tot.valor), "das posições com preço"], ["Custo", grande(tot.custo), "quantidade x preço médio"],
+      ["Resultado", grande(tot.valor - tot.custo), tot.custo ? pct((tot.valor - tot.custo) / tot.custo, 1) + " sobre o custo" : ""],
+      ["Dividendos por mês", grande(tot.div / 12), "média esperada, pelo histórico de 5 anos"]
+    ].map(function (c) { return '<div class="indic"><span>' + c[0] + '</span><b class="num">' + c[1] + "</b><small>" + c[2] + "</small></div>"; }).join("");
+    var al = document.getElementById("pos-alertas");
+    al.hidden = !avisos.length;
+    al.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--critical)" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16h.01"/></svg><div><p><strong>Atenção na sua carteira</strong></p><ul style="margin:4px 0 0;padding-left:18px">' +
+      avisos.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></div>";
+    POS._tot = tot;
+  }
+  document.getElementById("pos-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var t = document.getElementById("pos-ativo").value.trim().toUpperCase().split(" ")[0];
+    var q = +document.getElementById("pos-qtd").value, pm = +document.getElementById("pos-pm").value, msg = document.getElementById("pos-msg");
+    if (!ativoPor(t)) { msg.textContent = t + " não está no painel. Use o código de uma ação ou fundo imobiliário com nota."; return; }
+    if (!(q > 0) || !(pm > 0)) { msg.textContent = "Informe quantidade e preço médio maiores que zero."; return; }
+    var ja = POS.filter(function (p) { return p.t === t; })[0];
+    if (ja) { ja.pm = (ja.pm * ja.q + pm * q) / (ja.q + q); ja.q += q; msg.textContent = t + ": quantidade somada e preço médio recalculado."; }
+    else { POS.push({ t: t, q: q, pm: pm }); msg.textContent = t + " adicionada."; }
+    gravar("radar-posicoes", POS); e.target.reset(); desenharPosicoes();
+  });
+  document.getElementById("corpo-pos").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-rem]"); if (!b) return;
+    POS.splice(+b.dataset.rem, 1); gravar("radar-posicoes", POS); desenharPosicoes();
+  });
+
+  // ---------- simulador ----------
+  function simular(inicial, aporte, anos, dy, g) {
+    var saldo = inicial, pontos = [saldo], mensal = Math.pow(1 + g, 1 / 12) - 1;
+    for (var m = 1; m <= anos * 12; m++) {
+      saldo = saldo * (1 + mensal) + saldo * dy / 12 + aporte;
+      if (m % 12 === 0) pontos.push(saldo);
+    }
+    return pontos;
+  }
+  function desenharSimulador() {
+    var v = function (id) { return +(document.getElementById(id).value || 0); };
+    var ini = v("sim-inicial"), ap = v("sim-aporte"), anos = Math.max(1, Math.min(50, Math.round(v("sim-anos")))), dy = v("sim-dy") / 100, cdi = v("sim-cdi") / 100;
+    var cen = [["Pessimista", v("sim-g0") / 100], ["Base", v("sim-g1") / 100], ["Otimista", v("sim-g2") / 100]];
+    var series = cen.map(function (c) { return { nome: c[0] + " (" + numBR(c[1] * 100, 1) + "% + dividendos)", v: simular(ini, ap, anos, dy, c[1]), g: c[1] }; });
+    series.push({ nome: "Renda fixa no CDI (" + numBR(cdi * 100, 1) + "%)", v: simular(ini, ap, anos, 0, cdi) });
+    var aportado = ini + ap * 12 * anos;
+    document.getElementById("sim-resumo").innerHTML = '<div class="indic"><span>Total aportado</span><b class="num">' + grande(aportado) + "</b><small>em " + anos + " anos</small></div>" +
+      series.slice(0, 3).map(function (s, i) {
+        var fim = s.v[s.v.length - 1];
+        return '<div class="indic"><span>' + cen[i][0] + '</span><b class="num">' + grande(fim) + "</b><small>dividendos de " + grande(fim * dy / 12) + " por mês ao final</small></div>";
+      }).join("") +
+      '<div class="indic"><span>CDI</span><b class="num">' + grande(series[3].v[anos]) + "</b><small>sem imposto, para comparar</small></div>";
+    var rot = []; for (var a = 0; a <= anos; a++) rot.push("ano " + a);
+    linhas(document.getElementById("sim-graf"), rot, series, function (x) { return grande(x).replace("R$ ", ""); });
+  }
+  ["sim-inicial", "sim-aporte", "sim-anos", "sim-dy", "sim-g0", "sim-g1", "sim-g2", "sim-cdi"].forEach(function (id) {
+    document.getElementById(id).addEventListener("input", desenharSimulador);
+  });
+
+  // ---------- desempenho (teste no passado) ----------
+  function desenharDesempenho() {
+    var B = D.backtest || {}, P = B.periodos || [];
+    var res = document.getElementById("bt-resumo");
+    if (!P.length) {
+      res.innerHTML = '<div class="indic"><span>Teste no passado</span><b class="num">Em preparo</b><small>Aparece depois da próxima coleta, que busca 7 anos de cotações.</small></div>';
+      document.getElementById("bt-graf-painel").hidden = true;
+      document.getElementById("corpo-bt").innerHTML = '<tr><td colspan="8" class="sem">Sem períodos ainda.</td></tr>';
+      return;
+    }
+    var A = B.acumulado || {}, n = B.anosAcumulados || 0, vu = B.venceuUniverso || [0, 0], vl = B.venceuLongo || [0, 0];
+    res.innerHTML = [
+      ["10 maiores notas", A.top, vu[1] ? "melhor que todas as ações em " + vu[0] + " de " + vu[1] + " períodos" : ""],
+      ["10 de longo prazo", A.longo, vl[1] ? "melhor que todas as ações em " + vl[0] + " de " + vl[1] + " períodos" : ""],
+      ["Todas as ações", A.universo, "média simples do ranking"], ["CDI", A.cdi, "renda fixa de referência"]
+    ].map(function (c) {
+      return '<div class="indic"><span>' + c[0] + '</span><b class="num">' + (c[1] == null ? "–" : pct(c[1], 1)) + "</b><small>" + (n ? "em " + n + (n > 1 ? " anos" : " ano") + ", trocando em maio · " : "") + c[2] + "</small></div>";
+    }).join("");
+    var fechados = P.filter(function (p) { return p.completo; });
+    document.getElementById("bt-graf-painel").hidden = !fechados.length;
+    var cem = function (k) { return fechados.map(function (p) { return p[k] == null ? null : p[k] * 100; }); };
+    if (fechados.length) colunas(document.getElementById("bt-graf"), fechados.map(function (p) { return mesBR(p.inicio); }),
+      [{ nome: "10 maiores notas", v: cem("top") }, { nome: "10 de longo prazo", v: cem("longo") }, { nome: "Todas as ações", v: cem("universo") }, { nome: "CDI", v: cem("cdi") }],
+      function (x) { return Math.round(x) + "%"; });
+    var cel = function (v) { return '<td class="d num ' + (v != null && v < 0 ? "negativo" : "") + '">' + (v == null ? "–" : pct(v, 1)) + "</td>"; };
+    document.getElementById("corpo-bt").innerHTML = P.slice().reverse().map(function (p, i) {
+      var lst = function (l) { return (l || []).map(function (x) { return x[0] + " (" + (x[2] == null ? "sem preço" : pct(x[2], 0)) + ")"; }).join(", "); };
+      return '<tr><td class="num">' + dataBR(p.inicio) + '</td><td class="num">' + dataBR(p.fim) + (p.completo ? "" : ' <span class="etq">em andamento</span>') + "</td>" +
+        cel(p.top) + cel(p.longo) + cel(p.universo) + cel(p.cdi) + '<td class="d num so-largo">' + p.n + '</td><td><button type="button" class="btn" data-bt="' + i + '" aria-expanded="false">Ver ações</button></td></tr>' +
+        '<tr class="mais" id="bt-mais-' + i + '" hidden><td colspan="8"><b>10 maiores notas:</b> ' + esc(lst(p.acoesTop)) + "<br><b>10 de longo prazo:</b> " + esc(lst(p.acoesLongo) || "sem dados suficientes") + "</td></tr>";
+    }).join("");
+  }
+  document.getElementById("corpo-bt").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-bt]"); if (!b) return;
+    var linha = document.getElementById("bt-mais-" + b.dataset.bt), abrirLinha = linha.hidden;
+    linha.hidden = !abrirLinha; b.setAttribute("aria-expanded", abrirLinha); b.textContent = abrirLinha ? "Esconder" : "Ver ações";
+  });
+
+  // ---------- busca rapida ----------
+  function irPara(t) {
+    t = (t || "").trim().toUpperCase().split(" ")[0];
+    if (acaoPor(t)) { verAcao(t); return true; }
+    if (FIIS.some(function (f) { return f.t === t; })) {
+      estadoF.busca = ""; estadoF.seg = ""; estadoF.sel = t;
+      document.getElementById("ff-busca").value = ""; document.getElementById("ff-seg").value = "";
+      desenharFiis(); abrir("fiis"); return true;
+    }
+    return false;
+  }
+  document.getElementById("busca-rapida").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var campo = document.getElementById("busca-ativo");
+    if (irPara(campo.value)) { campo.value = ""; campo.blur(); }
+  });
+  document.getElementById("busca-ativo").addEventListener("change", function (e) { if (irPara(e.target.value)) { e.target.value = ""; } });
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return;
+    var tag = (document.activeElement && document.activeElement.tagName) || "";
+    if (/INPUT|SELECT|TEXTAREA/.test(tag)) return;
+    e.preventDefault(); document.getElementById("busca-ativo").focus();
+  });
+
   // ---------- abas ----------
-  var ABAS = ["destaques", "longo", "acoes", "cripto", "carteira", "coleta"];
-  var TITULOS = { destaques: "Destaques", longo: "Longo prazo", acoes: "Ações", cripto: "Cripto", carteira: "Carteira", coleta: "Coleta" };
+  var ABAS = ["destaques", "longo", "acoes", "fiis", "cripto", "renda", "comparar", "carteira", "simulador", "desempenho", "coleta"];
+  var TITULOS = { destaques: "Destaques", longo: "Longo prazo", acoes: "Ações", fiis: "Fundos imobiliários", cripto: "Cripto", renda: "Renda fixa",
+                  comparar: "Comparar ações", carteira: "Carteira", simulador: "Simulador", desempenho: "Desempenho das notas", coleta: "Coleta" };
   function abrir(nome) {
     if (ABAS.indexOf(nome) < 0) nome = "destaques";
     document.getElementById("titulo").textContent = document.getElementById("titulo-migalha").textContent = TITULOS[nome];
@@ -879,7 +1482,7 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
   var SITUACAO = { ok: ["Em dia", "ok"], avisos: ["Com avisos", "av"], erro: ["Com erro", "er"] };
 
   function iniciar(dados) {
-    D = dados; ACOES = D.acoes || []; CRIPTO = D.cripto || []; PESOS = D.pesos || {};
+    D = dados; ACOES = D.acoes || []; CRIPTO = D.cripto || []; PESOS = D.pesos || {}; FIIS = D.fiis || [];
     var gerado = D.geradoEm ? new Date(D.geradoEm) : null;
     document.getElementById("sub").textContent = "Triagem de ações da B3 e criptomoedas. Cotações de " + dataBR(D.dataCotacao) +
       (gerado ? ", atualizado em " + gerado.toLocaleDateString("pt-BR") + " às " + gerado.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "") + ".";
@@ -932,7 +1535,20 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
     document.getElementById("sem-vinculo").textContent = fora.length
       ? "Ações negociadas que ficaram fora do ranking porque o cadastro da CVM não informa o código delas: " + fora.join(", ") + "."
       : "";
+    var opc = function (lista) { return lista.map(function (x) { return '<option value="' + esc(x.t) + '">' + esc(x.n) + "</option>"; }).join(""); };
+    document.getElementById("lista-ativos").innerHTML = opc(ACOES) + opc(FIIS);
+    document.getElementById("lista-acoes").innerHTML = opc(ACOES);
+    var segs = FIIS.map(function (f) { return f.seg; }).filter(function (x, i, l) { return x && l.indexOf(x) === i; }).sort(function (a, b) { return a.localeCompare(b, "pt-BR"); });
+    document.getElementById("ff-seg").insertAdjacentHTML("beforeend", segs.map(function (x) { return "<option>" + esc(x) + "</option>"; }).join(""));
+    var top = ACOES.filter(function (a) { return a.lp != null && a.vol >= 2e6 && a.dyTipico != null; })
+      .sort(function (x, y) { return y.lp - x.lp || (y.final || 0) - (x.final || 0); }).slice(0, 10);
+    var dyMedio = top.length ? top.reduce(function (s2, a) { return s2 + Math.min(a.dyTipico, 0.15); }, 0) / top.length : 0.06;
+    document.getElementById("sim-dy").value = (dyMedio * 100).toFixed(1);
+    document.getElementById("sim-cdi").value = m.cdi_anual ? m.cdi_anual.valor.toFixed(2) : "10";
+    document.getElementById("sim-dica").textContent = "Dividendos de " + numBR(dyMedio * 100, 1) + "% ao ano: média do dividendo típico das 10 maiores notas de longo prazo" +
+      (top.length ? " (" + top.map(function (a) { return a.t; }).join(", ") + ")" : "") + ", limitado a 15% por ação. CDI de hoje, sem imposto.";
     desenharAcoes(); desenharDestaques(); desenharLongo(); desenharCarteira();
+    desenharFiis(); desenharRenda(); desenharComparar(); desenharPosicoes(); desenharSimulador(); desenharDesempenho();
     document.getElementById("app").hidden = false; document.getElementById("abas").hidden = false;
     abrir((location.hash || "").replace("#", "") || "destaques");
   }
