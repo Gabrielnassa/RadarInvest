@@ -605,7 +605,7 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
     </section>
   </div>
 
-  <footer>Conteúdo informativo. Não é recomendação de compra ou venda. Fontes: B3, CVM, Yahoo Finance, CoinGecko e Banco Central.</footer>
+  <footer>Conteúdo informativo. Não é recomendação de compra ou venda. Fontes: B3, CVM, Tesouro Transparente, Yahoo Finance, CoinGecko e Banco Central.</footer>
 </div>
   </div>
 </div>
@@ -1506,13 +1506,14 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
 
   // ---------- carga ----------
   var FONTES = { b3: ["B3", "Cotações diárias"], cvm: ["CVM", "Cadastro e demonstrativos"], dividendos: ["Dividendos", "Proventos por ação (Yahoo)"],
-                 cripto: ["Cripto", "Maiores moedas (CoinGecko)"], macro: ["Banco Central", "Selic, IPCA, dólar e CDI"] };
+                 cripto: ["Cripto", "Maiores moedas (CoinGecko)"], macro: ["Banco Central", "Selic, IPCA, dólar e CDI"],
+                 fii: ["FIIs (CVM)", "Informe mensal dos fundos imobiliários"], tesouro: ["Tesouro Direto", "Taxas e preços (Tesouro Transparente)"] };
   var SITUACAO = { ok: ["Em dia", "ok"], avisos: ["Com avisos", "av"], erro: ["Com erro", "er"] };
 
   function iniciar(dados) {
     D = dados; ACOES = D.acoes || []; CRIPTO = D.cripto || []; PESOS = D.pesos || {}; FIIS = D.fiis || [];
     var gerado = D.geradoEm ? new Date(D.geradoEm) : null;
-    document.getElementById("sub").textContent = "Triagem de ações da B3 e criptomoedas. Cotações de " + dataBR(D.dataCotacao) +
+    document.getElementById("sub").textContent = "Triagem de ações, fundos imobiliários, Tesouro Direto e cripto. Cotações de " + dataBR(D.dataCotacao) +
       (gerado ? ", atualizado em " + gerado.toLocaleDateString("pt-BR") + " às " + gerado.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "") + ".";
 
     var m = D.macro || {}, itens = [];
