@@ -1,4 +1,4 @@
-"""Coleta completa contra um servidor local que imita as cinco fontes.
+"""Coleta completa contra um servidor local que imita as sete fontes.
 
 Prova que download, cache, leitura, gravacao, registro da coleta e status funcionam juntos.
 Nao prova que os sites reais respondem neste formato: isso so a primeira coleta real mostra.
@@ -76,6 +76,16 @@ class TestPontaAPonta(unittest.TestCase):
             fabrica.gravar_json(site / "bcb" / f"bcdata.sgs.{codigo}" / "dados",
                                 [{"data": "02/10/2026", "valor": valor}, {"data": "05/10/2026", "valor": valor}])
 
+        HGLG = "11.728.688/0001-47"
+        fabrica.zip_fii(site / "fii" / "inf_mensal_fii_2026.zip", 2026,
+                        [[HGLG, "2026-08-01", 1, "CSHG LOGISTICA FII", "BRHGLGCTF004", "Logística", "Renda"]],
+                        [[HGLG, "2026-08-01", 1, "450123", "5100000000.50", "4900000000.00", "33000000", "148.4848", "0.71"]])
+        fabrica.csv_tesouro(site / "tesouro" / "PrecoTaxaTesouroDireto.csv", [
+            ["Tesouro IPCA+", "15/08/2035", "02/10/2026", "7,45", "7,57", "2154,32", "2131,10", "2131,10"],
+            ["Tesouro IPCA+", "15/08/2035", "02/10/2025", "6,95", "7,07", "2001,00", "1990,00", "1990,00"],
+            ["Tesouro Selic", "01/03/2029", "02/10/2026", "0,08", "0,10", "17654,21", "17640,00", "17640,00"],
+            ["Tesouro IPCA+", "15/08/2035", "02/10/2020", "3,10", "3,20", "1000,00", "990,00", "990,00"]])
+
         manipulador = functools.partial(Silencioso, directory=str(site))
         cls.servidor = http.server.ThreadingHTTPServer(("127.0.0.1", 0), manipulador)
         threading.Thread(target=cls.servidor.serve_forever, daemon=True).start()
@@ -89,6 +99,8 @@ class TestPontaAPonta(unittest.TestCase):
             "dividendos": {"url_base": f"{base}/yahoo", "anos": 2, "volume_medio_minimo": 1, "pausa_segundos": 0},
             "cripto": {"url_base": f"{base}/cg", "top_n": 2, "excluir_simbolos": ["usdt"], "pausa_segundos": 0},
             "macro": {"url_base": f"{base}/bcb", "anos": 1, "series": {"selic_meta": 432, "dolar_ptax": 1, "ipca_mensal": 433}},
+            "fii": {"url_base": f"{base}/fii"},
+            "tesouro": {"url": f"{base}/tesouro/PrecoTaxaTesouroDireto.csv"},
         }
         cls.caminho_cfg = raiz / "config.yaml"
         cls.caminho_cfg.write_text(yaml.safe_dump(cfg), encoding="utf-8")
@@ -129,8 +141,17 @@ class TestPontaAPonta(unittest.TestCase):
         self.assertEqual(dict(q("SELECT serie, valor FROM macro WHERE data = '2026-10-05'")),
                          {"selic_meta": 13.75, "dolar_ptax": 5.001})
 
+        # fundo imobiliario: ligado ao codigo da B3 pelo ISIN; valores com ponto decimal
+        self.assertEqual(q("""SELECT a.ticker, f.segmento, f.cotistas, f.vp_cota FROM fii_mensal f
+                              JOIN ativos a ON a.isin = f.isin"""), [("HGLG11", "Logística", 450123, 148.4848)])
+        # Tesouro: datas brasileiras e virgula decimal; registro de 2020 fica fora da janela de 400 dias
+        self.assertEqual(q("SELECT titulo, vencimento, data, taxa_compra, pu_compra FROM tesouro ORDER BY data, titulo"), [
+            ("Tesouro IPCA+", "2035-08-15", "2025-10-02", 6.95, 2001.0),
+            ("Tesouro IPCA+", "2035-08-15", "2026-10-02", 7.45, 2154.32),
+            ("Tesouro Selic", "2029-03-01", "2026-10-02", 0.08, 17654.21)])
+
         situacoes = dict(q("SELECT fonte, situacao FROM coletas"))
-        self.assertEqual(set(situacoes), {"b3", "cvm", "dividendos", "cripto", "macro"})
+        self.assertEqual(set(situacoes), {"b3", "cvm", "dividendos", "cripto", "macro", "fii", "tesouro"})
         self.assertNotIn("erro", situacoes.values())
         avisos = dict(q("SELECT fonte, mensagem FROM coletas"))
         self.assertIn("COTAHIST_A2025.ZIP", avisos["b3"])       # ano sem arquivo vira aviso, nao erro
@@ -165,7 +186,7 @@ class TestPontaAPonta(unittest.TestCase):
         self.assertEqual(conn.execute("SELECT count(*) FROM demonstrativos").fetchone()[0], 4)
         self.assertEqual(conn.execute("SELECT count(*) FROM dividendos").fetchone()[0], 2)
         self.assertEqual(conn.execute("SELECT count(*) FROM macro").fetchone()[0], 4)
-        self.assertEqual(conn.execute("SELECT count(*) FROM coletas").fetchone()[0], 15)
+        self.assertEqual(conn.execute("SELECT count(*) FROM coletas").fetchone()[0], 21)
         conn.close()
 
     def test_3_status_e_fonte_fora_do_ar(self):

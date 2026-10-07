@@ -136,6 +136,32 @@ CREATE TABLE IF NOT EXISTS coletas (
     mensagem  TEXT
 );
 
+CREATE TABLE IF NOT EXISTS fii_mensal (
+    cnpj     TEXT NOT NULL,
+    data_ref TEXT NOT NULL,
+    versao   INTEGER NOT NULL DEFAULT 1,
+    nome     TEXT,
+    isin     TEXT,
+    segmento TEXT,
+    mandato  TEXT,
+    cotistas INTEGER,
+    pl       REAL,                        -- patrimonio liquido em reais
+    cotas    REAL,
+    vp_cota  REAL,                        -- valor patrimonial por cota
+    dy_mes   REAL,                        -- percentual informado pelo administrador
+    PRIMARY KEY (cnpj, data_ref)
+) WITHOUT ROWID;
+CREATE INDEX IF NOT EXISTS ix_fii_isin ON fii_mensal(isin);
+
+CREATE TABLE IF NOT EXISTS tesouro (
+    titulo      TEXT NOT NULL,
+    vencimento  TEXT NOT NULL,
+    data        TEXT NOT NULL,
+    taxa_compra REAL, taxa_venda REAL,    -- % ao ano (acima do IPCA nos titulos IPCA+)
+    pu_compra   REAL, pu_venda REAL,
+    PRIMARY KEY (titulo, vencimento, data)
+) WITHOUT ROWID;
+
 CREATE VIEW IF NOT EXISTS macro_atual AS
 SELECT m.serie, m.data, m.valor
 FROM macro m

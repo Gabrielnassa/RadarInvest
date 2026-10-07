@@ -8,7 +8,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 from . import __version__, config, db, exportar
-from .fontes import b3_cotahist, cripto_coingecko, cvm, dividendos_yahoo, macro_bcb
+from .fontes import b3_cotahist, cripto_coingecko, cvm, cvm_fii, dividendos_yahoo, macro_bcb, tesouro
 from .rede import ErroRede, Rede
 
 FONTES = {
@@ -17,8 +17,10 @@ FONTES = {
     "dividendos": ("Dividendos (Yahoo, nao oficial)", dividendos_yahoo.coletar),
     "cripto": ("Criptomoedas (CoinGecko)", cripto_coingecko.coletar),
     "macro": ("Indicadores do Banco Central", macro_bcb.coletar),
+    "fii": ("Informe mensal dos fundos imobiliarios (CVM)", cvm_fii.coletar),
+    "tesouro": ("Tesouro Direto (Tesouro Transparente)", tesouro.coletar),
 }
-ORDEM = ["b3", "cvm", "dividendos", "cripto", "macro"]
+ORDEM = ["b3", "cvm", "dividendos", "cripto", "macro", "fii", "tesouro"]
 
 
 def _agora() -> str:
@@ -147,6 +149,10 @@ def cmd_diagnostico(cfg) -> int:
         ("CoinGecko (cripto)", f"{cfg['cripto']['url_base'].rstrip('/')}/ping", None),
         ("Banco Central", f"{cfg['macro']['url_base'].rstrip('/')}/bcdata.sgs.432/dados/ultimos/1", {"formato": "json"}),
     ]
+    if cfg.get("fii"):
+        testes.append(("CVM (FII)", f"{cfg['fii']['url_base'].rstrip('/')}/inf_mensal_fii_{hoje.year}.zip", None))
+    if cfg.get("tesouro"):
+        testes.append(("Tesouro Direto", cfg["tesouro"]["url"], None))
     print("\nDiagnostico das fontes de dados\n")
     falhas = 0
     for nome, url, params in testes:
@@ -269,7 +275,9 @@ def main(argv=None) -> int:
         return cmd_painel(cfg)
     if args.comando == "exportar":
         destino, dados = exportar.exportar(cfg)
-        print(f"{len(dados['acoes'])} acoes e {len(dados['cripto'])} criptos gravadas em {destino}")
+        print(f"{len(dados['acoes'])} acoes, {len(dados.get('fiis') or [])} FIIs e {len(dados['cripto'])} criptos gravados em {destino}")
+        bt = dados.get("backtest") or {}
+        print(f"Backtest: {len(bt.get('periodos') or [])} periodos; acumulado {bt.get('acumulado')}")
         for a in dados["acoes"][:10]:
             print(f"  {a['t']:<7} nota {a['final']:5.1f}  P/L {a['pl']}  P/VP {a['pvp']}  DY {a['dy']}  {a['m']}")
         return 0
