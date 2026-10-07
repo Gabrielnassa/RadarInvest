@@ -121,11 +121,18 @@ def rodar(conn, cfg: dict | None = None, meses=MESES_INICIO) -> dict:
 
     # carteira trocada uma vez por ano (so os periodos de maio completos, que nao se sobrepoem)
     anuais = [p for p in periodos if p["completo"] and p["inicio"][5:7] == f"{meses[0]:02d}"]
-    acumulado = {k: encadear([p[k] for p in anuais]) for k in ("top", "longo", "universo", "cdi")} if anuais else None
+    acumulado = {k: encadear([p[k] for p in anuais]) for k in ("top", "universo", "cdi")} if anuais else None
+    # a nota de longo prazo precisa de 5 anos de balanco: so existe nos periodos mais recentes
+    com_longo = [p for p in anuais if p["longo"] is not None]
+    acumulado_longo = None
+    if com_longo:
+        acumulado_longo = {"desde": com_longo[0]["inicio"], "anos": len(com_longo),
+                           **{k: encadear([p[k] for p in com_longo]) for k in ("longo", "universo", "cdi")}}
     completos = [p for p in periodos if p["completo"] and p["top"] is not None and p["universo"] is not None]
     return {
         "periodos": periodos,
         "acumulado": acumulado,
+        "acumuladoLongo": acumulado_longo,
         "anosAcumulados": len(anuais),
         "venceuUniverso": [sum(1 for p in completos if p["top"] > p["universo"]), len(completos)],
         "venceuLongo": [sum(1 for p in completos if p["longo"] is not None and p["longo"] > p["universo"]),

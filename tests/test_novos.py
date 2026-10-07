@@ -151,6 +151,7 @@ class TestBacktest(unittest.TestCase):
         self.assertFalse(r["periodos"][-1]["completo"])
         self.assertEqual(r["venceuUniverso"], [1, 1])        # so o periodo de maio de 2025 ja fechou 12 meses
         self.assertEqual(r["anosAcumulados"], 1)
+        self.assertIsNone(r["acumuladoLongo"])     # balancos de menos de 5 anos: sem nota de longo prazo
         self.assertEqual(len(r["historico"]["EMPB3"]), 3)
 
 
@@ -161,6 +162,7 @@ class TestFundosETesouro(unittest.TestCase):
         self.assertAlmostEqual(nota, (50 * 35 + 50 * 25 + 100 * 25 + 50 * 15) / 100)
         self.assertEqual(notas.nota_fii(0.13, 0.7, 12, 5e6)[1]["desconto"], 100.0)
         self.assertIsNone(notas.nota_fii(None, 1.0, 12, 1e6)[0])
+        self.assertIsNone(notas.nota_fii(0.10, None, 12, 1e6)[0])     # sem valor patrimonial, sem nota
 
     def _fundo(self, conn):
         conn.execute("INSERT INTO ativos (ticker, tipo, nome_pregao, isin) VALUES ('FUND11', 'fii', 'FII FUNDO', 'BRFUNDCTF000')")

@@ -530,12 +530,12 @@ def calcular_acoes(conn, cfg: dict | None = None, ate: str | None = None) -> lis
         conf_div = None
         anos_pagos_cvm = anuais(f["div_pagos"])
         fechados = sorted(anos_pagos_cvm)[-2:]
-        if completo and tem_div and fechados and q_acoes:
+        # so informativa: holdings (o consolidado inclui o que as controladas pagam a minoritarios) e o prazo
+        # entre declarar e pagar explicam boa parte das diferencas; units ficam de fora (uma unit reune varias acoes)
+        if completo and tem_div and fechados and q_acoes and _classe(ticker) != "unit":
             anos_c = {fim[:4] for fim in fechados}
             conf_div = conferir_dividendos(sum(v for d, v in pagos if d[:4] in anos_c), q_acoes,
                                            sum(anos_pagos_cvm[x] for x in fechados))
-            if conf_div is not None and (conf_div > 1.5 or conf_div < 0.5):
-                alertas.append("Dividendos do Yahoo diferem do caixa pago informado à CVM: confira os valores")
 
         # sinais de evento isolado: o ativo continua no ranking, mas sai da lista de destaques
         distorcao = bool(lucro_fora or ebit_fora or variacao_estranha or (dy12 is not None and dy12 > 0.15))
@@ -646,7 +646,7 @@ def nota_fii(dy12, p_vp, meses_pagos, volume) -> tuple[float | None, dict]:
     }
     pesos = {"dividendos": 35, "desconto": 25, "regularidade": 25, "liquidez": 15}
     com = {k: v for k, v in partes.items() if v is not None}
-    if "dividendos" not in com or len(com) < 3:
+    if "dividendos" not in com or "desconto" not in com or len(com) < 3:
         return None, partes
     return sum(v * pesos[k] for k, v in com.items()) / sum(pesos[k] for k in com), partes
 
@@ -705,7 +705,7 @@ def calcular_fiis(conn, cfg: dict | None = None) -> list[dict]:
         if var12 is not None and var12 <= -0.25:
             alertas.append(f"Caiu {abs(var12):.0%} em 12 meses")
         if vp is None:
-            alertas.append("Sem informe mensal na CVM ligado a este código")
+            alertas.append("Sem informe mensal na CVM ligado a este código: sem valor patrimonial, a nota não é calculada")
         ano = [f for d, f, _ in dias if d > alvo]
         passo = max(1, len(ano) // 52)
         saida.append({

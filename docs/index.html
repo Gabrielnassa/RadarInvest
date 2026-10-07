@@ -475,6 +475,7 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
               <tr><td><b>Tesouro Selic</b></td><td class="txt">Rende a taxa Selic mais o número da coluna. Quase não oscila: serve para reserva de emergência.</td></tr>
               <tr><td><b>Tesouro IPCA+</b></td><td class="txt">Paga a inflação mais a taxa da coluna, que é o ganho real. Levado até o vencimento, garante esse ganho acima da inflação. Vendido antes, o preço pode subir ou cair.</td></tr>
               <tr><td><b>Tesouro Prefixado</b></td><td class="txt">A taxa total é travada na compra. Ganha da inflação se ela ficar abaixo da taxa.</td></tr>
+              <tr><td><b>Tesouro Renda+ e Educa+</b></td><td class="txt">Também pagam inflação mais a taxa, mas a partir da data da coluna devolvem o dinheiro em parcelas mensais: por 20 anos no Renda+, para complementar a aposentadoria, e por 5 anos no Educa+, para pagar estudos.</td></tr>
               <tr><td><b>Com juros semestrais</b></td><td class="txt">Mesma taxa, mas paga parte dos juros a cada seis meses, em vez de tudo no vencimento.</td></tr>
             </tbody>
           </table>
@@ -526,6 +527,7 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
         <h2>As notas teriam funcionado?</h2>
         <p class="texto">Em maio e novembro de cada ano, as notas foram recalculadas como se fosse aquele dia, só com cotações, dividendos e balanços que já existiam (um balanço só conta 90 dias depois do fim do trimestre). Depois foi medido o retorno dos 12 meses seguintes, somando os dividendos, de três grupos: as 10 maiores notas finais, as 10 maiores notas de longo prazo e todas as ações do ranking. O CDI entra como referência de renda fixa.</p>
       </div>
+      <p class="aviso" id="bt-conclusao" hidden></p>
       <div class="macro" id="bt-resumo"></div>
       <div class="painel cartao-graf" id="bt-graf-painel">
         <h3>Retorno em cada período de 12 meses</h3>
@@ -750,8 +752,9 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
         par("Retorno sobre o patrimônio", a.roe == null ? "sem dado" : pct(a.roe, 1).replace("+", ""), "lucro de 12 meses") +
         par("Dívida líquida", a.divEbit == null ? "sem dado" : vezes(a.divEbit), a.divEbit == null ? "" : "vezes o " + (a.baseDivida || "lucro operacional")) +
         par("Retorno em 12 meses", a.tr12 == null ? "sem dado" : pct(a.tr12, 1), "preço mais dividendos recebidos") +
-        par("Dividendos conferidos", a.confDiv == null ? "sem dado" : (a.confDiv >= 0.67 && a.confDiv <= 1.5 ? "batem" : "diferem"),
-          a.confDiv == null ? "com o caixa pago informado à CVM" : "Yahoo e CVM: razão de " + vezes(a.confDiv)) +
+        par("Dividendos x CVM", a.confDiv == null ? "sem dado" : (a.confDiv >= 0.67 && a.confDiv <= 1.5 ? "batem" : "diferem"),
+          a.confDiv == null ? "Yahoo comparado ao caixa pago informado à CVM" : "Yahoo dividido pelo caixa pago à CVM em 2 anos: " + vezes(a.confDiv) +
+          (a.confDiv >= 0.67 && a.confDiv <= 1.5 ? "" : ". Holdings e o prazo entre declarar e pagar explicam parte das diferenças")) +
         par("Valor de mercado", a.valorMercado == null ? "sem dado" : "R$ " + (a.valorMercado / 1e9).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + " bi", "") +
         par("Confiança", a.conf[0] + " de " + a.conf[1], "dados disponíveis") +
       "</div>" +
@@ -1248,11 +1251,13 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
     if (pre) cards.push(["Prefixado mais longo", dec(pre.taxaCompra, 2) + "%", "ao ano até " + pre.venc.slice(0, 4)]);
     document.getElementById("rf-resumo").innerHTML = cards.map(function (c) { return '<div class="indic"><span>' + c[0] + '</span><b class="num">' + c[1] + "</b><small>" + c[2] + "</small></div>"; }).join("");
     document.getElementById("rf-data").textContent = T.data ? "Taxas de compra do dia " + dataBR(T.data) + ", na abertura do mercado." : "As taxas do Tesouro aparecem depois da próxima coleta de dados.";
-    var ordem = ["Tesouro Selic", "Tesouro IPCA+", "Tesouro IPCA+ com Juros Semestrais", "Tesouro Prefixado", "Tesouro Prefixado com Juros Semestrais"];
+    var ordem = ["Tesouro Selic", "Tesouro IPCA+", "Tesouro IPCA+ com Juros Semestrais", "Tesouro Prefixado", "Tesouro Prefixado com Juros Semestrais",
+                 "Tesouro Renda+ Aposentadoria Extra", "Tesouro Educa+", "Tesouro IGPM+ com Juros Semestrais"];
     venda.sort(function (a, b) { var x = ordem.indexOf(a.titulo), y = ordem.indexOf(b.titulo); return (x < 0 ? 99 : x) - (y < 0 ? 99 : y) || (a.venc < b.venc ? -1 : 1); });
     document.getElementById("corpo-tesouro").innerHTML = venda.map(function (t) {
       var taxa = t.taxaCompra, ano = t.venc.slice(0, 4), leit;
       if (/Selic/.test(t.titulo)) leit = "Selic + " + dec(taxa, 2) + "% até " + ano + ".";
+      else if (/Renda\+|Educa\+/.test(t.titulo)) leit = "Inflação + " + dec(taxa, 2) + "% ao ano; paga renda mensal " + (/Educa/.test(t.titulo) ? "por 5 anos" : "por 20 anos") + " a partir de " + ano + ".";
       else if (/IPCA|IGP/.test(t.titulo)) leit = "Inflação + " + dec(taxa, 2) + "% ao ano até " + ano + ".";
       else leit = dec(taxa, 2) + "% ao ano travados até " + ano + ".";
       if (t.taxaAnoAntes != null && t.taxaVenda != null) {
@@ -1409,14 +1414,26 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
       document.getElementById("corpo-bt").innerHTML = '<tr><td colspan="8" class="sem">Sem períodos ainda.</td></tr>';
       return;
     }
-    var A = B.acumulado || {}, n = B.anosAcumulados || 0, vu = B.venceuUniverso || [0, 0], vl = B.venceuLongo || [0, 0];
+    var A = B.acumulado || {}, n = B.anosAcumulados || 0, vu = B.venceuUniverso || [0, 0], vl = B.venceuLongo || [0, 0], AL = B.acumuladoLongo;
+    var anosTxt = function (k) { return k ? "em " + k + (k > 1 ? " anos" : " ano") + ", trocando em maio · " : ""; };
     res.innerHTML = [
-      ["10 maiores notas", A.top, vu[1] ? "melhor que todas as ações em " + vu[0] + " de " + vu[1] + " períodos" : ""],
-      ["10 de longo prazo", A.longo, vl[1] ? "melhor que todas as ações em " + vl[0] + " de " + vl[1] + " períodos" : ""],
-      ["Todas as ações", A.universo, "média simples do ranking"], ["CDI", A.cdi, "renda fixa de referência"]
+      ["10 maiores notas", A.top, anosTxt(n) + (vu[1] ? "melhor que todas as ações em " + vu[0] + " de " + vu[1] + " períodos" : "")],
+      ["Todas as ações", A.universo, anosTxt(n) + "média simples do ranking"],
+      ["CDI", A.cdi, anosTxt(n) + "renda fixa de referência"],
+      ["10 de longo prazo", AL ? AL.longo : null, AL ? "desde " + mesBR(AL.desde.slice(0, 7)) + " (" + AL.anos + (AL.anos > 1 ? " anos" : " ano") + "): todas as ações " + pct(AL.universo, 1) +
+        ", CDI " + pct(AL.cdi, 1) + (vl[1] ? " · melhor que todas em " + vl[0] + " de " + vl[1] + " períodos" : "") : "a nota precisa de 5 anos de balanço: ainda sem período de 12 meses fechado"]
     ].map(function (c) {
-      return '<div class="indic"><span>' + c[0] + '</span><b class="num">' + (c[1] == null ? "–" : pct(c[1], 1)) + "</b><small>" + (n ? "em " + n + (n > 1 ? " anos" : " ano") + ", trocando em maio · " : "") + c[2] + "</small></div>";
+      return '<div class="indic"><span>' + c[0] + '</span><b class="num">' + (c[1] == null ? "–" : pct(c[1], 1)) + "</b><small>" + c[2] + "</small></div>";
     }).join("");
+    var conc = document.getElementById("bt-conclusao");
+    if (A.top != null && A.universo != null) {
+      var ganhou = A.top > A.universo;
+      conc.hidden = false;
+      conc.innerHTML = "<strong>Resultado até aqui.</strong>&nbsp;Em " + n + (n > 1 ? " anos" : " ano") + ", as 10 maiores notas renderam " + pct(A.top, 1) +
+        (ganhou ? ", mais que " : ", menos que ") + "a média de todas as ações (" + pct(A.universo, 1) + ")" +
+        (A.cdi != null ? (A.top > A.cdi ? " e mais que o CDI (" : (ganhou ? ", mas menos que o CDI (" : " e menos que o CDI (")) + pct(A.cdi, 1) + ")" : "") +
+        ". " + (ganhou ? "É um sinal a favor das notas, ainda com poucos anos de teste." : "Por enquanto, as notas não mostraram vantagem: use-as como triagem, não como escolha final.");
+    }
     var fechados = P.filter(function (p) { return p.completo; });
     document.getElementById("bt-graf-painel").hidden = !fechados.length;
     var cem = function (k) { return fechados.map(function (p) { return p[k] == null ? null : p[k] * 100; }); };
