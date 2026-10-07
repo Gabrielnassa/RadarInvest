@@ -37,6 +37,8 @@ Para rodar fora de hora: aba Actions do repositório, rotina "Atualizar dados", 
 
 A nota final é a média ponderada dos métodos que se aplicam (pesos no `config.yaml`). Entram no ranking as ações com volume médio acima de R$ 500 mil por dia, uma por empresa (a mais negociada).
 
+A aba **Longo prazo** tem uma nota separada, que não entra na nota final: percentual do peso atendido num checklist de lucro em todos os 5 anos (20), lucro em todos os trimestres (10), lucro maior que há 5 anos (15), retorno sobre o patrimônio de 15% ou mais (15), dívida líquida de até 3 vezes o lucro operacional (10), receita crescendo 5% ao ano (5), dividendos em todos os 5 anos (15), preço sobre o lucro entre 0 e 15 (10) e setor perene (5). Prejuízo em 12 meses ou patrimônio negativo limitam a nota a 30.
+
 Cripto usa regras próprias: tendência em relação à média de 200 dias (45%), volatilidade de 30 dias (30%) e tamanho (25%).
 
 Todas as regras ficam em `radar/notas.py` e os limites na seção `notas` do `config.yaml`.
