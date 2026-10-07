@@ -13,7 +13,7 @@ rede:
 b3:
   ativo: true
   url_base: "https://bvmf.bmfbovespa.com.br/InstDados/SerHist"
-  anos_historico: 2
+  anos_historico: 7            # 7 anos para o teste das notas no passado
   # 02 = lote padrao (acoes, units, BDRs) | 12 = fundos imobiliarios
   codbdi: ["02", "12"]
   # Se a coleta da B3 falhar com "erro de certificado (SSL)", troque para false.
@@ -28,6 +28,8 @@ cvm:
   demonstrativos: [BPA, BPP, DRE, DFC_MI]
   # 1 = so totais (ex.: "3"), 2 = "3.01", 3 = "3.01.01"
   nivel_max_conta: 3
+  # o fluxo de caixa guarda um nivel a mais (depreciacao, usada no Ebitda)
+  nivel_max_dfc: 4
   # true guarda so empresas com codigo de negociacao no cadastro da CVM
   somente_listadas: false
   cache_horas: 24
@@ -60,16 +62,28 @@ notas:
   pesos: {barsi: 20, bazin: 15, qualidade: 30, graham: 15, greenblatt: 20}
   dy_minimo: 0.06              # dividendo minimo de Barsi e Bazin
   roe_minimo: 0.15
-  divida_ebit_max: 3.0         # divida liquida sobre lucro operacional
+  divida_ebit_max: 3.0         # divida liquida sobre Ebitda (ou lucro operacional, se faltar a depreciacao)
   nucleo_cripto: [bitcoin, ethereum]
 
 # Indicadores do Banco Central (codigos das series do SGS)
 macro:
   ativo: true
   url_base: "https://api.bcb.gov.br/dados/serie"
-  anos: 3
+  anos: 7
   series:
     selic_meta: 432
     ipca_mensal: 433
     dolar_ptax: 1
     cdi_anual: 4389
+
+# Informe mensal dos fundos imobiliarios (dados abertos da CVM)
+fii:
+  ativo: true
+  url_base: "https://dados.cvm.gov.br/dados/FII/DOC/INF_MENSAL/DADOS"
+  cache_horas: 24
+
+# Taxas do Tesouro Direto (Tesouro Transparente)
+tesouro:
+  ativo: true
+  url: "https://www.tesourotransparente.gov.br/ckan/dataset/df56aa42-484a-4a59-8184-7676580c81e3/resource/796d2059-14e9-44e3-80c9-2d9e30b405c1/download/PrecoTaxaTesouroDireto.csv"
+  cache_horas: 12

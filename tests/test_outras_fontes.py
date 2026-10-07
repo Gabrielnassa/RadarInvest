@@ -39,9 +39,9 @@ class TestDividendos(unittest.TestCase):
             conn.executemany("INSERT INTO cotacoes (ticker, data, fechamento, volume) VALUES (?, ?, 10, ?)",
                              [(ticker, f"2026-09-{d:02d}", volume) for d in range(1, 31)])
         conn.execute("INSERT INTO dividendos_controle VALUES ('FEIT4', '2026-10-05', ?)", (div.FEITO,))
-        # media de 60 pregoes: 30 dias com 5 mi = 2,5 mi/dia
-        self.assertEqual(div.selecionar_tickers(conn, 500000, date(2026, 10, 6), 7), ["LIQD3"])
-        self.assertEqual(div.selecionar_tickers(conn, 500000, date(2026, 10, 20), 7), ["FEIT4", "LIQD3"])
+        # media de 60 pregoes: 30 dias com 5 mi = 2,5 mi/dia; fundos imobiliarios tambem entram
+        self.assertEqual(div.selecionar_tickers(conn, 500000, date(2026, 10, 6), 7), ["FIIX11", "LIQD3"])
+        self.assertEqual(div.selecionar_tickers(conn, 500000, date(2026, 10, 20), 7), ["FIIX11", "FEIT4", "LIQD3"])
 
 
 class TestCripto(unittest.TestCase):

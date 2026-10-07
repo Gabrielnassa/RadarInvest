@@ -6,7 +6,9 @@ import math
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import db, notas
+from datetime import date, timedelta
+
+from . import backtest, db, notas
 
 
 def _limpar(x):
@@ -52,16 +54,69 @@ def sem_vinculo(conn, volume_minimo: float) -> list[str]:
            GROUP BY a.ticker HAVING sum(c.volume) / 60.0 >= ? ORDER BY sum(c.volume) DESC""", (volume_minimo,))]
 
 
+def precos_mensais(conn, tickers: list[str], anos: int = 5) -> dict[str, list]:
+    """Ultimo fechamento de cada mes nos ultimos `anos`, na base de acoes de hoje: {ticker: [[aaaa-mm, preco]]}."""
+    ultima = conn.execute("SELECT max(data) FROM cotacoes").fetchone()[0]
+    if not ultima or not tickers:
+        return {}
+    desde = (date.fromisoformat(ultima) - timedelta(days=365 * anos + 31)).isoformat()
+    splits: dict[str, list] = {}
+    for t, d, f in conn.execute("SELECT ticker, data, fator FROM desdobramentos WHERE fator > 0"):
+        splits.setdefault(t, []).append((d, f))
+    saida: dict[str, dict] = {}
+    marcas = ",".join("?" * len(tickers))
+    for t, d, fech in conn.execute(f"SELECT ticker, data, fechamento FROM cotacoes WHERE ticker IN ({marcas}) AND data >= ? "
+                                   "ORDER BY ticker, data", (*tickers, desde)):
+        if fech:
+            fator = 1.0
+            for quando, f in splits.get(t, ()):
+                if quando > d:
+                    fator *= f
+            saida.setdefault(t, {})[d[:7]] = round(fech / fator, 2)
+    return {t: [[m, v] for m, v in sorted(meses.items())] for t, meses in saida.items()}
+
+
+def tesouro(conn) -> dict:
+    """Titulos a venda na data mais recente, com a taxa de um ano antes para comparar."""
+    ultima = conn.execute("SELECT max(data) FROM tesouro").fetchone()[0]
+    if not ultima:
+        return {"data": None, "titulos": []}
+    ano_antes = (date.fromisoformat(ultima) - timedelta(days=365)).isoformat()
+    titulos = []
+    for tit, venc, tc, tv, pc, pv in conn.execute(
+            "SELECT titulo, vencimento, taxa_compra, taxa_venda, pu_compra, pu_venda FROM tesouro WHERE data = ? ORDER BY titulo, vencimento",
+            (ultima,)):
+        antes = conn.execute("SELECT taxa_venda FROM tesouro WHERE titulo = ? AND vencimento = ? AND data <= ? ORDER BY data DESC LIMIT 1",
+                             (tit, venc, ano_antes)).fetchone()
+        serie = [[d[:7], v] for d, v in conn.execute(
+            """SELECT max(data), taxa_venda FROM tesouro WHERE titulo = ? AND vencimento = ? GROUP BY substr(data, 1, 7) ORDER BY 1""",
+            (tit, venc))]
+        titulos.append({"titulo": tit, "venc": venc, "taxaCompra": tc, "taxaVenda": tv, "puCompra": pc, "puVenda": pv,
+                        "aVenda": bool(tc and tc > 0 and pc and pc > 0), "taxaAnoAntes": antes[0] if antes else None,
+                        "serie": serie})
+    return {"data": ultima, "titulos": titulos}
+
+
 def montar(conn, cfg: dict) -> dict:
     regras = cfg.get("notas") or {}
     acoes = notas.calcular_acoes(conn, regras)
     cripto = notas.calcular_cripto(conn, regras)
+    fiis = notas.calcular_fiis(conn, regras)
+    teste = backtest.rodar(conn, regras)
+    historico = teste.pop("historico", {})
+    mensais = precos_mensais(conn, [a["t"] for a in acoes])
+    for a in acoes:
+        a["hist"] = historico.get(a["t"], []) + [[a["data"], round(a["final"]), a.get("lp")]]
+        a["precos5"] = mensais.get(a["t"], [])
     return _limpar({
         "geradoEm": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "dataCotacao": conn.execute("SELECT max(data) FROM cotacoes").fetchone()[0],
         "pesos": dict(notas.PADRAO["pesos"], **(regras.get("pesos") or {})),
         "acoes": acoes,
         "cripto": cripto,
+        "fiis": fiis,
+        "tesouro": tesouro(conn),
+        "backtest": teste,
         "macro": macro(conn),
         "coleta": coletas(conn),
         "semVinculo": sem_vinculo(conn, float(regras.get("volume_minimo", notas.PADRAO["volume_minimo"]))),

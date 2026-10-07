@@ -26,11 +26,12 @@ def coletar(conn, rede, cfg, cache: Path, hoje: date | None = None):
     anos = min(10, int(cfg.get("anos", 3)))  # o SGS limita series diarias a janelas de 10 anos
     total, avisos = 0, []
     for nome, codigo in (cfg.get("series") or {}).items():
-        ultima = conn.execute("SELECT max(data) FROM macro WHERE serie = ?", (nome,)).fetchone()[0]
-        if ultima:
+        primeira, ultima = conn.execute("SELECT min(data), max(data) FROM macro WHERE serie = ?", (nome,)).fetchone()
+        desejado = hoje - timedelta(days=365 * anos)
+        if ultima and date.fromisoformat(primeira) <= desejado + timedelta(days=45):
             inicio = date.fromisoformat(ultima) + timedelta(days=1)
         else:
-            inicio = hoje - timedelta(days=365 * anos)
+            inicio = desejado   # sem dados ou com historico mais curto que o configurado: busca tudo de novo
         if inicio > hoje:
             continue
         status, payload, erro = None, None, None

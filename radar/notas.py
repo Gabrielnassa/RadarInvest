@@ -71,6 +71,7 @@ def montar_fundamentos(linhas) -> dict:
     comum e o de bancos e seguradoras.
     """
     dre: dict[tuple, list] = {}
+    dfc: dict[tuple, list] = {}
     bpp: dict[str, list] = {}
     bpa: dict[str, list] = {}
     for dem, refer, ini, fim, cd, ds, valor in linhas:
@@ -79,6 +80,8 @@ def montar_fundamentos(linhas) -> dict:
         item = (cd, norm(ds), valor)
         if dem == "DRE" and ini and fim:
             dre.setdefault((ini, fim), []).append(item)
+        elif dem == "DFC_MI" and ini and fim:
+            dfc.setdefault((ini, fim), []).append(item)
         elif dem == "BPP":
             bpp.setdefault(refer, []).append(item)
         elif dem == "BPA":
@@ -98,7 +101,19 @@ def montar_fundamentos(linhas) -> dict:
             elif nivel(cd) == 2 and "antes do resultado financeiro" in n:
                 ebit[periodo] = valor
 
-    f = {"lucro": lucro, "receita": receita, "ebit": ebit, "plano_financeiro": bool(lucro) and not ebit}
+    # depreciacao e amortizacao somadas de volta no caixa operacional (6.01.01.xx); dividendos e JCP pagos (6.03.xx)
+    da, pagos = {}, {}
+    for periodo, itens in dfc.items():
+        v = [x for cd, n, x in itens if cd.startswith("6.01.01.") and nivel(cd) == 4
+             and ("deprecia" in n or "amortiza" in n or "exaust" in n) and "arrend" not in n]
+        if v:
+            da[periodo] = sum(v)
+        d = [x for cd, n, x in itens if cd.startswith("6.03.") and nivel(cd) == 3
+             and ("dividend" in n or "juros sobre" in n) and "receb" not in n]
+        if d:
+            pagos[periodo] = -sum(d)
+    f = {"lucro": lucro, "receita": receita, "ebit": ebit, "da": da, "div_pagos": pagos,
+         "plano_financeiro": bool(lucro) and not ebit}
 
     if bpp:
         refer = max(bpp)
@@ -228,7 +243,7 @@ def criterios_longo_prazo(lucro_5anos, lucro_trimestres, lucro_cresceu, roe_ok, 
         ["Lucro em todos os trimestres dos últimos 5 anos", lucro_trimestres, 10],
         ["Lucro maior que o de 5 anos atrás", lucro_cresceu, 15],
         ["Retorno sobre o patrimônio de 15% ou mais", roe_ok, 15],
-        ["Dívida líquida de até 3 vezes o lucro operacional", divida_ok, 10],
+        ["Dívida líquida de até 3 vezes o Ebitda", divida_ok, 10],
         ["Receita cresceu 5% ao ano ou mais em 5 anos", receita_ok, 5],
         ["Pagou dividendos em todos os últimos 5 anos", None if anos_div is None else anos_div >= 5, 15],
         [f"Preço sobre o lucro entre 0 e {p_l_max:.0f}", None if p_l is None else 0 < p_l <= p_l_max, 10],
@@ -244,6 +259,14 @@ def nota_longo_prazo(criterios, prejuizo=False) -> float | None:
         return None
     nota = 100.0 * sum(peso for _, ok, peso in criterios if ok) / com
     return min(nota, 30.0) if prejuizo else nota
+
+
+def conferir_dividendos(dpa_yahoo: float | None, acoes: float | None, pago_cvm: float | None) -> float | None:
+    """Razao entre os dividendos do Yahoo (por acao x acoes) e o caixa pago informado a CVM no mesmo periodo.
+    Perto de 1 = as duas fontes concordam. None quando falta um dos lados."""
+    if not dpa_yahoo or not acoes or not pago_cvm or pago_cvm <= 0:
+        return None
+    return dpa_yahoo * acoes / pago_cvm
 
 
 def nota_final(notas: dict, pesos: dict) -> float | None:
@@ -262,20 +285,25 @@ def _classe(ticker: str) -> str:
     return "on" if sufixo == "3" else "unit" if sufixo == "11" else "pn"
 
 
-def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
+def calcular_acoes(conn, cfg: dict | None = None, ate: str | None = None) -> list[dict]:
+    """Notas de todas as acoes. Com `ate`, calcula como se fosse aquele dia: so cotacoes e dividendos
+    ate a data, e so balancos com pelo menos 90 dias (o prazo de publicacao), para o teste no passado."""
     p = dict(PADRAO, **(cfg or {}))
     pesos = p["pesos"]
-    ultima = conn.execute("SELECT max(data) FROM cotacoes").fetchone()[0]
+    limite = ate or "9999-12-31"
+    ultima = conn.execute("SELECT max(data) FROM cotacoes WHERE data <= ?", (limite,)).fetchone()[0]
     if not ultima:
         return []
     hoje = date.fromisoformat(ultima)
     desde = (hoje - timedelta(days=400)).isoformat()
+    publicado = (hoje - timedelta(days=90)).isoformat() if ate else "9999-12-31"
+    completo = ate is None   # series longas e conferencias so no calculo de hoje
 
     # ----- mercado: preco, volume e serie por ticker
     mercado: dict[str, dict] = {}
     for ticker, dia, fech, vol in conn.execute(
             """SELECT c.ticker, c.data, c.fechamento, c.volume FROM cotacoes c JOIN ativos a ON a.ticker = c.ticker
-               WHERE a.tipo IN ('acao', 'unit') AND c.data >= ? ORDER BY c.ticker, c.data""", (desde,)):
+               WHERE a.tipo IN ('acao', 'unit') AND c.data >= ? AND c.data <= ? ORDER BY c.ticker, c.data""", (desde, limite)):
         mercado.setdefault(ticker, {"dias": []})["dias"].append((dia, fech, vol or 0.0))
     desdobros: dict[str, list] = {}
     for ticker, dia, fator in conn.execute("SELECT ticker, data, fator FROM desdobramentos WHERE fator > 0 ORDER BY data"):
@@ -292,7 +320,8 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
     for ticker, m in mercado.items():
         if ticker in desdobros:   # preco antigo na base de hoje: divide pelo fator dos desdobramentos posteriores
             m["dias"] = [(d, fech / fator_depois(ticker, d), v) for d, fech, v in m["dias"]]
-    pregoes = [d for (d,) in conn.execute("SELECT DISTINCT data FROM cotacoes WHERE data >= ? ORDER BY data DESC LIMIT 60", (desde,))]
+    pregoes = [d for (d,) in conn.execute(
+        "SELECT DISTINCT data FROM cotacoes WHERE data >= ? AND data <= ? ORDER BY data DESC LIMIT 60", (desde, limite))]
     corte60 = pregoes[-1] if pregoes else ultima
     recente = (hoje - timedelta(days=7)).isoformat()
     for ticker, m in mercado.items():
@@ -302,6 +331,7 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
         alvo = (hoje - timedelta(days=365)).isoformat()
         antigos = [f for d, f, _ in dias if d <= alvo]
         m["var12"] = (m["preco"] / antigos[-1] - 1) if antigos and antigos[-1] else None
+        m["p_antigo"], m["desde12"] = (antigos[-1], alvo) if antigos and antigos[-1] else (None, None)
         ano = [f for d, f, _ in dias if d > alvo]
         passo = max(1, len(ano) // 52)
         serie = ano[::-1][::passo][::-1]
@@ -323,17 +353,18 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
     contas: dict[str, list] = {}
     for cnpj, dem, refer, ini, fim, cd, ds, valor in conn.execute(
             """SELECT cnpj, demonstrativo, dt_refer, dt_ini_exerc, dt_fim_exerc, cd_conta, ds_conta, valor
-               FROM demonstrativos WHERE demonstrativo IN ('DRE', 'BPA', 'BPP')"""):
+               FROM demonstrativos WHERE demonstrativo IN ('DRE', 'BPA', 'BPP', 'DFC_MI') AND dt_refer <= ?""", (publicado,)):
         if cnpj in empresas:
             contas.setdefault(cnpj, []).append((dem, refer, ini, fim, cd, ds, valor))
     capital = {}
     for cnpj, refer, on_t, pn_t, tot, on_x, pn_x, tes in conn.execute(
-            "SELECT cnpj, dt_refer, on_total, pn_total, total, on_tes, pn_tes, tes FROM capital ORDER BY dt_refer"):
+            "SELECT cnpj, dt_refer, on_total, pn_total, total, on_tes, pn_tes, tes FROM capital WHERE dt_refer <= ? ORDER BY dt_refer",
+            (publicado,)):
         capital[cnpj] = (refer, on_t or 0.0, pn_t or 0.0, tot or 0.0, on_x or 0.0, pn_x or 0.0, tes or 0.0)
 
     # ----- dividendos por ticker
     divs: dict[str, list] = {}
-    for ticker, dia, valor in conn.execute("SELECT ticker, data, valor FROM dividendos ORDER BY data"):
+    for ticker, dia, valor in conn.execute("SELECT ticker, data, valor FROM dividendos WHERE data <= ? ORDER BY data", (limite,)):
         divs.setdefault(ticker, []).append((dia, valor))
     consultados = {t for (t,) in conn.execute("SELECT ticker FROM dividendos_controle WHERE situacao LIKE 'ok%'")}
 
@@ -358,6 +389,7 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
         # valor de mercado: acoes de cada classe x preco da classe.
         # P/L e P/VP seguem a convencao usual (preco deste papel x todas as acoes); units usam o valor por classe.
         valor_mercado = valor_papel = None
+        q_acoes = None
         cap = capital.get(cnpj)
         if cap:
             cap_em, on_t, pn_t, tot, on_x, pn_x, tes = cap
@@ -365,6 +397,7 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
             on_t, pn_t, tot, on_x, pn_x, tes = (x * ajuste for x in (on_t, pn_t, tot, on_x, pn_x, tes))
             q_on, q_pn = on_t - on_x, pn_t - pn_x
             q_total = (q_on + q_pn) or (tot - tes)
+            q_acoes = q_total
             precos = {_classe(t): mercado[t]["preco"] for t in sorted(e["tickers"], key=lambda t: mercado[t]["volume"])}
             p_on = precos.get("on") or precos.get("pn")
             p_pn = precos.get("pn") or precos.get("on")
@@ -374,8 +407,9 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
                 if pl and pl > 0:
                     fator = 1000 if valor_mercado / pl < 0.02 else 1          # quantidade informada em milhares
                     valor_mercado, valor_papel = valor_mercado * fator, valor_papel * fator
+                    q_acoes = q_total * fator
                     if not (0.02 <= valor_mercado / pl <= 200):
-                        valor_mercado = valor_papel = None
+                        valor_mercado = valor_papel = q_acoes = None
         p_l = (valor_papel / lucro12) if (valor_papel and lucro12) else None
         p_vp = (valor_papel / pl) if (valor_papel and pl) else None
 
@@ -426,14 +460,17 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
         r_anos = sorted(receitas_ano)
         if len(r_anos) >= 5 and receitas_ano[r_anos[-5]] > 0 and receitas_ano[r_anos[-1]] > 0:
             cresc_receita = (receitas_ano[r_anos[-1]] / receitas_ano[r_anos[-5]]) ** (1 / 4) - 1
-        divida_ebit = (divida_liq / ebit12) if (divida_liq is not None and ebit12 and ebit12 > 0) else None
+        da12, _, _ = ultimos_12_meses(f["da"])
+        ebitda12 = (ebit12 + da12) if (ebit12 is not None and da12) else None
+        geracao, base_divida = (ebitda12, "Ebitda") if ebitda12 else (ebit12, "lucro operacional")
+        divida_ebit = (divida_liq / geracao) if (divida_liq is not None and geracao and geracao > 0) else None
         check = [
             (f"Retorno sobre o patrimônio de {p['roe_minimo']:.0%} ou mais", None if roe is None else roe >= p["roe_minimo"]),
             ("Lucro em cada um dos últimos 5 anos", None if len(ultimos5) < 5 else all(lucros_ano[a] > 0 for a in ultimos5)),
             ("Lucro em todos os trimestres dos últimos 5 anos", None if len(tri_fins) < 12 else all(tri[x] > 0 for x in tri_fins)),
             ("Receita cresceu 5% ao ano ou mais em 5 anos", None if financeiro or cresc_receita is None else cresc_receita >= p["crescimento_receita_min"]),
             ("Lucro maior que o de 5 anos atrás", None if len(ultimos5) < 5 else lucros_ano[ultimos5[-1]] > lucros_ano[ultimos5[0]] > 0),
-            (f"Dívida líquida de até {p['divida_ebit_max']:.0f} vezes o lucro operacional",
+            (f"Dívida líquida de até {p['divida_ebit_max']:.0f} vezes o Ebitda",
              None if financeiro else (True if (divida_liq is not None and divida_liq <= 0) else
                                       None if divida_ebit is None else divida_ebit <= p["divida_ebit_max"])),
             ("Pelo menos 5 anos de balanços publicados", len(anos) >= 5 if anos else None),
@@ -467,7 +504,7 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
         if len(ultimos5) >= 3 and any(lucros_ano[a] < 0 for a in ultimos5) and not (lucro12 is not None and lucro12 < 0):
             alertas.append("Teve prejuízo em pelo menos um dos últimos 5 anos")
         if divida_ebit is not None and divida_ebit > p["divida_ebit_max"]:
-            alertas.append(f"Dívida líquida de {divida_ebit:.1f} vezes o lucro operacional".replace(".", ","))
+            alertas.append(f"Dívida líquida de {divida_ebit:.1f} vezes o {base_divida}".replace(".", ","))
         if lucro_fora or ebit_fora:
             alertas.append("Lucro de 12 meses é mais que o dobro da média de 3 anos: Graham e Greenblatt usam a média")
         if m["volume"] < p["liquidez_boa"]:
@@ -484,6 +521,22 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
         c = [ok for _, ok in check]           # mesma ordem do checklist acima
         lp = criterios_longo_prazo(c[1], c[2], c[4], c[0], c[5], c[3], anos_pagos if tem_div else None, p_l_base, setor)
         prejuizo = (lucro12 is not None and lucro12 < 0) or (pl is not None and pl <= 0)
+        # retorno de 12 meses somando os dividendos recebidos no periodo (o preco da B3 nao desconta proventos)
+        tr12 = None
+        if m["p_antigo"] and tem_div:
+            tr12 = (preco + sum(v for d, v in pagos if d > m["desde12"])) / m["p_antigo"] - 1
+
+        # conferencia: dividendos do Yahoo x caixa pago informado a CVM nos 2 ultimos anos fechados
+        conf_div = None
+        anos_pagos_cvm = anuais(f["div_pagos"])
+        fechados = sorted(anos_pagos_cvm)[-2:]
+        # so informativa: holdings (o consolidado inclui o que as controladas pagam a minoritarios) e o prazo
+        # entre declarar e pagar explicam boa parte das diferencas; units ficam de fora (uma unit reune varias acoes)
+        if completo and tem_div and fechados and q_acoes and _classe(ticker) != "unit":
+            anos_c = {fim[:4] for fim in fechados}
+            conf_div = conferir_dividendos(sum(v for d, v in pagos if d[:4] in anos_c), q_acoes,
+                                           sum(anos_pagos_cvm[x] for x in fechados))
+
         # sinais de evento isolado: o ativo continua no ranking, mas sai da lista de destaques
         distorcao = bool(lucro_fora or ebit_fora or variacao_estranha or (dy12 is not None and dy12 > 0.15))
 
@@ -499,6 +552,8 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
             "conf": [sum(1 for d in dados if d is not None and d is not False), len(dados)],
             "serie": m["serie"], "lucroAte": lucro_fim, "lucroBase": lucro_origem, "balancoEm": f.get("balanco_em"),
             "aplicaveis": 4 if financeiro else 5, "lucroNormalizado": lucro_fora or ebit_fora, "distorcao": distorcao,
+            "baseDivida": base_divida, "tr12": tr12, "confDiv": conf_div,
+            "anual": _serie_anual(lucros_ano, receitas_ano, pagos, hoje) if completo else None,
             "lp": nota_longo_prazo(lp, prejuizo), "lpCheck": [[txt, v] for txt, v, _ in lp],
         })
 
@@ -513,6 +568,19 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
     resultado = [r for r in resultado if r["final"] is not None]
     resultado.sort(key=lambda r: -r["final"])
     return resultado
+
+
+def _serie_anual(lucros: dict, receitas: dict, pagos: list, hoje: date) -> dict:
+    """Ultimos 6 anos fechados: lucro, receita e dividendos por acao pagos (pela data com direito)."""
+    anos = [str(a) for a in range(hoje.year - 6, hoje.year)]
+    por_ano = lambda serie: {fim[:4]: v for fim, v in serie.items()}  # noqa: E731
+    lu, re_ = por_ano(lucros), por_ano(receitas)
+    div = {a: 0.0 for a in anos}
+    for d, v in pagos:
+        if d[:4] in div:
+            div[d[:4]] += v
+    return {"anos": anos, "lucro": [lu.get(a) for a in anos], "receita": [re_.get(a) for a in anos],
+            "dpa": [round(div[a], 4) if pagos else None for a in anos]}
 
 
 # ---------------------------------------------------------------- cripto
@@ -561,4 +629,96 @@ def calcular_cripto(conn, cfg: dict | None = None) -> list[dict]:
             "al": alertas, "serie": s[::-1][::passo][::-1][-53:], "valorMercado": cap,
         })
     saida.sort(key=lambda c: -(c["nota"] if c["nota"] is not None else -1))
+    return saida
+
+
+# ---------------------------------------------------------------- fundos imobiliarios
+
+def nota_fii(dy12, p_vp, meses_pagos, volume) -> tuple[float | None, dict]:
+    """35% dividendos (6% ao ano vale 0, 12% vale 100), 25% preco sobre o patrimonio (1,0 vale 50,
+    0,8 vale 100, 1,2 vale 0), 25% regularidade (meses com pagamento nos ultimos 12) e 15% liquidez
+    (R$ 2 milhoes por dia vale 100). Parte sem dado fica fora da media; sem dividendos ou sem valor
+    patrimonial nao ha nota. Dividendos acima de 18% ou preco abaixo de 0,6 do patrimonio costumam indicar
+    problema nos imoveis ou creditos: a nota fica limitada a 60."""
+    partes = {
+        "dividendos": None if dy12 is None else limitar((dy12 - 0.06) / 0.06 * 100),
+        "desconto": None if not p_vp or p_vp <= 0 else limitar(50 + (1 - p_vp) * 250),
+        "regularidade": None if meses_pagos is None else meses_pagos / 12 * 100,
+        "liquidez": None if volume is None else limitar(volume / 2_000_000 * 100),
+    }
+    pesos = {"dividendos": 35, "desconto": 25, "regularidade": 25, "liquidez": 15}
+    com = {k: v for k, v in partes.items() if v is not None}
+    if "dividendos" not in com or "desconto" not in com or len(com) < 3:
+        return None, partes
+    nota = sum(v * pesos[k] for k, v in com.items()) / sum(pesos[k] for k in com)
+    if dy12 > 0.18 or p_vp < 0.6:
+        nota = min(nota, 60.0)
+    return nota, partes
+
+
+def calcular_fiis(conn, cfg: dict | None = None) -> list[dict]:
+    p = dict(PADRAO, **(cfg or {}))
+    minimo = float(p.get("volume_minimo_fii", 300000))
+    ultima = conn.execute("SELECT max(data) FROM cotacoes").fetchone()[0]
+    if not ultima:
+        return []
+    hoje = date.fromisoformat(ultima)
+    desde = (hoje - timedelta(days=400)).isoformat()
+    alvo = (hoje - timedelta(days=365)).isoformat()
+    recente = (hoje - timedelta(days=7)).isoformat()
+    pregoes = [d for (d,) in conn.execute("SELECT DISTINCT data FROM cotacoes WHERE data >= ? ORDER BY data DESC LIMIT 60", (desde,))]
+    corte60 = pregoes[-1] if pregoes else ultima
+
+    mercado: dict[str, dict] = {}
+    for t, nome, isin, dia, fech, vol in conn.execute(
+            """SELECT a.ticker, a.nome_pregao, a.isin, c.data, c.fechamento, c.volume FROM cotacoes c
+               JOIN ativos a ON a.ticker = c.ticker WHERE a.tipo = 'fii' AND c.data >= ? ORDER BY a.ticker, c.data""", (desde,)):
+        mercado.setdefault(t, {"nome": nome, "isin": isin, "dias": []})["dias"].append((dia, fech, vol or 0.0))
+    info = {}
+    for isin, nome, seg, man, cot, pl, vp, ref in conn.execute(
+            """SELECT isin, nome, segmento, mandato, cotistas, pl, vp_cota, data_ref FROM fii_mensal
+               WHERE isin IS NOT NULL AND isin != '' ORDER BY data_ref"""):
+        info[isin] = (nome, seg, man, cot, pl, vp, ref)
+    divs: dict[str, list] = {}
+    for t, d, v in conn.execute("SELECT d.ticker, d.data, d.valor FROM dividendos d JOIN ativos a ON a.ticker = d.ticker "
+                                "WHERE a.tipo = 'fii' AND d.data > ?", (alvo,)):
+        divs.setdefault(t, []).append((d, v))
+    consultados = {t for (t,) in conn.execute("SELECT ticker FROM dividendos_controle WHERE situacao LIKE 'ok%'")}
+
+    saida = []
+    for t, m in mercado.items():
+        dias = m["dias"]
+        dia, preco = dias[-1][0], dias[-1][1]
+        volume = sum(v for d, _, v in dias if d >= corte60) / max(1, len(pregoes))
+        if dia < recente or volume < minimo or not preco:
+            continue
+        antigos = [f for d, f, _ in dias if d <= alvo]
+        var12 = (preco / antigos[-1] - 1) if antigos and antigos[-1] else None
+        nome, seg, man, cot, pl, vp, ref = info.get(m["isin"], (None,) * 7)
+        p_vp = (preco / vp) if vp else None
+        pagos = divs.get(t, [])
+        dy12 = (sum(v for _, v in pagos) / preco) if t in consultados else None
+        meses = len({d[:7] for d, _ in pagos}) if t in consultados else None
+        nota, partes = nota_fii(dy12, p_vp, meses, volume)
+        alertas = []
+        if dy12 is not None and dy12 > 0.18:
+            alertas.append(f"Dividendos de 12 meses somam {dy12:.0%} do preço: pode haver pagamento não recorrente")
+        if p_vp is not None and p_vp < 0.6:
+            alertas.append("Negocia muito abaixo do patrimônio: o mercado pode ver risco nos imóveis ou créditos")
+        if meses is not None and meses < 10:
+            alertas.append(f"Pagou em só {meses} dos últimos 12 meses")
+        if var12 is not None and var12 <= -0.25:
+            alertas.append(f"Caiu {abs(var12):.0%} em 12 meses")
+        if vp is None:
+            alertas.append("Sem informe mensal na CVM ligado a este código: sem valor patrimonial, a nota não é calculada")
+        ano = [f for d, f, _ in dias if d > alvo]
+        passo = max(1, len(ano) // 52)
+        saida.append({
+            "t": t, "n": nome or m["nome"], "seg": seg or "Sem segmento", "mandato": man, "p": round(preco, 2), "data": dia,
+            "vol": round(volume), "var12": var12, "dy": dy12, "pvp": p_vp, "vp": vp, "meses": meses, "cotistas": cot,
+            "pl": pl, "infoEm": ref, "nota": None if nota is None else round(nota),
+            "partes": {k: (None if v is None else round(v)) for k, v in partes.items()},
+            "al": alertas, "serie": [round(x, 2) for x in ano[::-1][::passo][::-1][-53:]],
+        })
+    saida.sort(key=lambda f: -(f["nota"] if f["nota"] is not None else -1))
     return saida

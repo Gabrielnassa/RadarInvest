@@ -174,10 +174,11 @@ def _referencia(data_ref: str, versao: str) -> str:
 
 # ---------------------------------------------------------------- demonstrativos (DFP e ITR)
 
-def carregar_demonstrativos(conn, caminho: Path, origem: str, demonstrativos, nivel_max: int,
+def carregar_demonstrativos(conn, caminho: Path, origem: str, demonstrativos, nivel_max: int | dict,
                             permitidos: set[str] | None = None) -> int:
     """Grava as contas do exercicio mais recente de cada documento.
-    Usa o consolidado quando a empresa publica um; senao, o individual."""
+    Usa o consolidado quando a empresa publica um; senao, o individual.
+    nivel_max pode ser um numero ou {demonstrativo: nivel}."""
     prefixo = origem.lower()
     com_consolidado: set[tuple[str, str]] = set()
     total = 0
@@ -186,8 +187,9 @@ def carregar_demonstrativos(conn, caminho: Path, origem: str, demonstrativos, ni
             for dem in demonstrativos:
                 membro = _membro(zf, f"{prefixo}_cia_aberta_{dem}_{escopo}_")
                 if membro:
+                    nivel = nivel_max.get(dem, 3) if isinstance(nivel_max, dict) else nivel_max
                     total += _carregar_csv(conn, zf, membro, origem.upper(), dem, consolidado,
-                                           nivel_max, permitidos, com_consolidado)
+                                           nivel, permitidos, com_consolidado)
         membro = _membro(zf, f"{prefixo}_cia_aberta_composicao_capital_")
         if membro:
             total += _carregar_capital(conn, zf, membro, permitidos)
@@ -307,7 +309,9 @@ def coletar(conn, rede, cfg, cache: Path, hoje: date | None = None):
 
     anos = max(1, int(cfg.get("anos_fundamentos", 6)))
     dems = cfg.get("demonstrativos", ["BPA", "BPP", "DRE", "DFC_MI"])
-    nivel = int(cfg.get("nivel_max_conta", 3))
+    nivel = {d: int(cfg.get("nivel_max_conta", 3)) for d in dems}
+    # o fluxo de caixa precisa de um nivel a mais: e onde fica a depreciacao, usada no Ebitda
+    nivel["DFC_MI"] = max(nivel.get("DFC_MI", 3), int(cfg.get("nivel_max_dfc", 4)))
     plano = [("DFP", a) for a in range(hoje.year - anos, hoje.year + 1)]
     plano += [("ITR", a) for a in range(hoje.year - anos + 1, hoje.year + 1)]
     for origem, ano in plano:

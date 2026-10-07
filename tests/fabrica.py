@@ -113,3 +113,28 @@ def gravar_json(destino: Path, dado) -> Path:
     destino.parent.mkdir(parents=True, exist_ok=True)
     destino.write_text(json.dumps(dado), encoding="utf-8")
     return destino
+
+
+CAB_FII_GERAL = ["CNPJ_Fundo_Classe", "Data_Referencia", "Versao", "Nome_Fundo_Classe", "Codigo_ISIN",
+                 "Segmento_Atuacao", "Mandato"]
+CAB_FII_COMP = ["CNPJ_Fundo_Classe", "Data_Referencia", "Versao", "Total_Numero_Cotistas", "Valor_Ativo",
+                "Patrimonio_Liquido", "Cotas_Emitidas", "Valor_Patrimonial_Cotas", "Percentual_Dividend_Yield_Mes"]
+
+
+def zip_fii(destino: Path, ano: int, geral: list[list], complemento: list[list]) -> Path:
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(destino, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(f"inf_mensal_fii_geral_{ano}.csv", _csv(CAB_FII_GERAL, geral))
+        zf.writestr(f"inf_mensal_fii_complemento_{ano}.csv", _csv(CAB_FII_COMP, complemento))
+        zf.writestr(f"inf_mensal_fii_ativo_passivo_{ano}.csv", b"CNPJ_Fundo_Classe;Data_Referencia\r\n")
+    return destino
+
+
+CAB_TESOURO = ["Tipo Titulo", "Data Vencimento", "Data Base", "Taxa Compra Manha", "Taxa Venda Manha",
+               "PU Compra Manha", "PU Venda Manha", "PU Base Manha"]
+
+
+def csv_tesouro(destino: Path, linhas: list[list]) -> Path:
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    destino.write_bytes(_csv(CAB_TESOURO, linhas))
+    return destino
