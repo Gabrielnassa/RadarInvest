@@ -1124,9 +1124,9 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
       s += '<line x1="' + ml + '" x2="' + (W - mr) + '" y1="' + y(t).toFixed(1) + '" y2="' + y(t).toFixed(1) + '" stroke="var(--line)"/>' +
         '<text x="' + (ml - 6) + '" y="' + (y(t) + 3.5).toFixed(1) + '" text-anchor="end" font-size="10.5" fill="var(--muted)">' + esc(fmt(t)) + "</text>";
     });
-    var passo = Math.max(1, Math.ceil(rotulos.length / 6));
+    var cabem = Math.max(2, Math.floor((W - ml - mr) / 64)), passo = Math.max(1, Math.ceil(rotulos.length / cabem)), ult = rotulos.length - 1;
     rotulos.forEach(function (r, i) {
-      if (i % passo === 0 || i === rotulos.length - 1) s += '<text x="' + x(i).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="' + (i === 0 ? "start" : i === rotulos.length - 1 ? "end" : "middle") + '" font-size="10.5" fill="var(--muted)">' + esc(r) + "</text>";
+      if (i === ult || (i % passo === 0 && ult - i >= passo * 0.7)) s += '<text x="' + x(i).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="' + (i === 0 ? "start" : i === rotulos.length - 1 ? "end" : "middle") + '" font-size="10.5" fill="var(--muted)">' + esc(r) + "</text>";
     });
     series.forEach(function (z, k) {
       var pts = [];
@@ -1473,7 +1473,18 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
       document.getElementById("aba-" + a).setAttribute("aria-selected", a === nome);
     });
     try { history.replaceState(null, "", "#" + nome); } catch (e) { /* sem historico */ }
+    abaAtual = nome;
+    redesenhar();
   }
+  // graficos medem a largura do espaco: so dao certo com a aba visivel
+  var abaAtual = null;
+  function redesenhar() {
+    if (!D) return;
+    var f = { acoes: desenharDetalhe, fiis: desenharFii, comparar: desenharComparar, simulador: desenharSimulador, desempenho: desenharDesempenho }[abaAtual];
+    if (f) f();
+  }
+  var esperaTam = null;
+  window.addEventListener("resize", function () { clearTimeout(esperaTam); esperaTam = setTimeout(redesenhar, 200); });
   document.querySelector(".tabs").addEventListener("click", function (e) { var b = e.target.closest("button[data-aba]"); if (b) abrir(b.dataset.aba); });
 
   // ---------- carga ----------
