@@ -4,42 +4,29 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Radar de Investimentos</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&family=Geist:wght@400;500&display=swap">
 <style>
 body{margin:0}img{max-width:100%}[hidden]{display:none!important}
 /* Layout: cabecalho compacto, abas, e em Acoes uma tabela de ranking ao lado de um painel de detalhe fixo. */
+/* Estilo terminal: fundo preto, texto em peso 400, cor só para dado. Verde = nota e alta; laranja = alerta e status. */
 :root {
-  --bg: #f2f3f0; --surface: #ffffff; --surface-2: #eceeea;
-  --ink: #14181d; --ink-2: #4b5560; --muted: #6b7480;
-  --line: #e2e5e1; --line-strong: #c9cec8;
-  --accent: #1f6b4f; --accent-ink: #1f6b4f; --track: #e3efe8; --mid: #cfe3d8; --sel: #e8f1ec; --wash: rgba(31,107,79,.10);
-  --good: #2f9e6e; --warning: #e6a019; --critical: #b3261e;
-  --note-bg: #fbefd9; --note-ink: #5c3a00; --note-line: #d99a2b;
-  --on-accent: #ffffff; --faixa: #14181d; --faixa-2: #232a32; --faixa-ink: #f2f5f7; --faixa-muted: #a9b2bc; --faixa-accent: #7fd1ae;
-  --sans: "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #101418; --surface: #171c21; --surface-2: #1e252c;
-    --ink: #f2f5f7; --ink-2: #b9c2cb; --muted: #8b96a2;
-    --line: #262e36; --line-strong: #36414c;
-    --accent: #4fb38a; --accent-ink: #7fd1ae; --track: #1d3a2f; --mid: #2a5442; --sel: #1a2b24; --wash: rgba(79,179,138,.14);
-    --good: #4fb38a; --warning: #f0b43c; --critical: #e66767;
-    --note-bg: #33290f; --note-ink: #f6d98a; --note-line: #c98500;
-    --on-accent: #0a1a13; --faixa: #0a0d10; --faixa-2: #1a2027;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #101418; --surface: #171c21; --surface-2: #1e252c;
-  --ink: #f2f5f7; --ink-2: #b9c2cb; --muted: #8b96a2;
-  --line: #262e36; --line-strong: #36414c;
-  --accent: #4fb38a; --accent-ink: #7fd1ae; --track: #1d3a2f; --mid: #2a5442; --sel: #1a2b24; --wash: rgba(79,179,138,.14);
-  --good: #4fb38a; --warning: #f0b43c; --critical: #e66767;
-  --note-bg: #33290f; --note-ink: #f6d98a; --note-line: #c98500;
-  --on-accent: #0a1a13; --faixa: #0a0d10; --faixa-2: #1a2027;
+  --bg: #101010; --surface: #141312; --surface-2: #1d1a18;
+  --ink: #eeeeee; --ink-2: #b8b3b0; --muted: #8a8380;
+  --line: #262322; --line-strong: #3d3a39;
+  --accent: #a0ca92; --accent-ink: #a0ca92; --track: #2b2d28; --mid: #4d4947; --sel: #1d1a18; --wash: rgba(160,202,146,.10);
+  --good: #a0ca92; --warning: #ee6018; --critical: #ee6018;
+  --note-bg: #eeeeee; --note-ink: #101010; --note-line: #ee6018;
+  --on-accent: #101010; --faixa: #101010; --faixa-2: #1d1a18; --faixa-ink: #eeeeee; --faixa-muted: #8a8380; --faixa-accent: #eeeeee;
+  --sans: "Geist", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", "JetBrains Mono", ui-monospace, Consolas, monospace;
   color-scheme: dark;
+}
+/* cartao claro sobre o fundo escuro: os mesmos nomes de cor, invertidos */
+.figura, .aviso, .lp-num .pot {
+  --surface: #eeeeee; --surface-2: #e2e0de; --ink: #101010; --ink-2: #3d3a39; --muted: #57524f;
+  --line: #d3d0ce; --line-strong: #b8b3b0; --accent: #101010; --accent-ink: #101010; --track: #d3d0ce; --mid: #b8b3b0;
+  --sel: #e2e0de; --wash: rgba(16,16,16,.08); --on-accent: #eeeeee;
+  background: var(--surface); color: var(--ink);
 }
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 14px; line-height: 1.45; }
@@ -222,6 +209,66 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
 .carteira-campos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .carteira-campos input { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong); border-radius: 6px; padding: 6px 9px; width: 100%; min-width: 0; }
 @media (max-width: 720px) { .carteira-campos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ---- estilo terminal: pesos, raios e rotulos em mono ---- */
+body { font-size: 14px; line-height: 1.43; }
+b, strong, th, h1, h2, h3, h4 { font-weight: 400; }
+.wrap { max-width: 1200px; gap: 32px; padding-block: 32px 80px; }
+.faixa { border-bottom: 1px solid var(--line); }
+.faixa-in { max-width: 1200px; padding-top: 20px; }
+h1 { font-family: var(--mono); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
+.top p { font-size: 13px; }
+h2 { font-size: 36px; line-height: 1.1; letter-spacing: -0.031em; font-weight: 400; }
+h3, th, .lp-por h4, .lp-aten h4, .indic span, .lp-num span, .par span, .lp-nota small, .notao span, .campo, .conta, .pos {
+  font-family: var(--mono); font-size: 12px; font-weight: 400; letter-spacing: -0.02em; text-transform: uppercase;
+}
+.texto, .dest-cab p { font-size: 16px; line-height: 1.5; color: var(--muted); }
+.tabs button { font-weight: 400; font-size: 14px; text-transform: uppercase; letter-spacing: .02em; border-bottom-width: 1px; padding: 14px 14px 15px; }
+.tabs button[aria-selected="true"] { font-weight: 400; color: var(--ink); }
+.faixa .chip { color: var(--muted); font-family: var(--mono); font-size: 12px; text-transform: uppercase; }
+.faixa .dot.ok { background: var(--good); }
+.dot { width: 6px; height: 6px; }
+.painel, .indic, .lp-card { background: transparent; border-color: var(--line); border-radius: 10px; }
+.figura.painel { background: var(--surface); }
+.indic { padding: 20px; }
+.indic b { font-family: var(--sans); font-size: 36px; font-weight: 400; letter-spacing: -0.031em; line-height: 1.1; }
+.aviso { border-radius: 10px; padding: 20px 24px; font-size: 14px; display: flex; gap: 12px; align-items: baseline; }
+.aviso::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: #ee6018; transform: translateY(-2px); }
+.aviso strong { font-family: var(--mono); font-size: 12px; text-transform: uppercase; white-space: nowrap; }
+.seg { border-radius: 3px; padding: 3px; border: 1px solid var(--line-strong); background: transparent; }
+.seg button { border-radius: 3px; font-size: 14px; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); font-weight: 400; box-shadow: none; }
+.btn { font-weight: 400; color: var(--ink); background: var(--surface-2); border: 0; border-radius: 3px; padding: 0 14px; }
+.btn:hover { background: var(--line-strong); }
+.figura .btn, .aviso .btn { background: #101010; color: #eeeeee; }
+.campo input[type="search"], .campo select { border-radius: 3px; background: var(--surface-2); border-color: var(--line-strong); font-family: var(--sans); text-transform: none; letter-spacing: 0; }
+.ativo b, .nota b, .lp-nota b, .lp-num b, .par b, .notao b, .metodo b { font-weight: 400; }
+.notao b { font-family: var(--sans); font-size: 56px; letter-spacing: -0.04em; line-height: 1; color: var(--ink); }
+.lp-nota b { font-family: var(--sans); font-size: 36px; letter-spacing: -0.031em; }
+.lp-card { padding: 24px; gap: 20px; }
+.lp-num div { border-radius: 3px; }
+.lp-num .pot { border-radius: 3px; }
+.lp-num .pot span { color: #57524f; }
+.lp-num .pot b { color: #101010; }
+.lp-aten ul { color: var(--ink-2); list-style: none; padding-left: 0; }
+.lp-aten li { display: flex; gap: 8px; align-items: baseline; }
+.lp-aten li::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: #ee6018; transform: translateY(-2px); }
+.mt { border-radius: 3px; font-weight: 400; }
+.mt.medio { color: var(--ink); }
+.barra, .barra i, .metodo .barra, .metodo .barra i { border-radius: 0; }
+.barra { height: 4px; } .metodo .barra { height: 6px; }
+.segs i { border-radius: 0; width: 5px; }
+tbody tr[aria-selected="true"] { background: var(--surface-2); box-shadow: inset 2px 0 0 var(--ink); }
+.detalhe { padding: 24px; gap: 20px; }
+.dica { border-radius: 3px; }
+.ck { border-radius: 3px; font-family: var(--mono); font-weight: 400; text-transform: uppercase; }
+.ck.ok { background: var(--accent); color: var(--on-accent); }
+.ck.nao { background: transparent; color: var(--ink-2); border-color: #ee6018; }
+.etq { background: #ee6018; color: #101010; font-weight: 400; border-radius: 3px; }
+.arca-faixa .bar { border-radius: 0; }
+footer { font-size: 14px; padding-top: 32px; }
+@media (max-width: 720px) { .aviso { flex-wrap: wrap; row-gap: 6px; } h2 { font-size: 28px; } .indic b { font-size: 28px; } .notao b { font-size: 44px; } }
+@media (prefers-reduced-motion: no-preference) { .btn, .seg button, .tabs button { transition: color .15s cubic-bezier(.4,0,.2,1), background-color .15s cubic-bezier(.4,0,.2,1); } }
 </style>
 </head>
 <body>
@@ -229,7 +276,7 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
   <div class="faixa-in">
   <header class="top">
     <div class="marca">
-      <svg width="34" height="34" viewBox="0 0 34 34" fill="none" stroke="var(--faixa-accent)" stroke-width="1.8" aria-hidden="true"><circle cx="17" cy="17" r="15"/><circle cx="17" cy="17" r="9"/><circle cx="17" cy="17" r="3"/><path d="M17 17 L29 8" stroke-linecap="round"/></svg>
+      <svg width="26" height="26" viewBox="0 0 34 34" fill="none" stroke="#ee6018" stroke-width="1.6" aria-hidden="true"><circle cx="17" cy="17" r="15"/><circle cx="17" cy="17" r="9"/><circle cx="17" cy="17" r="3"/><path d="M17 17 L29 8" stroke-linecap="round"/></svg>
       <div>
         <h1>Radar de Investimentos</h1>
         <p id="sub">Carregando dados…</p>
@@ -368,7 +415,7 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
             <tbody id="corpo-acoes"></tbody>
           </table>
         </div>
-        <aside class="painel detalhe" id="detalhe" aria-live="polite"></aside>
+        <aside class="painel detalhe figura" id="detalhe" aria-live="polite"></aside>
       </div>
       <div class="bloco">
         <h3>Pesos da nota final</h3>
@@ -445,7 +492,7 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
   function dataBR(iso) { return iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) + "/" + iso.slice(0, 4) : "sem dado"; }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function barra(v) { return '<span class="barra"><i style="width:' + Math.max(0, Math.min(100, v || 0)) + '%"></i></span>'; }
-  var ICONE = '<svg width="13" height="13" viewBox="0 0 13 13" aria-hidden="true"><path d="M6.5 1.2 12.3 11.6H.7z" fill="var(--warning)"/><rect x="5.9" y="4.6" width="1.2" height="3.8" fill="#3a2a00"/><rect x="5.9" y="9.1" width="1.2" height="1.2" fill="#3a2a00"/></svg>';
+  var ICONE = '<svg width="6" height="6" viewBox="0 0 6 6" aria-hidden="true"><circle cx="3" cy="3" r="3" fill="#ee6018"/></svg>';
   function alertas(lista, curto) {
     if (!lista || !lista.length) return '<span class="sem">' + (curto ? "–" : "sem alertas") + "</span>";
     var rotulo = lista.length + (lista.length > 1 ? " alertas" : " alerta");
