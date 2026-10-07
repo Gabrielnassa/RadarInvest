@@ -82,6 +82,19 @@ class TestNotas(unittest.TestCase):
         self.assertAlmostEqual(notas.nota_final(m, pesos), (80 * 20 + 60 * 15 + 70 * 30 + 50 * 15) / 80)
         self.assertIsNone(notas.nota_final({}, pesos))
 
+    def test_longo_prazo(self):
+        # tudo atendido menos dividendos (15) e setor perene (5); trimestres sem dado (10): 75 de 95
+        c = notas.criterios_longo_prazo(True, None, True, True, True, True, 3, 12, "Varejo")
+        self.assertEqual(sum(peso for _, _, peso in c), 105)
+        self.assertAlmostEqual(notas.nota_longo_prazo(c), 100 * 75 / 95)
+        self.assertEqual(notas.nota_longo_prazo(c, prejuizo=True), 30.0)
+        # P/L negativo ou acima de 15 nao passa; setor perene passa
+        c = dict((txt, ok) for txt, ok, _ in notas.criterios_longo_prazo(True, True, True, True, None, None, 5, -4, "Saneamento"))
+        self.assertFalse(c["Preço sobre o lucro entre 0 e 15"])
+        self.assertTrue(c["Setor perene (bancos, seguros, energia, saneamento ou telecom)"])
+        # menos de 60% do peso com dado
+        self.assertIsNone(notas.nota_longo_prazo(notas.criterios_longo_prazo(None, None, None, True, None, None, None, None, "Varejo")))
+
     def test_cripto(self):
         # 20% acima da media => 80; volatilidade 40% => 60; 1a posicao => 100
         self.assertAlmostEqual(notas.nota_cripto(20, 40, 1), 0.45 * 80 + 0.30 * 60 + 0.25 * 100)
@@ -262,6 +275,11 @@ class TestCalculoCompleto(unittest.TestCase):
         self.assertEqual(r["conf"], [10, 10])
         self.assertFalse(r["distorcao"])
         self.assertEqual(r["aplicaveis"], 5)
+        lp = dict(r["lpCheck"])
+        self.assertTrue(lp["Pagou dividendos em todos os últimos 5 anos"])
+        self.assertTrue(lp["Preço sobre o lucro entre 0 e 15"])           # P/L 10
+        self.assertIsNone(lp["Lucro em todos os trimestres dos últimos 5 anos"])
+        self.assertEqual(r["lp"], 100)                                   # todos os criterios com dado atendidos
 
 
 if __name__ == "__main__":

@@ -216,6 +216,36 @@ def notas_greenblatt(empresas: dict[str, tuple[float, float]]) -> dict[str, floa
     return saida
 
 
+SETORES_PERENES = ("Bancos", "Seguros", "Energia elétrica", "Saneamento", "Telecomunicações")
+
+
+def criterios_longo_prazo(lucro_5anos, lucro_trimestres, lucro_cresceu, roe_ok, divida_ok, receita_ok,
+                          anos_div, p_l, setor, p_l_max=15.0) -> list[list]:
+    """Checklist de quem segura a acao por anos: lucro constante e crescente, retorno alto,
+    pouca divida, dividendos todo ano, preco nao esticado e setor perene. Devolve [texto, ok, peso]."""
+    return [
+        ["Lucro em cada um dos últimos 5 anos", lucro_5anos, 20],
+        ["Lucro em todos os trimestres dos últimos 5 anos", lucro_trimestres, 10],
+        ["Lucro maior que o de 5 anos atrás", lucro_cresceu, 15],
+        ["Retorno sobre o patrimônio de 15% ou mais", roe_ok, 15],
+        ["Dívida líquida de até 3 vezes o lucro operacional", divida_ok, 10],
+        ["Receita cresceu 5% ao ano ou mais em 5 anos", receita_ok, 5],
+        ["Pagou dividendos em todos os últimos 5 anos", None if anos_div is None else anos_div >= 5, 15],
+        [f"Preço sobre o lucro entre 0 e {p_l_max:.0f}", None if p_l is None else 0 < p_l <= p_l_max, 10],
+        ["Setor perene (bancos, seguros, energia, saneamento ou telecom)", setor in SETORES_PERENES, 5],
+    ]
+
+
+def nota_longo_prazo(criterios, prejuizo=False) -> float | None:
+    """Percentual do peso atendido entre os criterios com dado. Precisa de 60% do peso com dado.
+    Prejuizo nos ultimos 12 meses ou patrimonio negativo limitam a nota a 30."""
+    com = sum(peso for _, ok, peso in criterios if ok is not None)
+    if com < 0.6 * sum(peso for _, _, peso in criterios):
+        return None
+    nota = 100.0 * sum(peso for _, ok, peso in criterios if ok) / com
+    return min(nota, 30.0) if prejuizo else nota
+
+
 def nota_final(notas: dict, pesos: dict) -> float | None:
     soma = peso = 0.0
     for metodo, p in pesos.items():
@@ -451,6 +481,9 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
             alertas.append("Variação de 12 meses fora do comum: pode haver desdobramento ou grupamento não ajustado")
         elif m["var12"] is not None and m["var12"] <= -0.30:
             alertas.append(f"Caiu {abs(m['var12']):.0%} em 12 meses")
+        c = [ok for _, ok in check]           # mesma ordem do checklist acima
+        lp = criterios_longo_prazo(c[1], c[2], c[4], c[0], c[5], c[3], anos_pagos if tem_div else None, p_l_base, setor)
+        prejuizo = (lucro12 is not None and lucro12 < 0) or (pl is not None and pl <= 0)
         # sinais de evento isolado: o ativo continua no ranking, mas sai da lista de destaques
         distorcao = bool(lucro_fora or ebit_fora or variacao_estranha or (dy12 is not None and dy12 > 0.15))
 
@@ -466,6 +499,7 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
             "conf": [sum(1 for d in dados if d is not None and d is not False), len(dados)],
             "serie": m["serie"], "lucroAte": lucro_fim, "lucroBase": lucro_origem, "balancoEm": f.get("balanco_em"),
             "aplicaveis": 4 if financeiro else 5, "lucroNormalizado": lucro_fora or ebit_fora, "distorcao": distorcao,
+            "lp": nota_longo_prazo(lp, prejuizo), "lpCheck": [[txt, v] for txt, v, _ in lp],
         })
 
     gb = notas_greenblatt(gb_entrada)
@@ -473,6 +507,8 @@ def calcular_acoes(conn, cfg: dict | None = None) -> list[dict]:
         if r["t"] in gb:
             r["m"]["greenblatt"] = gb[r["t"]]
         r["final"] = nota_final(r["m"], pesos)
+        if r["lp"] is not None:
+            r["lp"] = round(r["lp"])
         r["m"] = {k: (None if r["m"].get(k) is None else round(r["m"][k])) for k in METODOS}
     resultado = [r for r in resultado if r["final"] is not None]
     resultado.sort(key=lambda r: -r["final"])

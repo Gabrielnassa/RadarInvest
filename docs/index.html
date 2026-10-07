@@ -206,6 +206,7 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
   <div id="app" class="secao" hidden>
     <nav class="tabs" role="tablist" aria-label="Seções do painel">
       <button role="tab" id="aba-destaques" data-aba="destaques" aria-selected="true">Destaques</button>
+      <button role="tab" id="aba-longo" data-aba="longo" aria-selected="false">Longo prazo</button>
       <button role="tab" id="aba-acoes" data-aba="acoes" aria-selected="false">Ações</button>
       <button role="tab" id="aba-cripto" data-aba="cripto" aria-selected="false">Cripto</button>
       <button role="tab" id="aba-carteira" data-aba="carteira" aria-selected="false">Carteira</button>
@@ -248,6 +249,54 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
             </tbody>
           </table>
         </div>
+      </div>
+    </section>
+
+    <section class="secao" id="sec-longo" role="tabpanel" aria-labelledby="aba-longo" hidden>
+      <div class="bloco">
+        <h2>Ações para acompanhar pensando em anos, não em meses</h2>
+        <p class="texto">Quem segura uma ação por muito tempo depende mais da empresa do que do preço de hoje. Esta nota olha para lucro constante e crescente, retorno alto, pouca dívida, dividendos todo ano, preço não esticado e setor perene. Prejuízo nos últimos 12 meses ou patrimônio negativo limitam a nota a 30.</p>
+      </div>
+      <div class="dest-cab">
+        <div class="seg" role="group" aria-label="Liquidez">
+          <button type="button" data-liq="boa" aria-pressed="true">Boa liquidez</button>
+          <button type="button" data-liq="todas" aria-pressed="false">Todas</button>
+        </div>
+        <p id="lp-txt"></p>
+      </div>
+      <div class="bloco">
+        <h3>Maiores notas de longo prazo</h3>
+        <div class="painel"><ul class="dest-lista" id="lp-acoes"></ul></div>
+      </div>
+      <div class="bloco">
+        <h3>Critérios e pesos</h3>
+        <div class="painel rolagem">
+          <table>
+            <thead><tr><th>Critério</th><th class="d">Peso</th><th>Por que importa no longo prazo</th></tr></thead>
+            <tbody>
+              <tr><td class="txt">Lucro em cada um dos últimos 5 anos</td><td class="d num">20</td><td class="txt">Empresa que atravessa anos ruins sem prejuízo tende a sobreviver aos próximos.</td></tr>
+              <tr><td class="txt">Lucro em todos os trimestres dos últimos 5 anos</td><td class="d num">10</td><td class="txt">Mostra resultado estável, sem sustos no meio do ano.</td></tr>
+              <tr><td class="txt">Lucro maior que o de 5 anos atrás</td><td class="d num">15</td><td class="txt">No longo prazo o preço acompanha o lucro.</td></tr>
+              <tr><td class="txt">Retorno sobre o patrimônio de 15% ou mais</td><td class="d num">15</td><td class="txt">Cada real reinvestido rende bem, o que faz o patrimônio crescer sozinho.</td></tr>
+              <tr><td class="txt">Dívida líquida de até 3 vezes o lucro operacional</td><td class="d num">10</td><td class="txt">Dívida baixa evita quebra em crise e juro alto. Não se aplica a bancos e seguradoras.</td></tr>
+              <tr><td class="txt">Receita cresceu 5% ao ano ou mais em 5 anos</td><td class="d num">5</td><td class="txt">Crescimento acima da inflação. Não se aplica a bancos e seguradoras.</td></tr>
+              <tr><td class="txt">Pagou dividendos em todos os últimos 5 anos</td><td class="d num">15</td><td class="txt">Dividendo reinvestido é o que mais pesa no retorno de quem fica muitos anos.</td></tr>
+              <tr><td class="txt">Preço sobre o lucro entre 0 e 15</td><td class="d num">10</td><td class="txt">Mesmo empresa boa rende pouco se for comprada cara.</td></tr>
+              <tr><td class="txt">Setor perene (bancos, seguros, energia, saneamento ou telecom)</td><td class="d num">5</td><td class="txt">Serviços que as pessoas usam em qualquer cenário.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="texto">A nota é o percentual do peso atendido entre os critérios com dado. Sem dado em 40% do peso ou mais, a ação fica sem nota.</p>
+      </div>
+      <div class="bloco">
+        <h3>Outras classes no longo prazo</h3>
+        <div class="painel rolagem">
+          <table>
+            <thead><tr><th>Classe</th><th>Hoje</th><th>Leitura para quem pensa em anos</th></tr></thead>
+            <tbody id="lp-classes"></tbody>
+          </table>
+        </div>
+        <div><button type="button" class="btn" data-ir="carteira">Comparar minha carteira com a divisão em 4 classes</button></div>
       </div>
     </section>
 
@@ -471,6 +520,10 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
         var r = c[1] === true ? ["sim", "ok"] : c[1] === false ? ["não", "nao"] : ["sem dado", "nd"];
         return '<li><span class="ck ' + r[1] + '">' + r[0] + "</span>" + esc(c[0]) + "</li>";
       }).join("") + "</ul></div>" +
+      (a.lpCheck ? '<div class="bloco"><h3>Longo prazo · nota ' + (a.lp == null ? "sem dado" : a.lp) + '</h3><ul class="check">' + a.lpCheck.map(function (c) {
+        var r = c[1] === true ? ["sim", "ok"] : c[1] === false ? ["não", "nao"] : ["sem dado", "nd"];
+        return '<li><span class="ck ' + r[1] + '">' + r[0] + "</span>" + esc(c[0]) + "</li>";
+      }).join("") + "</ul></div>" : "") +
       '<div class="bloco ia"><h3>Leitura automática</h3><p>' + esc(L.resumo) + "</p>" +
         lista("A favor", L.favor) + lista("Contra", L.contra) + lista("Alertas", a.al) + lista("Sem dado", L.semDado) + "</div>" +
       '<div class="rodape-det">Cotação de ' + dataBR(a.data) + " · balanço de " + dataBR(a.balancoEm) +
@@ -572,7 +625,7 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
   function desenharDestaques() {
     var o = OBJETIVOS[objetivo], pesos = o.pesos || PESOS;
     document.getElementById("dest-txt").textContent = o.txt;
-    Array.prototype.forEach.call(document.querySelectorAll(".seg button"), function (b) { b.setAttribute("aria-pressed", b.dataset.obj === objetivo); });
+    Array.prototype.forEach.call(document.querySelectorAll("#sec-destaques .seg button"), function (b) { b.setAttribute("aria-pressed", b.dataset.obj === objetivo); });
     document.getElementById("dest-acoes").innerHTML = ACOES
       .filter(function (a) {
         var com = METODOS.filter(function (p) { return a.m[p[0]] != null; }).length;
@@ -604,6 +657,53 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
     if (b.dataset.obj) { objetivo = b.dataset.obj; desenharDestaques(); }
     else if (b.dataset.ver) verAcao(b.dataset.ver);
     else if (b.dataset.ir) { abrir(b.dataset.ir); try { window.scrollTo(0, 0); } catch (e2) { /* idem */ } }
+  });
+
+  // ---------- longo prazo ----------
+  var liquidez = "boa";
+  function motivoLongo(a) {
+    var com = a.lpCheck.filter(function (c) { return c[1] != null; });
+    var falta = com.filter(function (c) { return c[1] === false; }).map(function (c) { return c[0].replace(/ \(.*\)$/, "").toLowerCase(); });
+    var txt = "Atende " + (com.length - falta.length) + " de " + com.length + " critérios";
+    txt += falta.length ? ". Não atende: " + falta.join("; ") + "." : ".";
+    if (a.dyTipico) txt += " Dividendo típico de " + semSinal(a.dyTipico, 1) + " do preço.";
+    return txt;
+  }
+  function desenharLongo() {
+    Array.prototype.forEach.call(document.querySelectorAll("#sec-longo .seg button"), function (b) { b.setAttribute("aria-pressed", b.dataset.liq === liquidez); });
+    document.getElementById("lp-txt").textContent = liquidez === "boa"
+      ? "Só ações com mais de R$ 2 milhões negociados por dia, mais fáceis de comprar e vender."
+      : "Inclui ações com pouca liquidez, a partir de R$ 500 mil por dia.";
+    var lista = ACOES.filter(function (a) { return a.lp != null && a.lpCheck && (liquidez === "todas" || a.vol >= 2e6); })
+      .sort(function (x, y) { return y.lp - x.lp || (y.final || 0) - (x.final || 0); }).slice(0, 15);
+    document.getElementById("lp-acoes").innerHTML = lista.map(function (a, i) {
+      return itemDestaque(i + 1, a.t, a.n + " · " + a.s, a.lp, motivoLongo(a), a.al,
+        '<button type="button" class="btn" data-ver="' + a.t + '">Ver detalhe</button>');
+    }).join("") || '<li class="dest-item"><span class="sem" style="grid-column:1/-1">Nenhuma ação com nota de longo prazo nesta coleta. A nota aparece depois da próxima atualização dos dados.</span></li>';
+
+    var m = D.macro || {}, linhas = [];
+    if (m.selic_meta && m.ipca_12m) {
+      var real = ((1 + m.selic_meta.valor / 100) / (1 + m.ipca_12m.valor / 100) - 1) * 100;
+      linhas.push(["Renda fixa atrelada à inflação", "Selic de " + m.selic_meta.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 }) + "% e IPCA de " +
+        m.ipca_12m.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%: juro real perto de " +
+        real.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "% ao ano",
+        real >= 5 ? "Juro real acima de 5% é alto para o padrão histórico. Títulos que pagam inflação mais uma taxa fixa travam esse ganho por anos, desde que levados até o vencimento."
+          : "Juro real moderado. Renda fixa segue útil como reserva e para equilibrar a carteira."]);
+    }
+    linhas.push(["Fundos imobiliários", "Cotações coletadas, ainda sem nota", "Renda mensal de aluguéis que tende a acompanhar a inflação no longo prazo."]);
+    var nucleo = CRIPTO.filter(function (c) { return c.nucleo; });
+    linhas.push(["Cripto", nucleo.length ? nucleo.map(function (c) { return c.id + " com nota " + (c.nota == null ? "sem dado" : c.nota); }).join(" · ") : "Sem dados nesta coleta",
+      "Para prazos longos, as moedas do núcleo têm o histórico mais longo. Mesmo assim, só uma parcela pequena da carteira."]);
+    linhas.push(["Internacional", "Fora do painel por enquanto", "Diversifica fora do Brasil e protege contra a desvalorização do real."]);
+    document.getElementById("lp-classes").innerHTML = linhas.map(function (l) {
+      return "<tr><td><b>" + esc(l[0]) + '</b></td><td class="txt">' + esc(l[1]) + '</td><td class="txt">' + esc(l[2]) + "</td></tr>";
+    }).join("");
+  }
+  document.getElementById("sec-longo").addEventListener("click", function (e) {
+    var b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.liq) { liquidez = b.dataset.liq; desenharLongo(); }
+    else if (b.dataset.ver) verAcao(b.dataset.ver);
+    else if (b.dataset.ir) { abrir(b.dataset.ir); try { window.scrollTo(0, 0); } catch (e2) { /* sem rolagem */ } }
   });
 
   // ---------- carteira ----------
@@ -641,7 +741,7 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
   });
 
   // ---------- abas ----------
-  var ABAS = ["destaques", "acoes", "cripto", "carteira", "coleta"];
+  var ABAS = ["destaques", "longo", "acoes", "cripto", "carteira", "coleta"];
   function abrir(nome) {
     if (ABAS.indexOf(nome) < 0) nome = "destaques";
     ABAS.forEach(function (a) {
@@ -707,7 +807,7 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
     document.getElementById("sem-vinculo").textContent = fora.length
       ? "Ações negociadas que ficaram fora do ranking porque o cadastro da CVM não informa o código delas: " + fora.join(", ") + "."
       : "";
-    desenharAcoes(); desenharDestaques(); desenharCarteira();
+    desenharAcoes(); desenharDestaques(); desenharLongo(); desenharCarteira();
     document.getElementById("app").hidden = false;
     abrir((location.hash || "").replace("#", "") || "destaques");
   }
