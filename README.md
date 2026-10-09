@@ -13,8 +13,8 @@ A nota mostra se o ativo passa nos critérios de cada método. Não é previsão
 | 1. Coleta e banco | Baixa os dados e grava em SQLite | Pronta e rodando com dados reais |
 | 2. Notas | Calcula a nota de cada método | Pronta |
 | 3. Backtest | Verifica se a nota teria funcionado no passado | Pronto (`radar/backtest.py`), com período curto |
-| 4. IA | Explica cada nota em texto livre | A fazer. Hoje o texto é montado por regra fixa |
-| 5. Painel | Ranking, detalhe, FIIs, renda fixa, comparação, carteira, simulador e desempenho | Pronto, lendo dados reais |
+| 4. IA | Explica cada empresa em texto livre | Pronto e opcional: liga com o segredo `ANTHROPIC_API_KEY` |
+| 5. Painel | Ranking, detalhe, FIIs, renda fixa, agenda, comparação, carteira com IR, simulador, desempenho e metodologia | Pronto, lendo dados reais; instalável no celular |
 
 ## Como funciona
 
@@ -33,7 +33,9 @@ Para rodar fora de hora: aba Actions do repositório, rotina "Atualizar dados", 
 | Bazin | Dividendos sobre o preço, pelo menor entre os 12 meses e o ano típico | 60 com 6%, 100 com 10%; reduz se não pagou em todos os 5 anos ou se a dívida passa do patrimônio |
 | Qualidade | Checklist de 8 itens: retorno sobre o patrimônio, lucro recorrente, crescimento, dívida sobre Ebitda, histórico e liquidez | Percentual de itens atendidos |
 | Graham | Valor = raiz(22,5 x lucro por ação x patrimônio por ação) | 50 no valor, 100 com 50% de margem; zero com prejuízo. Se o lucro de 12 meses passa do dobro da média de 3 anos, usa a média |
-| Greenblatt | Ranking por lucro operacional sobre o valor da firma e sobre o capital | 100 para a melhor colocada, 10 para a última; não se aplica a bancos e seguradoras |
+| Greenblatt | Ranking por lucro operacional sobre o valor da firma e sobre o capital | 100 para a melhor colocada, 10 para a última. Em bancos e seguradoras vira P/VP justo = ROE ÷ 14%, na escala de Graham |
+| Setor | Lucro e patrimônio sobre o preço comparados com o próprio setor (ou com todas, se o setor tiver menos de 4) | 100 para a mais barata do grupo |
+| Tendência | Momento de 12 meses sem o último mês, distância da média de 200 pregões e volatilidade de 60 pregões | 50% momento, 25% média, 25% volatilidade baixa |
 
 A nota final é a média ponderada dos métodos que se aplicam (pesos no `config.yaml`). Entram no ranking as ações com volume médio acima de R$ 500 mil por dia, uma por empresa (a mais negociada).
 
@@ -41,7 +43,7 @@ A aba **Longo prazo** tem uma nota separada, que não entra na nota final: perce
 
 Fundos imobiliários (volume acima de R$ 300 mil por dia): dividendos de 12 meses (35%; 6% vale 0 e 12% vale 100), preço sobre o valor patrimonial da cota (25%; 1,0 vale 50 e 0,8 vale 100), meses com pagamento nos últimos 12 (25%) e liquidez (15%; R$ 2 milhões por dia vale 100). Dividendos acima de 18% ou preço abaixo de 0,6 do patrimônio limitam a nota a 60; sem valor patrimonial, não há nota. O valor patrimonial e o segmento vêm do informe mensal da CVM, ligado ao código da B3 pelo ISIN.
 
-**Backtest.** Em maio e novembro de cada ano, as notas são recalculadas como se fosse aquele dia: só cotações e dividendos até a data e só balanços com 90 dias ou mais. Depois mede o retorno de 12 meses, somando dividendos, das 10 maiores notas finais, das 10 maiores notas de longo prazo, de todas as ações do ranking e do CDI. Só entram empresas que ainda estão no cadastro da CVM, o que favorece o resultado.
+**Backtest.** O painel mostra também o resultado de cada método sozinho, o Ibovespa (pelo fundo BOVA11) e uma carteira com pesos calibrados, medida fora da amostra (os pesos de cada período vêm só dos outros). Empresas que saíram da bolsa entram quando o cadastro antigo da CVM liga o código à empresa, assim como as negociadas em recuperação judicial. Em maio e novembro de cada ano, as notas são recalculadas como se fosse aquele dia: só cotações e dividendos até a data e só balanços com 90 dias ou mais. Depois mede o retorno de 12 meses, somando dividendos, das 10 maiores notas finais, das 10 maiores notas de longo prazo, de todas as ações do ranking e do CDI. Só entram empresas que ainda estão no cadastro da CVM, o que favorece o resultado.
 
 Cripto usa regras próprias: tendência em relação à média de 200 dias (45%), volatilidade de 30 dias (30%) e tamanho (25%).
 
@@ -58,6 +60,8 @@ Todas as regras ficam em `radar/notas.py` e os limites na seção `notas` do `co
 | Banco Central (SGS) | Selic, IPCA, dólar e CDI | Oficial |
 | CVM (informe mensal de FII) | Patrimônio, valor da cota, segmento e cotistas dos fundos imobiliários | Oficial |
 | Tesouro Transparente | Taxas e preços do Tesouro Direto | Oficial |
+| B3 (consulta de empresas listadas) | Proventos aprovados, com data com e pagamento | Oficial, mas não é arquivo de dados abertos; o Yahoo fica de reserva |
+| CVM (IPE) | Fatos relevantes, comunicados e avisos aos acionistas | Oficial |
 
 ## Rodar no seu computador (Windows)
 
@@ -73,11 +77,13 @@ Linha de comando:
 
 ```
 python -m radar coletar                  coleta tudo
-python -m radar coletar --fonte cripto   coleta só uma fonte (b3, cvm, dividendos, cripto, macro, fii, tesouro)
+python -m radar coletar --fonte cripto   coleta só uma fonte (b3, cvm, dividendos, proventos, cripto, macro, fii, tesouro, ipe)
 python -m radar exportar                 calcula as notas, roda o backtest e grava docs/dados.json
 python -m radar painel                   abre o painel neste computador
 python -m radar status                   mostra o que há no banco
 python -m radar diagnostico              testa as fontes
+python -m radar falhas                   lista as fontes com erro na última coleta
+python -m radar alertas                  envia os alertas por Telegram (se configurado)
 python -m unittest discover -s tests -t .
 ```
 
@@ -112,6 +118,8 @@ radar/                 código
   rede.py              download, cache e novas tentativas
   notas.py             indicadores e notas por método
   backtest.py          teste das notas no passado
+  resumos.py           resumos por IA (opcional)
+  alertas.py           alertas por Telegram (opcional)
   exportar.py          gera docs/dados.json
   fontes/              um módulo por fonte
 tests/                 testes automatizados
@@ -119,6 +127,34 @@ docs/index.html        painel
 docs/dados.json        dados do painel (gerado pela rotina)
 config.yaml            configuração
 ```
+
+## Publicação e segurança dos dados
+
+- Antes de publicar, a exportação confere os números (quantidade de ações, preços, notas, data). Se algo vier estranho, o painel continua com os dados anteriores e a rotina abre uma issue "Coleta com problema" no GitHub, o que manda e-mail para o dono do repositório. A mesma issue avisa quando alguma fonte falha.
+- Todo dia fica uma foto compacta das notas em `docs/historico/AAAA-MM-DD.json`, para auditar mudanças.
+- Todo PR roda os testes automáticos (`.github/workflows/testes.yml`).
+
+## Opcionais (ligam com segredos do GitHub)
+
+Em Settings > Secrets and variables > Actions > New repository secret:
+
+| Segredo | O que liga |
+|---|---|
+| `ANTHROPIC_API_KEY` | Resumo em texto das 40 maiores notas, escrito pelo Claude (modelo `claude-opus-5-5`). Só empresas cujos números mudaram pedem texto novo. |
+| `TELEGRAM_TOKEN` e `TELEGRAM_CHAT_ID` | Alertas por Telegram para os códigos em `alertas.tickers` no `config.yaml`: nota que muda 10 pontos, fato relevante e falha na coleta. Crie o robô com o @BotFather e pegue o chat ID com @userinfobot. |
+
+## Domínio próprio
+
+1. Compre o domínio (por exemplo, no Registro.br).
+2. No provedor do domínio, crie um registro CNAME `www` apontando para `gabrielnassa.github.io`.
+3. No GitHub: Settings > Pages > Custom domain, digite o domínio e marque "Enforce HTTPS".
+O painel usa só caminhos relativos e funciona no domínio novo sem mudança no código.
+
+## Carteira, privacidade e celular
+
+- Operações, favoritos e preferências ficam só no navegador. "Baixar arquivo da carteira" e "Importar arquivo" levam tudo para outro aparelho.
+- O imposto de renda da carteira é um cálculo simplificado (operações comuns, sem day trade); confira com um contador.
+- O painel é instalável no celular (menu do navegador > "Adicionar à tela inicial") e abre a última versão baixada mesmo sem internet.
 
 ## Aviso
 

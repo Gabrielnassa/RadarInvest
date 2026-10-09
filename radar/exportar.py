@@ -204,13 +204,25 @@ DETALHE = ("precos5", "hist", "anual")
 
 
 def separar(dados: dict) -> dict:
-    """Tira as series longas de cada ativo para um arquivo a parte, carregado depois da primeira tela."""
+    """Deixa o arquivo principal leve: series longas de cada ativo e comunicados da CVM vao para um arquivo
+    carregado depois da primeira tela; os textos dos checklists vao uma vez so, e cada acao leva so os sim/nao."""
     detalhes = {}
     for lista in ("acoes", "fiis"):
         for item in dados.get(lista) or []:
             extra = {k: item.pop(k) for k in DETALHE if k in item}
             if extra:
                 detalhes[item["t"]] = extra
+    if "fatos" in dados:
+        detalhes["_fatos"] = dados.pop("fatos")
+    for campo in ("check", "lpCheck"):
+        rotulos: list[str] = []
+        for a in dados.get("acoes") or []:
+            if a.get(campo):
+                for txt, _ in a[campo]:
+                    if txt not in rotulos:
+                        rotulos.append(txt)
+                a[campo] = [[rotulos.index(txt), ok] for txt, ok in a[campo]]
+        dados["rotulos_" + campo] = rotulos
     return detalhes
 
 

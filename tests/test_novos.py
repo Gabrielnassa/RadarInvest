@@ -139,7 +139,12 @@ class TestPublicacao(unittest.TestCase):
 
     def test_separar_e_historico(self):
         d = self._dados(n=2)
+        d["fatos"] = [{"t": "A0003"}]
+        d["acoes"][0]["check"] = [["Lucro", True], ["Divida", None]]
         det = exportar.separar(d)
+        self.assertEqual(det["_fatos"], [{"t": "A0003"}])
+        self.assertEqual(d["rotulos_check"], ["Lucro", "Divida"])
+        self.assertEqual(d["acoes"][0]["check"], [[0, True], [1, None]])
         self.assertEqual(det["A0003"]["precos5"], [["2026-09", 10]])
         self.assertNotIn("precos5", d["acoes"][0])
         with tempfile.TemporaryDirectory() as tmp:

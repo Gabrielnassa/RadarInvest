@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Radar de Investimentos</title>
+<meta name="description" content="Triagem de ações, fundos imobiliários, Tesouro Direto e cripto com dados públicos da B3, CVM e Banco Central. Notas por métodos conhecidos, teste no passado e carteira com imposto de renda.">
+<meta name="theme-color" content="#f5f5f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="icone.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icone-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<script data-tema>try { var t = localStorage.getItem("radar-tema"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) { /* sem armazenamento */ }</script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
 <style>
 body{margin:0}img{max-width:100%}[hidden]{display:none!important}
@@ -16,10 +23,33 @@ body{margin:0}img{max-width:100%}[hidden]{display:none!important}
   --accent: #0a0a0a; --accent-ink: #0a0a0a; --track: #e5e5e5; --mid: #d4d4d4; --sel: #f5f5f5; --wash: rgba(10,10,10,.06);
   --good: #0a0a0a; --warning: #e7000b; --critical: #e7000b; --on-accent: #fafafa;
   --sombra: 0 0 0 1px rgba(23,23,23,.05), 0 1px 3px rgba(0,0,0,.1), 0 1px 2px -1px rgba(0,0,0,.1);
+  --seg: #e9e9e9; --c2: #737373; --c3: #b5b5b5; --c4: #e0e0e0; --muted-inv: #a3a3a3;
   --r-card: 24px; --r-pill: 18px; --r-in: 10px;
   --sans: "Geist", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "Geist Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
   color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0a0a0a; --surface: #141414; --surface-2: #1f1f1f; --side: #0f0f0f;
+    --ink: #fafafa; --ink-soft: #e5e5e5; --ink-2: #d4d4d4; --muted: #a3a3a3;
+    --line: #262626; --line-strong: #404040;
+    --accent: #fafafa; --accent-ink: #fafafa; --track: #2a2a2a; --mid: #404040; --sel: #1f1f1f; --wash: rgba(250,250,250,.08);
+    --good: #fafafa; --warning: #ff6467; --critical: #ff6467; --on-accent: #0a0a0a;
+    --sombra: 0 0 0 1px rgba(255,255,255,.04);
+    --seg: #1f1f1f; --c2: #a3a3a3; --c3: #6b6b6b; --c4: #404040; --muted-inv: #525252;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0a0a0a; --surface: #141414; --surface-2: #1f1f1f; --side: #0f0f0f;
+  --ink: #fafafa; --ink-soft: #e5e5e5; --ink-2: #d4d4d4; --muted: #a3a3a3;
+  --line: #262626; --line-strong: #404040;
+  --accent: #fafafa; --accent-ink: #fafafa; --track: #2a2a2a; --mid: #404040; --sel: #1f1f1f; --wash: rgba(250,250,250,.08);
+  --good: #fafafa; --warning: #ff6467; --critical: #ff6467; --on-accent: #0a0a0a;
+  --sombra: 0 0 0 1px rgba(255,255,255,.04);
+  --seg: #1f1f1f; --c2: #a3a3a3; --c3: #6b6b6b; --c4: #404040; --muted-inv: #525252;
+  color-scheme: dark;
 }
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 14px; line-height: 1.43; font-feature-settings: "ss01" on, "cv11" on; }
@@ -77,7 +107,7 @@ h3, th, .lp-por h4, .lp-aten h4, .indic span, .lp-num span, .par span, .notao sp
 .aviso strong { font-weight: 600; color: var(--ink); }
 
 /* ---- controles ---- */
-.seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: var(--r-pill); background: #e9e9e9; }
+.seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: var(--r-pill); background: var(--seg); }
 .seg button { font: inherit; font-weight: 500; color: var(--ink-2); background: none; border: 0; border-radius: 15px; min-height: 32px; padding: 0 14px; cursor: pointer; white-space: nowrap; }
 .seg button:hover { color: var(--ink); }
 .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--sombra); }
@@ -86,7 +116,7 @@ h3, th, .lp-por h4, .lp-aten h4, .indic span, .lp-num span, .par span, .notao sp
 .btn.cheio { background: var(--ink); color: var(--on-accent); border-color: var(--ink); }
 .filtros { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; }
 .campo { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 500; color: var(--ink-2); }
-.campo input[type="search"], .campo select, .carteira-campos input { font: inherit; font-size: 14px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-pill); min-height: 36px; padding: 0 12px; min-width: 0; }
+.campo input[type="search"], .campo input[type="number"], .campo input[type="date"], .campo select, .carteira-campos input { font: inherit; font-size: 14px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-pill); min-height: 36px; padding: 0 12px; min-width: 0; }
 .campo input[type="search"] { width: 220px; max-width: 100%; }
 .campo input[type="range"] { width: 160px; accent-color: var(--ink); }
 .conta { margin-left: auto; color: var(--muted); font-size: 13px; }
@@ -115,7 +145,7 @@ tbody tr[aria-selected="true"] { background: var(--surface-2); }
 .barra i { display: block; height: 100%; background: var(--ink); border-radius: 3px; }
 .nota .barra { width: 64px; }
 .mt { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; height: 22px; padding: 0 8px; border-radius: var(--r-pill); font-size: 12px; font-weight: 500; border: 1px solid var(--line); color: var(--ink-2); }
-.mt.alto { background: var(--ink-soft); border-color: var(--ink-soft); color: #fafafa; }
+.mt.alto { background: var(--ink-soft); border-color: var(--ink-soft); color: var(--on-accent); }
 .mt.medio { background: var(--surface-2); border-color: var(--surface-2); color: var(--ink-soft); }
 .mt.nd { color: var(--muted); }
 .alerta { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); }
@@ -153,7 +183,7 @@ tbody tr[aria-selected="true"] { background: var(--surface-2); }
 .check { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: var(--ink-2); }
 .check li { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 8px; align-items: baseline; }
 .ck { font-size: 12px; font-weight: 500; text-align: center; border-radius: var(--r-pill); padding: 1px 0; border: 1px solid var(--line); color: var(--muted); }
-.ck.ok { background: var(--ink-soft); border-color: var(--ink-soft); color: #fafafa; }
+.ck.ok { background: var(--ink-soft); border-color: var(--ink-soft); color: var(--on-accent); }
 .ck.nao { background: var(--surface-2); border-color: var(--surface-2); color: var(--ink-soft); }
 .etq { display: inline-block; font-size: 12px; font-weight: 500; color: var(--ink-soft); background: var(--surface-2); border-radius: var(--r-pill); padding: 1px 8px; margin-left: 6px; }
 .rodape-det { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px; }
@@ -172,8 +202,8 @@ tbody tr[aria-selected="true"] { background: var(--surface-2); }
 .lp-num b { font-size: 18px; font-weight: 600; letter-spacing: -.01em; }
 .lp-num small { font-size: 12px; color: var(--muted); }
 .lp-num .pot { background: var(--ink); }
-.lp-num .pot span, .lp-num .pot small { color: #a3a3a3; }
-.lp-num .pot b { color: #fafafa; }
+.lp-num .pot span, .lp-num .pot small { color: var(--muted-inv); }
+.lp-num .pot b { color: var(--on-accent); }
 .lp-por, .lp-aten { display: flex; flex-direction: column; gap: 6px; }
 .lp-por ul, .lp-aten ul { margin: 0; padding: 0; list-style: none; color: var(--ink-2); display: flex; flex-direction: column; gap: 4px; }
 .lp-por li, .lp-aten li { display: flex; gap: 10px; align-items: baseline; }
@@ -222,6 +252,20 @@ tbody tr[aria-selected="true"] { background: var(--surface-2); }
 .vazio-msg { padding: 20px; color: var(--muted); }
 .cmp th, .cmp td { white-space: normal; }
 .cmp td:first-child { color: var(--muted); }
+.pular { position: absolute; left: 12px; top: -60px; z-index: 10; background: var(--ink); color: var(--on-accent); padding: 8px 14px; border-radius: var(--r-pill); text-decoration: none; }
+.pular:focus { top: 12px; }
+.principal:focus { outline: none; }
+.op-campos { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.tema .seg { width: 100%; }
+.tema .seg button { flex: 1; padding: 0 6px; font-size: 13px; }
+.fatos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; color: var(--ink-2); }
+.fatos a, .texto-longo a, td a { color: var(--ink); }
+.texto-longo .arca { max-width: 860px; }
+.texto-longo h2 { margin-top: 8px; }
+.texto-longo h3 { margin-top: 10px; }
+.texto-longo p, .texto-longo li { color: var(--ink-2); font-size: 14.5px; line-height: 1.6; max-width: 75ch; }
+.texto-longo ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+code { font-family: var(--mono); font-size: 12.5px; background: var(--surface-2); padding: 1px 5px; border-radius: 6px; }
 footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 20px; }
 
 @media (max-width: 1100px) {
@@ -250,13 +294,14 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
   .dest-item .dest-motivo { grid-column: 2 / 4; }
   .dest-item .dest-al { grid-column: 2; }
   .dest-item .btn { grid-column: 3; }
-  .carteira-campos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .carteira-campos, .op-campos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 520px) { .lp-num { grid-template-columns: repeat(2, minmax(0, 1fr)); } .lp-num .pot { grid-column: 1 / 3; order: -1; } }
 @media (prefers-reduced-motion: no-preference) { .barra i { transition: width .2s ease; } .btn, .seg button, .tabs button { transition: background-color .15s ease, color .15s ease; } }
 </style>
 </head>
 <body>
+<a class="pular" href="#conteudo">Pular para o conteúdo</a>
 <div class="casca">
   <aside class="lateral">
     <div class="marca">
@@ -276,17 +321,28 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
       <button role="tab" id="aba-fiis" data-aba="fiis" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/></svg>FIIs</button>
       <button role="tab" id="aba-cripto" data-aba="cripto" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 8h4a2 2 0 010 4h-4m0 0h4.5a2 2 0 010 4h-4.5M9.5 8v8M11 6v2m0 8v2"/></svg>Cripto</button>
       <button role="tab" id="aba-renda" data-aba="renda" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 9v.01M18 15v.01"/></svg>Renda fixa</button>
+      <button role="tab" id="aba-agenda" data-aba="agenda" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Agenda</button>
       <p class="rotulo-lat" role="presentation">Ferramentas</p>
       <button role="tab" id="aba-comparar" data-aba="comparar" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v18M16 3v18"/><path d="M3 8h5M16 16h5"/></svg>Comparar</button>
       <button role="tab" id="aba-carteira" data-aba="carteira" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 012-2h13v4"/><path d="M3 7v11a2 2 0 002 2h15V9H5a2 2 0 01-2-2z"/><circle cx="16" cy="14.5" r="1"/></svg>Carteira</button>
       <button role="tab" id="aba-simulador" data-aba="simulador" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M8 15h2M12 15h2M16 11v6"/></svg>Simulador</button>
       <p class="rotulo-lat" role="presentation">Sobre os dados</p>
       <button role="tab" id="aba-desempenho" data-aba="desempenho" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 109 9h-9z"/><path d="M15 3.5A9 9 0 0120.5 9H15z"/></svg>Desempenho</button>
+      <button role="tab" id="aba-metodologia" data-aba="metodologia" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h12a4 4 0 014 4v12H8a4 4 0 01-4-4z"/><path d="M8 9h8M8 13h6"/></svg>Metodologia</button>
       <button role="tab" id="aba-coleta" data-aba="coleta" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>Coleta</button>
+      <button role="tab" id="aba-termos" data-aba="termos" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/></svg>Termos e privacidade</button>
     </nav>
+    <div class="tema">
+      <p class="rotulo-lat">Tema</p>
+      <div class="seg" role="group" aria-label="Tema da página">
+        <button type="button" data-tema="auto" aria-pressed="true">Automático</button>
+        <button type="button" data-tema="light" aria-pressed="false">Claro</button>
+        <button type="button" data-tema="dark" aria-pressed="false">Escuro</button>
+      </div>
+    </div>
     <div class="fontes" id="fontes" aria-label="Situação das fontes de dados"></div>
   </aside>
-  <div class="principal">
+  <main class="principal" id="conteudo" tabindex="-1">
 <div class="wrap">
   <header class="topo">
     <p class="migalha">Radar de Investimentos <span aria-hidden="true">›</span> <b id="titulo-migalha">Destaques</b></p>
@@ -398,8 +454,10 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
         <label class="campo">Setor<select id="f-setor"><option value="">Todos</option></select></label>
         <label class="campo">Ordenar por<select id="f-ordem">
           <option value="final">Nota final</option><option value="barsi">Barsi</option><option value="bazin">Bazin</option>
-          <option value="qualidade">Qualidade</option><option value="graham">Graham</option><option value="greenblatt">Greenblatt</option>
+          <option value="qualidade">Qualidade</option><option value="graham">Graham</option><option value="greenblatt">Greenblatt / P/VP justo</option>
+          <option value="setor">Setor</option><option value="tendencia">Tendência</option><option value="lp">Longo prazo</option>
           <option value="margemTeto">Margem sobre o preço-teto</option><option value="dy">Dividendos sobre o preço</option></select></label>
+        <label class="campo">Pesos da nota<select id="f-pesos"><option value="padrao">Padrão</option><option value="calibrado">Calibrados pelo teste</option></select></label>
         <label class="campo"><span>Nota mínima: <b class="num" id="f-min-val">0</b></span><input type="range" id="f-min" min="0" max="90" step="5" value="0"></label>
         <label class="campo-check"><input type="checkbox" id="f-fav"> Só favoritos</label>
         <button type="button" class="btn" id="baixar-acoes">Baixar planilha</button>
@@ -410,7 +468,7 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
           <table>
             <thead><tr>
               <th>#</th><th>Ativo</th><th>Nota final</th><th class="d so-largo">Preço</th>
-              <th class="d met">Barsi</th><th class="d met">Bazin</th><th class="d met">Qualid.</th><th class="d met">Graham</th><th class="d met">Greenb.</th>
+              <th class="d met">Barsi</th><th class="d met">Bazin</th><th class="d met">Qualid.</th><th class="d met">Graham</th><th class="d met" title="Greenblatt; em bancos e seguradoras, P/VP justo pelo retorno sobre o patrimônio">Greenb.</th><th class="d met">Setor</th><th class="d met">Tend.</th>
               <th class="d so-largo">Margem teto</th><th>Alertas</th>
             </tr></thead>
             <tbody id="corpo-acoes"></tbody>
@@ -534,10 +592,20 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
         <div class="graf" id="bt-graf"></div>
       </div>
       <div class="bloco">
+        <h3>Cada método sozinho</h3>
+        <p class="texto">As 10 maiores notas de cada método, em cada período fechado, comparadas com a média de todas as ações. Os pesos sugeridos misturam meio a meio os pesos padrão com o ganho de cada método; com poucos períodos, isso pode ser sorte, por isso a carteira calibrada acima é medida com pesos tirados só dos outros períodos.</p>
+        <div class="painel rolagem">
+          <table>
+            <thead><tr><th>Método</th><th class="d">Retorno médio</th><th class="d">Ganho sobre todas</th><th class="d">Venceu</th><th class="d">Peso padrão</th><th class="d">Peso sugerido</th></tr></thead>
+            <tbody id="corpo-metodos"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="bloco">
         <h3>Períodos</h3>
         <div class="painel rolagem">
           <table>
-            <thead><tr><th>Início</th><th>Fim</th><th class="d">10 maiores notas</th><th class="d">10 de longo prazo</th><th class="d">Todas as ações</th><th class="d">CDI</th><th class="d so-largo">Ações</th><th></th></tr></thead>
+            <thead><tr><th>Início</th><th>Fim</th><th class="d">10 maiores notas</th><th class="d">Calibrados</th><th class="d">10 de longo prazo</th><th class="d">Todas as ações</th><th class="d">Ibovespa</th><th class="d">CDI</th><th class="d so-largo">Ações</th><th></th></tr></thead>
             <tbody id="corpo-bt"></tbody>
           </table>
         </div>
@@ -550,15 +618,22 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
 
     <section class="secao" id="sec-carteira" role="tabpanel" aria-labelledby="aba-carteira" hidden>
       <div class="bloco">
-        <h2>Minhas posições</h2>
-        <p class="texto">Adicione as ações e os fundos imobiliários que você tem. O painel calcula o resultado com o preço de hoje, os dividendos esperados e avisa quando a nota de algum ativo cai. Tudo fica guardado só neste navegador.</p>
+        <h2>Minhas operações</h2>
+        <p class="texto">Registre cada compra e venda de ações e fundos imobiliários, com data. O painel calcula as posições, o resultado, a rentabilidade, os dividendos a receber, quanto aportar em cada ativo e o imposto de renda. Tudo fica guardado só neste navegador: use "Baixar arquivo" para levar a carteira para outro aparelho.</p>
+        <div class="det-acoes">
+          <button type="button" class="btn" id="cart-baixar">Baixar arquivo da carteira</button>
+          <label class="btn" for="cart-importar" style="display:inline-flex;align-items:center">Importar arquivo</label>
+          <input type="file" id="cart-importar" accept="application/json,.json" hidden>
+        </div>
       </div>
       <form class="painel arca" id="pos-form" autocomplete="off">
-        <div class="carteira-campos">
+        <div class="carteira-campos op-campos">
+          <label class="campo">Operação<select id="op-tipo"><option value="compra">Compra</option><option value="venda">Venda</option></select></label>
           <label class="campo">Ativo<input type="search" list="lista-ativos" id="pos-ativo" placeholder="Código, ex.: BBSE3" required></label>
+          <label class="campo">Data<input type="date" id="op-data" required></label>
           <label class="campo">Quantidade<input type="number" id="pos-qtd" min="0" step="1" required></label>
-          <label class="campo">Preço médio (R$)<input type="number" id="pos-pm" min="0" step="0.01" required></label>
-          <div class="campo"><span>&nbsp;</span><button type="submit" class="btn cheio">Adicionar</button></div>
+          <label class="campo">Preço por unidade (R$)<input type="number" id="pos-pm" min="0" step="0.01" required></label>
+          <div class="campo"><span>&nbsp;</span><button type="submit" class="btn cheio">Registrar</button></div>
         </div>
         <p class="texto" id="pos-msg" role="status"></p>
       </form>
@@ -566,9 +641,64 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
       <div class="aviso" id="pos-alertas" hidden></div>
       <div class="painel rolagem" id="pos-tabela" hidden>
         <table>
-          <thead><tr><th>Ativo</th><th class="d">Quantidade</th><th class="d so-largo">Preço médio</th><th class="d">Preço hoje</th><th class="d">Valor</th><th class="d">Resultado</th><th class="d so-largo">Dividendos/ano</th><th class="d">Nota</th><th></th></tr></thead>
+          <thead><tr><th>Ativo</th><th class="d">Quantidade</th><th class="d so-largo">Preço médio</th><th class="d">Preço hoje</th><th class="d">Valor</th><th class="d">Resultado</th><th class="d so-largo">Dividendos/ano</th><th class="d">Nota</th></tr></thead>
           <tbody id="corpo-pos"></tbody>
         </table>
+      </div>
+      <div class="painel cartao-graf" id="rent-painel" hidden>
+        <h3>Rentabilidade da carteira</h3>
+        <p class="texto" id="rent-txt"></p>
+        <div class="graf" id="rent-graf"></div>
+      </div>
+      <div class="bloco" id="cal-painel" hidden>
+        <h3>Dividendos anunciados a receber</h3>
+        <div class="painel rolagem">
+          <table>
+            <thead><tr><th>Pagamento</th><th>Ativo</th><th class="so-largo">Tipo</th><th class="so-largo">Data com</th><th class="d">Por ação</th><th class="d">Você recebe</th></tr></thead>
+            <tbody id="corpo-cal"></tbody>
+          </table>
+        </div>
+        <p class="texto">Proventos já aprovados e informados à B3, para quem tinha o papel na data com. Fundos imobiliários ainda não entram aqui.</p>
+      </div>
+      <div class="bloco" id="reb-painel" hidden>
+        <h3>Quanto aportar em cada ativo</h3>
+        <div class="filtros">
+          <label class="campo">Valor para aportar (R$)<input type="number" id="reb-valor" min="0" step="100" value="1000"></label>
+          <p class="texto" style="max-width:60ch">Leva as 4 classes para perto de 25% cada e, dentro de ações e de FIIs, completa primeiro os ativos com menos dinheiro. Caixa e internacional vêm da divisão em 4 classes, mais abaixo.</p>
+        </div>
+        <div class="painel rolagem">
+          <table>
+            <thead><tr><th>Classe ou ativo</th><th class="d">Valor hoje</th><th class="d">Aportar</th><th class="d">Quantidade aproximada</th></tr></thead>
+            <tbody id="corpo-reb"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="bloco" id="ir-painel" hidden>
+        <h3>Imposto de renda</h3>
+        <div class="filtros"><label class="campo">Ano<select id="ir-ano"></select></label></div>
+        <div class="painel rolagem">
+          <table>
+            <thead><tr><th>Mês</th><th>Tipo</th><th class="d">Vendas</th><th class="d">Lucro</th><th class="d so-largo">Prejuízo usado</th><th class="d">Imposto</th><th>Situação</th></tr></thead>
+            <tbody id="corpo-ir"></tbody>
+          </table>
+        </div>
+        <h3>Bens e direitos em 31 de dezembro</h3>
+        <div class="painel rolagem">
+          <table>
+            <thead><tr><th>Ativo</th><th>Grupo e código</th><th class="d">Quantidade</th><th class="d">Custo total</th></tr></thead>
+            <tbody id="corpo-bens"></tbody>
+          </table>
+        </div>
+        <p class="texto">Cálculo simplificado para operações comuns (não day trade): ações pagam 15% sobre o lucro do mês, com isenção quando as vendas de ações no mês somam até R$ 20 mil; fundos imobiliários pagam 20%, sem isenção. Prejuízos ficam guardados para abater lucros futuros do mesmo tipo. O DARF (código 6015) vence no último dia útil do mês seguinte; valores abaixo de R$ 10 acumulam para o mês seguinte. Não considera custos de corretagem, imposto retido na fonte, ETFs, BDRs nem eventos como desdobramentos e bonificações. Confira com um contador.</p>
+      </div>
+      <div class="bloco" id="ops-painel" hidden>
+        <h3>Operações registradas</h3>
+        <div class="painel rolagem">
+          <table>
+            <thead><tr><th>Data</th><th>Operação</th><th>Ativo</th><th class="d">Quantidade</th><th class="d">Preço</th><th class="d">Total</th><th></th></tr></thead>
+            <tbody id="corpo-ops"></tbody>
+          </table>
+        </div>
       </div>
       <div class="bloco">
         <h2>Divisão em 4 classes</h2>
@@ -593,6 +723,104 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
       </div>
     </section>
 
+    <section class="secao" id="sec-agenda" role="tabpanel" aria-labelledby="aba-agenda" hidden>
+      <div class="filtros">
+        <label class="campo-check"><input type="checkbox" id="ag-minhas"> Só minha carteira e favoritos</label>
+      </div>
+      <div class="bloco">
+        <h2>Proventos anunciados</h2>
+        <p class="texto">Dividendos e juros sobre capital próprio já aprovados e informados à B3, com pagamento a partir de hoje. Recebe quem tinha a ação no fim do pregão da data com.</p>
+        <div class="painel rolagem"><table>
+          <thead><tr><th>Pagamento</th><th>Ativo</th><th class="so-largo">Tipo</th><th>Data com</th><th class="d">Por ação</th><th class="d so-largo">Sobre o preço</th></tr></thead>
+          <tbody id="corpo-ag-prov"></tbody>
+        </table></div>
+      </div>
+      <div class="bloco">
+        <h2>Próximos balanços</h2>
+        <p class="texto">A CVM dá até 45 dias depois do fim do trimestre para o balanço trimestral e até 3 meses para o anual. A data abaixo é esse prazo; a empresa pode divulgar antes.</p>
+        <div class="painel rolagem"><table>
+          <thead><tr><th>Prazo</th><th>Ativo</th><th>Período</th><th class="d so-largo">Nota</th></tr></thead>
+          <tbody id="corpo-ag-bal"></tbody>
+        </table></div>
+      </div>
+      <div class="bloco">
+        <h2>Comunicados recentes à CVM</h2>
+        <p class="texto">Fatos relevantes, comunicados ao mercado e avisos aos acionistas dos últimos 90 dias, das ações do ranking.</p>
+        <div class="painel rolagem"><table>
+          <thead><tr><th>Data</th><th>Ativo</th><th class="so-largo">Tipo</th><th>Assunto</th></tr></thead>
+          <tbody id="corpo-ag-fatos"></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <section class="secao texto-longo" id="sec-metodologia" role="tabpanel" aria-labelledby="aba-metodologia" hidden>
+      <div class="painel arca">
+        <h2>Como as notas são calculadas</h2>
+        <p>Todas as notas vão de 0 a 100 e saem de regras fixas aplicadas a dados públicos. Dado que falta não é estimado: o método fica de fora da média e a confiança do ativo cai. O código está em <code>radar/notas.py</code> e os limites em <code>config.yaml</code>.</p>
+        <h3>Ações (nota final = média ponderada dos métodos)</h3>
+        <div id="met-pesos" class="pesos"></div>
+        <ul>
+          <li><b>Barsi</b>: preço-teto = dividendo típico por ação (mediana de 5 anos) ÷ 6%. Preço no teto vale 50, com 50% de margem vale 100; +10 nos setores perenes (bancos, energia, saneamento, seguros e telecom); −20 se pagou em menos de 4 dos 5 anos.</li>
+          <li><b>Bazin</b>: dividendos sobre o preço, pelo menor entre os 12 meses e o ano típico. 6% vale 60 e 10% vale 100; reduz se não pagou em todos os 5 anos ou se a dívida passa do patrimônio.</li>
+          <li><b>Qualidade</b>: checklist de 8 itens (retorno sobre o patrimônio de 15% ou mais, lucro em todos os anos e trimestres, crescimento de receita e de lucro, dívida líquida de até 3 vezes o Ebitda, 5 anos de balanços, liquidez). Nota = percentual atendido.</li>
+          <li><b>Graham</b>: valor = √(22,5 × lucro por ação × patrimônio por ação). No valor vale 50, com 50% de margem vale 100; prejuízo vale 0. Lucro de 12 meses acima do dobro da média de 3 anos é trocado pela média.</li>
+          <li><b>Greenblatt</b>: posição nos rankings de lucro operacional sobre o valor da firma e sobre o capital investido; a melhor vale 100 e a pior 10. <b>Em bancos e seguradoras</b> é trocado pelo <b>P/VP justo</b> = retorno sobre o patrimônio ÷ custo de capital (14%), com a mesma escala de Graham.</li>
+          <li><b>Setor</b>: lucro e patrimônio sobre o preço comparados com as empresas do mesmo setor (ou com todas, se o setor tiver menos de 4). A mais barata do grupo vale 100.</li>
+          <li><b>Tendência</b>: 50% momento de 12 meses sem o último mês (posição entre todas), 25% distância da média de 200 pregões (na média vale 50, 20% acima vale 100) e 25% volatilidade baixa de 60 pregões.</li>
+        </ul>
+        <h3>Longo prazo</h3>
+        <p>Percentual do peso atendido em 9 critérios: lucro em todos os 5 anos (20), em todos os trimestres (10), lucro maior que há 5 anos (15), retorno sobre o patrimônio de 15% ou mais (15), dívida de até 3 vezes o Ebitda (10), receita crescendo 5% ao ano (5), dividendos nos 5 anos (15), preço sobre o lucro entre 0 e 15 (10) e setor perene (5). Prejuízo em 12 meses ou patrimônio negativo limitam a nota a 30. O potencial estimado é a distância até o valor de Graham e o preço-teto de Barsi; não é previsão.</p>
+        <h3>Fundos imobiliários</h3>
+        <p>Dividendos de 12 meses (35%; 6% vale 0 e 12% vale 100), preço sobre o valor patrimonial da cota (25%; 1,0 vale 50 e 0,8 vale 100), meses com pagamento nos últimos 12 (25%) e liquidez (15%). Sem valor patrimonial, não há nota; dividendos acima de 18% ou preço abaixo de 0,6 do patrimônio limitam a nota a 60.</p>
+        <h3>Cripto</h3>
+        <p>45% tendência sobre a média de 200 dias, 30% volatilidade de 30 dias e 25% tamanho.</p>
+        <h3>Teste no passado</h3>
+        <p>Em maio e novembro de cada ano, as notas são recalculadas só com dados que existiam na data (balanço conta 90 dias depois do fim do trimestre). Mede-se o retorno de 12 meses, com dividendos, das 10 maiores notas, de cada método sozinho, de todas as ações, do Ibovespa (BOVA11) e do CDI. Entram empresas que saíram da bolsa quando o cadastro antigo da CVM permite ligar o código à empresa, e as negociadas em recuperação judicial. Os pesos calibrados são medidos fora da amostra (tirados dos outros períodos).</p>
+        <h3>Fontes</h3>
+        <ul>
+          <li>B3 (arquivo COTAHIST): cotações diárias oficiais, sem ajuste por proventos (o ajuste por desdobramentos é feito no cálculo).</li>
+          <li>B3 (consulta de empresas listadas): proventos aprovados. Yahoo Finance, não oficial, fica como reserva.</li>
+          <li>CVM (dados abertos): cadastro, balanços, quantidade de ações, informe mensal de FIIs e comunicados (IPE).</li>
+          <li>Banco Central (SGS): Selic, CDI, IPCA e dólar. Tesouro Transparente: Tesouro Direto. CoinGecko: cripto.</li>
+        </ul>
+        <h3>Limites conhecidos</h3>
+        <ul>
+          <li>O teste no passado cobre poucos anos e não inclui custos nem impostos.</li>
+          <li>Planos de contas fora do padrão podem gerar números errados em empresas isoladas.</li>
+          <li>Os dados são atualizados de terça a sábado de manhã: não há cotação em tempo real.</li>
+        </ul>
+        <h3>Histórico de mudanças</h3>
+        <ul class="historico">
+          <li><b>out/2026</b>: métodos Setor e Tendência; P/VP justo para bancos; backtest por método, com Ibovespa e pesos calibrados; proventos da B3; comunicados da CVM; agenda; carteira com operações, rentabilidade e imposto de renda; histórico diário das notas em <code>docs/historico</code>.</li>
+          <li><b>out/2026</b>: backtest, nota de FIIs, Tesouro Direto, dívida sobre Ebitda, comparação, simulador.</li>
+          <li><b>out/2026</b>: nota de longo prazo com potencial estimado.</li>
+          <li><b>out/2026</b>: primeira versão com Barsi, Bazin, Qualidade, Graham e Greenblatt.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="secao texto-longo" id="sec-termos" role="tabpanel" aria-labelledby="aba-termos" hidden>
+      <div class="painel arca">
+        <h2>Aviso regulatório</h2>
+        <p>O Radar de Investimentos é uma ferramenta de triagem que aplica regras fixas e públicas a dados públicos. Ele <b>não faz recomendação de investimento</b>, não considera o seu perfil, objetivos ou situação financeira e não é analista nem consultor registrado na CVM. Notas altas indicam apenas que o ativo passa nos critérios de cada método. Resultados passados não garantem resultados futuros. Antes de investir, avalie o seu perfil e, se precisar, procure um profissional certificado.</p>
+        <h2>Termos de uso</h2>
+        <ul>
+          <li>O conteúdo é informativo e gratuito, oferecido "no estado em que se encontra", sem garantia de que os dados estejam completos, corretos ou atualizados.</li>
+          <li>As fontes podem mudar ou ficar fora do ar; quando uma coleta falha, o painel mostra os últimos dados válidos e avisa na aba Coleta.</li>
+          <li>Você é responsável pelas decisões que tomar. O autor não responde por perdas decorrentes do uso do painel.</li>
+          <li>O código é aberto no GitHub; as regras de cálculo estão descritas na aba Metodologia.</li>
+        </ul>
+        <h2>Privacidade</h2>
+        <ul>
+          <li>O painel <b>não tem cadastro nem login e não coleta dados pessoais</b>. Carteira, operações, favoritos e preferências ficam guardados só no seu navegador (armazenamento local) e não são enviados a nenhum servidor.</li>
+          <li>O arquivo "Baixar arquivo da carteira" fica com você; importar um arquivo só altera este navegador.</li>
+          <li>Ao abrir a página, o navegador baixa as fontes de letra do Google Fonts e a hospedagem é do GitHub Pages: esses serviços recebem o seu endereço IP, como em qualquer site, conforme as políticas deles.</li>
+          <li>Para apagar tudo, limpe os dados do site nas configurações do navegador.</li>
+        </ul>
+        <p class="sem">Textos-base; revise com um advogado antes de oferecer o site como serviço.</p>
+      </div>
+    </section>
+
     <section class="secao" id="sec-coleta" role="tabpanel" aria-labelledby="aba-coleta" hidden>
       <p class="texto">Uma linha por fonte, com a última coleta, a quantidade de registros novos e os avisos. A coleta roda sozinha de terça a sábado, de manhã cedo.</p>
       <div class="painel rolagem">
@@ -607,14 +835,16 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
 
   <footer>Conteúdo informativo. Não é recomendação de compra ou venda. Fontes: B3, CVM, Tesouro Transparente, Yahoo Finance, CoinGecko e Banco Central.</footer>
 </div>
-  </div>
+  </main>
 </div>
 <script>
 (function () {
   "use strict";
 
-  var METODOS = [["barsi", "Barsi"], ["bazin", "Bazin"], ["qualidade", "Qualidade"], ["graham", "Graham"], ["greenblatt", "Greenblatt"]];
-  var D = null, ACOES = [], CRIPTO = [], PESOS = {};
+  var METODOS = [["barsi", "Barsi"], ["bazin", "Bazin"], ["qualidade", "Qualidade"], ["graham", "Graham"], ["greenblatt", "Greenblatt"], ["setor", "Setor"], ["tendencia", "Tendência"]];
+  function nomeMetodo(k, a) { return k === "greenblatt" && a && a.banco ? "P/VP justo" : (METODOS.filter(function (m) { return m[0] === k; })[0] || [k, k])[1]; }
+  var D = null, ACOES = [], CRIPTO = [], PESOS = {}, PESOS_ATIVOS = {};
+  var DETALHES = false;
 
   // ---------- formatacao ----------
   function brl(v) {
@@ -665,7 +895,7 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
         (!estado.setor || a.s === estado.setor) && (a.final || 0) >= estado.min && (!estado.fav || ehFav(a.t));
     });
     var k = estado.ordem;
-    function val(a) { var x = (k === "final" || k === "margemTeto" || k === "dy") ? a[k] : a.m[k]; return x == null ? -Infinity : x; }
+    function val(a) { var x = (k === "final" || k === "margemTeto" || k === "dy" || k === "lp") ? a[k] : a.m[k]; return x == null ? -Infinity : x; }
     return lista.sort(function (x, y) { return val(y) - val(x); });
   }
   function celMetodo(v) {
@@ -682,10 +912,10 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
         '<td class="c-ativo"><span class="ativo"><b>' + botaoFav(a.t) + " " + a.t + "</b><span>" + esc(a.n) + " · " + esc(a.s) + "</span></span></td>" +
         '<td><span class="nota"><b class="num">' + inteiro(a.final) + "</b>" + barra(a.final) + "</span></td>" +
         '<td class="d num so-largo">' + brl(a.p) + "</td>" +
-        celMetodo(a.m.barsi) + celMetodo(a.m.bazin) + celMetodo(a.m.qualidade) + celMetodo(a.m.graham) + celMetodo(a.m.greenblatt) +
+        celMetodo(a.m.barsi) + celMetodo(a.m.bazin) + celMetodo(a.m.qualidade) + celMetodo(a.m.graham) + celMetodo(a.m.greenblatt) + celMetodo(a.m.setor) + celMetodo(a.m.tendencia) +
         '<td class="d num so-largo">' + (a.margemTeto == null ? '<span class="sem">sem dado</span>' : pct(Math.max(a.margemTeto, -9.99))) + "</td>" +
         "<td>" + alertas(a.al, true) + "</td></tr>";
-    }).join("") || '<tr><td colspan="11" class="sem">Nenhuma ação passa nos filtros. Reduza a nota mínima ou limpe a busca.</td></tr>';
+    }).join("") || '<tr><td colspan="13" class="sem">Nenhuma ação passa nos filtros. Reduza a nota mínima ou limpe a busca.</td></tr>';
     document.getElementById("conta").textContent = lista.length + " de " + ACOES.length + " ações";
     desenharDetalhe();
   }
@@ -696,7 +926,7 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
     var comCheck = (a.check || []).filter(function (c) { return c[1] != null; }).length;
     METODOS.forEach(function (par) {
       var k = par[0], v = a.m[k];
-      if (v == null) { semDado.push(par[1] + ": " + ((a.nulo && a.nulo[k]) || "sem nota.")); return; }
+      if (v == null) { semDado.push(nomeMetodo(k, a) + ": " + ((a.nulo && a.nulo[k]) || "sem nota.")); return; }
       var alto = v >= 70, baixo = v <= 40;
       if (!alto && !baixo) return;
       var txt = "";
@@ -709,8 +939,12 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
       if (k === "graham") txt = !a.graham ? "Lucro ou patrimônio negativo: não passa em Graham."
         : a.margemGraham > 0 ? "Negocia " + semSinal(a.margemGraham) + " abaixo do valor de Graham (" + brl(a.graham) + ")."
         : "Negocia acima do valor de Graham (" + brl(a.graham) + ").";
-      if (k === "greenblatt") txt = alto ? "Bem colocada no ranking de retorno sobre o capital e de lucro operacional em relação ao valor da empresa."
+      if (k === "greenblatt" && a.banco) txt = a.pvpJusto ? (alto ? "Negocia abaixo" : "Negocia acima") + " do P/VP justo de " + vezes(a.pvpJusto) + ", calculado pelo retorno sobre o patrimônio."
+        : "Retorno sobre o patrimônio negativo: sem P/VP justo.";
+      else if (k === "greenblatt") txt = alto ? "Bem colocada no ranking de retorno sobre o capital e de lucro operacional em relação ao valor da empresa."
         : "Mal colocada no ranking de retorno sobre o capital, ou com lucro operacional negativo.";
+      if (k === "setor") txt = alto ? "Barata em relação às empresas do mesmo setor (lucro e patrimônio sobre o preço)." : "Cara em relação às empresas do mesmo setor.";
+      if (k === "tendencia") txt = alto ? "Preço em alta nos últimos 12 meses, acima da média de 200 pregões e com oscilação baixa." : "Preço em queda ou muito instável.";
       (alto ? favor : contra).push(txt);
     });
     var faixa = a.final >= 70 ? "Nota alta" : a.final >= 50 ? "Nota intermediária" : "Nota baixa";
@@ -718,6 +952,14 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
     var resumo = faixa + ": " + favor.length + (favor.length === 1 ? " método a favor e " : " métodos a favor e ") + contra.length + " contra. " +
       (n ? "Há " + n + (n > 1 ? " alertas que pedem" : " alerta que pede") + " leitura antes de qualquer decisão." : "Sem alertas no momento.");
     return { resumo: resumo, favor: favor, contra: contra, semDado: semDado };
+  }
+  function fatosDe(t) {
+    var f = (D.fatos || []).filter(function (x) { return x.t === t; }).slice(0, 5);
+    if (!f.length) return "";
+    return '<div class="bloco"><h3>Comunicados recentes à CVM</h3><ul class="fatos">' + f.map(function (x) {
+      return '<li><span class="sem num">' + dataBR(x.data) + "</span> <b>" + esc(x.cat) + "</b>: " +
+        (x.link ? '<a href="' + esc(x.link) + '" target="_blank" rel="noopener">' + esc(x.assunto || "abrir documento") + "</a>" : esc(x.assunto || "")) + "</li>";
+    }).join("") + "</ul></div>";
   }
   function lista(titulo, itens) {
     if (!itens || !itens.length) return "";
@@ -740,8 +982,9 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
         '<button type="button" class="btn" data-cmp="' + a.t + '">Comparar</button></div>' +
       '<div class="bloco"><h3>Notas por método</h3>' + METODOS.map(function (p) {
         var v = a.m[p[0]];
-        return '<div class="metodo"><span>' + p[1] + "</span>" + barra(v) + '<b class="num">' + (v == null ? '<span class="sem">–</span>' : v) + "</b></div>";
+        return '<div class="metodo"><span>' + nomeMetodo(p[0], a) + "</span>" + barra(v) + '<b class="num">' + (v == null ? '<span class="sem">–</span>' : v) + "</b></div>";
       }).join("") + "</div>" +
+      (a.resumo ? '<div class="bloco ia"><h3>Resumo <span class="etq">escrito por IA</span></h3><p>' + esc(a.resumo) + '</p><p class="sem" style="font-size:12px">Gerado pelo Claude a partir dos números desta página em ' + dataBR(a.resumoEm) + ". Pode conter erros: confira os números.</p></div>" : "") +
       '<div class="pares">' +
         par("Preço-teto (Barsi)", brl(a.teto), a.margemTeto == null ? "sem dividendos" : "margem de " + pct(Math.max(a.margemTeto, -9.99))) +
         par("Valor de Graham", brl(a.graham), a.margemGraham == null ? "lucro ou patrimônio negativo" : "margem de " + pct(Math.max(a.margemGraham, -9.99))) +
@@ -752,6 +995,9 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
         par("Retorno sobre o patrimônio", a.roe == null ? "sem dado" : pct(a.roe, 1).replace("+", ""), "lucro de 12 meses") +
         par("Dívida líquida", a.divEbit == null ? "sem dado" : vezes(a.divEbit), a.divEbit == null ? "" : "vezes o " + (a.baseDivida || "lucro operacional")) +
         par("Retorno em 12 meses", a.tr12 == null ? "sem dado" : pct(a.tr12, 1), "preço mais dividendos recebidos") +
+        (a.banco ? par("P/VP justo", a.pvpJusto == null ? "sem dado" : vezes(a.pvpJusto), "retorno sobre o patrimônio / 14%") : "") +
+        (a.tend ? par("Momento de 12 meses", a.tend.mom == null ? "sem dado" : pct(a.tend.mom, 0), "sem o último mês") +
+          par("Média de 200 pregões", pct(a.tend.acima200, 1), a.tend.vol == null ? "" : "volatilidade de " + semSinal(a.tend.vol, 0) + " ao ano") : "") +
         par("Dividendos x CVM", a.confDiv == null ? "sem dado" : (a.confDiv >= 0.67 && a.confDiv <= 1.5 ? "batem" : "diferem"),
           a.confDiv == null ? "Yahoo comparado ao caixa pago informado à CVM" : "Yahoo dividido pelo caixa pago à CVM em 2 anos: " + vezes(a.confDiv) +
           (a.confDiv >= 0.67 && a.confDiv <= 1.5 ? "" : ". Holdings e o prazo entre declarar e pagar explicam parte das diferenças")) +
@@ -773,7 +1019,10 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
       }).join("") + "</ul></div>" : "") +
       '<div class="bloco ia"><h3>Leitura automática</h3><p>' + esc(L.resumo) + "</p>" +
         lista("A favor", L.favor) + lista("Contra", L.contra) + lista("Alertas", a.al) + lista("Sem dado", L.semDado) + "</div>" +
+      fatosDe(a.t) +
       '<div class="rodape-det">Cotação de ' + dataBR(a.data) + " · balanço de " + dataBR(a.balancoEm) +
+        (a.proxPrazo ? " · próximo balanço até " + dataBR(a.proxPrazo) + " (prazo legal)" : "") +
+        (a.fonteDiv ? " · dividendos: " + a.fonteDiv : "") +
         (a.lucroAte ? " · lucro até " + dataBR(a.lucroAte) + (a.lucroBase === "ultimo ano" ? " (ano fechado)" : " (12 meses)") : "") + "</div>";
     grafico(document.getElementById("graf"), a.serie || [], a.data);
     var g5 = document.getElementById("graf5");
@@ -850,6 +1099,14 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
     if (f) { alternarFav(f.dataset.fav); desenharAcoes(); return; }
     var tr = e.target.closest("tr[data-t]"); if (tr) selecionar(tr.dataset.t, true);
   });
+  document.getElementById("f-pesos").addEventListener("change", function (e) { aplicarPesos(e.target.value); });
+  function aplicarPesos(modo) {
+    var sug = (D.backtest || {}).pesosSugeridos;
+    PESOS_ATIVOS = modo === "calibrado" && sug ? sug : PESOS;
+    ACOES.forEach(function (a) { if (a.finalPadrao == null) a.finalPadrao = a.final; a.final = modo === "calibrado" && sug ? notaCom(a.m, sug) : a.finalPadrao; });
+    document.getElementById("pesos").innerHTML = METODOS.map(function (p) { return '<span class="chip">' + p[1] + ' <b class="num">' + (PESOS_ATIVOS[p[0]] || 0) + "%</b></span>"; }).join("");
+    desenharAcoes(); desenharDestaques();
+  }
   document.getElementById("f-fav").addEventListener("change", function (e) { estado.fav = e.target.checked; desenharAcoes(); });
   document.getElementById("baixar-acoes").addEventListener("click", function () {
     baixarCSV("acoes-radar.csv", ["Código", "Empresa", "Setor", "Preço", "Nota final", "Barsi", "Bazin", "Qualidade", "Graham", "Greenblatt", "Longo prazo",
@@ -871,7 +1128,7 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
 
   // ---------- destaques ----------
   var OBJETIVOS = {
-    equilibrio: { pesos: null, txt: "Usa os pesos padrão da nota final." },
+    equilibrio: { pesos: null, txt: "Usa os pesos da nota final escolhidos na aba Ações." },
     renda: { pesos: { barsi: 35, bazin: 30, qualidade: 25, graham: 5, greenblatt: 5 }, txt: "Barsi e Bazin somam 65% da nota: pesa mais quem paga dividendos." },
     valor: { pesos: { barsi: 5, bazin: 5, qualidade: 25, graham: 35, greenblatt: 30 }, txt: "Graham e Greenblatt somam 65% da nota: pesa mais o preço abaixo do valor." }
   };
@@ -904,7 +1161,7 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
       '<span class="dest-al">' + alertas(lista) + "</span>" + botao + "</li>";
   }
   function desenharDestaques() {
-    var o = OBJETIVOS[objetivo], pesos = o.pesos || PESOS;
+    var o = OBJETIVOS[objetivo], pesos = o.pesos || PESOS_ATIVOS;
     document.getElementById("dest-txt").textContent = o.txt;
     Array.prototype.forEach.call(document.querySelectorAll("#sec-destaques .seg button"), function (b) { b.setAttribute("aria-pressed", b.dataset.obj === objetivo); });
     document.getElementById("dest-acoes").innerHTML = ACOES
@@ -1105,7 +1362,7 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
     return M[+aaaamm.slice(5, 7) - 1] + "/" + aaaamm.slice(2, 4);
   }
   var TRACOS = [["var(--ink)", ""], ["var(--muted)", ""], ["var(--ink)", "5 4"], ["var(--muted)", "2 3"]];
-  var CAIXAS = ["var(--ink)", "#737373", "#b5b5b5", "#e0e0e0"];
+  var CAIXAS = ["var(--ink)", "var(--c2)", "var(--c3)", "var(--c4)"];
   function legenda(series, caixa) {
     return '<div class="leg">' + series.map(function (s, i) {
       return "<span><i" + (caixa ? ' class="caixa" style="background:' + CAIXAS[i] + '"' :
@@ -1315,42 +1572,66 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
   });
   document.getElementById("cmp-limpar").addEventListener("click", function () { CMP = []; gravar("radar-comparar", CMP); desenharComparar(); });
 
-  // ---------- carteira: posicoes ----------
-  var POS = ler("radar-posicoes", []);
+  // ---------- carteira: operacoes ----------
+  // cada operacao: {id, tipo: "compra"|"venda", t, data: "aaaa-mm-dd"|null, q, preco}
+  var OPS = ler("radar-operacoes", null);
+  if (!OPS) {   // posicoes da versao anterior viram compras sem data
+    OPS = ler("radar-posicoes", []).map(function (p, i) { return { id: "m" + i, tipo: "compra", t: p.t, data: null, q: p.q, preco: p.pm }; });
+    gravar("radar-operacoes", OPS);
+  }
+  var POS = { _tot: { acoes: 0, fiis: 0 } };
   function ativoPor(t) {
     t = (t || "").trim().toUpperCase();
     var a = acaoPor(t);
-    if (a) return { t: a.t, tipo: "acao", p: a.p, nota: a.final == null ? null : Math.round(a.final), dpa: a.dpa, al: a.al || [], nome: a.n };
+    if (a) return { t: a.t, tipo: "acao", p: a.p, nota: a.final == null ? null : Math.round(a.final), dpa: a.dpa, al: a.al || [], nome: a.n, precos5: a.precos5 };
     var f = FIIS.filter(function (x) { return x.t === t; })[0];
-    if (f) return { t: f.t, tipo: "fii", p: f.p, nota: f.nota, dpa: f.dy == null ? null : f.dy * f.p, al: f.al || [], nome: f.n };
+    if (f) return { t: f.t, tipo: "fii", p: f.p, nota: f.nota, dpa: f.dy == null ? null : f.dy * f.p, al: f.al || [], nome: f.n, precos5: f.precos5 };
     return null;
   }
+  function tipoDe(t) { var a = ativoPor(t); return a ? a.tipo : (/11$/.test(t) ? "fii" : "acao"); }
+  function opsOrdenadas() { return OPS.slice().sort(function (a, b) { return (a.data || "") < (b.data || "") ? -1 : (a.data || "") > (b.data || "") ? 1 : 0; }); }
+  // posicoes e vendas a partir das operacoes, ate uma data (inclusive)
+  function apurar(ate) {
+    var pos = {}, vendas = [];
+    opsOrdenadas().forEach(function (o) {
+      if (ate && o.data && o.data > ate) return;
+      var p = pos[o.t] = pos[o.t] || { q: 0, custo: 0 };
+      if (o.tipo === "compra") { p.q += o.q; p.custo += o.q * o.preco; return; }
+      var q = Math.min(o.q, p.q), pm = p.q ? p.custo / p.q : 0;
+      vendas.push({ data: o.data, t: o.t, tipo: tipoDe(o.t), q: q, preco: o.preco, total: q * o.preco, lucro: (o.preco - pm) * q });
+      p.custo -= pm * q; p.q -= q;
+    });
+    Object.keys(pos).forEach(function (t) { if (pos[t].q <= 1e-9) delete pos[t]; });
+    return { pos: pos, vendas: vendas };
+  }
   function desenharPosicoes() {
-    var temPos = POS.length > 0;
-    ["pos-resumo", "pos-tabela"].forEach(function (id) { document.getElementById(id).hidden = !temPos; });
-    var memo = ler("radar-notas-vistas", { data: null, notas: {}, antes: {} });
-    var atuais = {};
-    POS.forEach(function (p) { var a = ativoPor(p.t); if (a && a.nota != null) atuais[p.t] = a.nota; });
+    if (!D) return;
+    var A = apurar(null), tickers = Object.keys(A.pos).sort();
+    var temOps = OPS.length > 0;
+    ["pos-resumo", "pos-tabela", "ops-painel", "reb-painel", "ir-painel"].forEach(function (id) { document.getElementById(id).hidden = !temOps; });
+    var memo = ler("radar-notas-vistas", { data: null, notas: {}, antes: {} }), atuais = {};
+    tickers.forEach(function (t) { var a = ativoPor(t); if (a && a.nota != null) atuais[t] = a.nota; });
     if (memo.data !== D.dataCotacao) { memo.antes = memo.notas || {}; memo.notas = atuais; memo.data = D.dataCotacao; gravar("radar-notas-vistas", memo); }
     var tot = { valor: 0, custo: 0, div: 0, acoes: 0, fiis: 0 }, avisos = [];
-    document.getElementById("corpo-pos").innerHTML = POS.map(function (p, i) {
-      var a = ativoPor(p.t), custo = p.q * p.pm;
-      if (!a) return "<tr><td><b>" + esc(p.t) + '</b></td><td class="d num">' + inteiro(p.q) + '</td><td class="d num so-largo">' + brl(p.pm) +
-        '</td><td colspan="5" class="sem">Fora do painel nesta coleta</td><td><button type="button" class="btn" data-rem="' + i + '">Remover</button></td></tr>';
-      var valor = p.q * a.p, res = valor - custo, div = a.dpa ? a.dpa * p.q : null;
-      tot.valor += valor; tot.custo += custo; tot.div += div || 0; tot[a.tipo === "fii" ? "fiis" : "acoes"] += valor;
-      var antes = (memo.antes || {})[p.t];
-      if (antes != null && a.nota != null && antes - a.nota >= 10) avisos.push(p.t + ": a nota caiu de " + antes + " para " + a.nota + " desde a coleta anterior.");
-      if (a.nota != null && a.nota < 50) avisos.push(p.t + ": nota " + a.nota + ", abaixo de 50.");
-      if (a.al.length) avisos.push(p.t + ": " + a.al.join("; ") + ".");
-      return "<tr><td><span class=\"ativo\"><b>" + a.t + "</b><span>" + esc(a.nome) + '</span></span></td><td class="d num">' + inteiro(p.q) + '</td><td class="d num so-largo">' + brl(p.pm) +
+    POS.linhas = [];
+    document.getElementById("corpo-pos").innerHTML = tickers.map(function (t) {
+      var p = A.pos[t], a = ativoPor(t), pm = p.custo / p.q;
+      if (!a) return "<tr><td><b>" + esc(t) + '</b></td><td class="d num">' + inteiro(p.q) + '</td><td class="d num so-largo">' + brl(pm) + '</td><td colspan="5" class="sem">Fora do painel nesta coleta</td></tr>';
+      var valor = p.q * a.p, res = valor - p.custo, div = a.dpa ? a.dpa * p.q : null;
+      tot.valor += valor; tot.custo += p.custo; tot.div += div || 0; tot[a.tipo === "fii" ? "fiis" : "acoes"] += valor;
+      POS.linhas.push({ t: t, tipo: a.tipo, q: p.q, valor: valor, preco: a.p });
+      var antes = (memo.antes || {})[t];
+      if (antes != null && a.nota != null && antes - a.nota >= 10) avisos.push(t + ": a nota caiu de " + antes + " para " + a.nota + " desde a coleta anterior.");
+      if (a.nota != null && a.nota < 50) avisos.push(t + ": nota " + a.nota + ", abaixo de 50.");
+      if (a.al.length) avisos.push(t + ": " + a.al.join("; ") + ".");
+      return '<tr><td><span class="ativo"><b>' + a.t + "</b><span>" + esc(a.nome) + '</span></span></td><td class="d num">' + inteiro(p.q) + '</td><td class="d num so-largo">' + brl(pm) +
         '</td><td class="d num">' + brl(a.p) + '</td><td class="d num">' + grande(valor) + '</td><td class="d num ' + (res < 0 ? "negativo" : "positivo") + '">' + grande(res) +
-        (custo ? " (" + pct(res / custo, 1) + ")" : "") + '</td><td class="d num so-largo">' + (div == null ? "sem dado" : grande(div)) + '</td><td class="d num">' + inteiro(a.nota) +
-        '</td><td><button type="button" class="btn" data-rem="' + i + '" aria-label="Remover ' + a.t + '">Remover</button></td></tr>';
-    }).join("");
+        (p.custo ? " (" + pct(res / p.custo, 1) + ")" : "") + '</td><td class="d num so-largo">' + (div == null ? "sem dado" : grande(div)) + '</td><td class="d num">' + inteiro(a.nota) + "</td></tr>";
+    }).join("") || '<tr><td colspan="8" class="sem">Nenhuma posição aberta.</td></tr>';
+    var lucroVendas = A.vendas.reduce(function (s2, v) { return s2 + v.lucro; }, 0);
     document.getElementById("pos-resumo").innerHTML = [
-      ["Valor hoje", grande(tot.valor), "das posições com preço"], ["Custo", grande(tot.custo), "quantidade x preço médio"],
-      ["Resultado", grande(tot.valor - tot.custo), tot.custo ? pct((tot.valor - tot.custo) / tot.custo, 1) + " sobre o custo" : ""],
+      ["Valor hoje", grande(tot.valor), "das posições abertas"], ["Custo", grande(tot.custo), "quantidade x preço médio"],
+      ["Resultado", grande(tot.valor - tot.custo), (tot.custo ? pct((tot.valor - tot.custo) / tot.custo, 1) + " sobre o custo" : "") + (A.vendas.length ? " · vendas: " + grande(lucroVendas) : "")],
       ["Dividendos por mês", grande(tot.div / 12), "média esperada, pelo histórico de 5 anos"]
     ].map(function (c) { return '<div class="indic"><span>' + c[0] + '</span><b class="num">' + c[1] + "</b><small>" + c[2] + "</small></div>"; }).join("");
     var al = document.getElementById("pos-alertas");
@@ -1358,21 +1639,172 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
     al.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--critical)" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16h.01"/></svg><div><p><strong>Atenção na sua carteira</strong></p><ul style="margin:4px 0 0;padding-left:18px">' +
       avisos.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></div>";
     POS._tot = tot;
+    document.getElementById("corpo-ops").innerHTML = opsOrdenadas().reverse().map(function (o) {
+      return '<tr><td class="num">' + (o.data ? dataBR(o.data) : '<span class="sem">sem data</span>') + "</td><td>" + (o.tipo === "compra" ? "Compra" : "Venda") + "</td><td><b>" + esc(o.t) +
+        '</b></td><td class="d num">' + inteiro(o.q) + '</td><td class="d num">' + brl(o.preco) + '</td><td class="d num">' + brl(o.q * o.preco) +
+        '</td><td><button type="button" class="btn" data-rem-op="' + esc(o.id) + '" aria-label="Apagar operação de ' + esc(o.t) + '">Apagar</button></td></tr>';
+    }).join("");
+    desenharRentabilidade(); desenharCalendarioCarteira(A.pos); desenharRebalanceamento(); desenharIR();
   }
+  function precoNoMes(x, mes, cache) {
+    if (!x) return null;
+    var m = cache[x.t];
+    if (!m) { m = cache[x.t] = {}; (x.precos5 || []).forEach(function (p) { m[p[0]] = p[1]; }); }
+    if (mes >= (D.dataCotacao || "").slice(0, 7)) return x.p;
+    var meses = Object.keys(m).filter(function (k) { return k <= mes; }).sort();
+    return meses.length ? m[meses[meses.length - 1]] : null;
+  }
+  function desenharRentabilidade() {
+    var painel = document.getElementById("rent-painel"), txt = document.getElementById("rent-txt");
+    var datadas = OPS.filter(function (o) { return o.data; });
+    painel.hidden = !OPS.length;
+    if (!datadas.length) { txt.textContent = "Registre as operações com data para ver a rentabilidade ao longo do tempo."; document.getElementById("rent-graf").innerHTML = ""; return; }
+    if (!DETALHES) { txt.textContent = "Carregando o histórico de preços…"; return; }
+    var semData = OPS.length - datadas.length, ini = datadas.map(function (o) { return o.data; }).sort()[0].slice(0, 7), fim = (D.dataCotacao || "").slice(0, 7);
+    var meses = [], a = +ini.slice(0, 4), m = +ini.slice(5, 7);
+    while ((a + "-" + String(m).padStart(2, "0")) <= fim) { meses.push(a + "-" + String(m).padStart(2, "0")); m++; if (m > 12) { m = 1; a++; } }
+    var cache = {}, ativos = {}, indice = 1, carteira = [], vAnt = 0, q = {}, ultimoPreco = {};
+    datadas.slice().sort(function (x, y) { return x.data < y.data ? -1 : 1; }).forEach(function (o) { ativos[o.t] = ativoPor(o.t); });
+    meses.forEach(function (mes) {
+      var fluxo = 0;
+      datadas.forEach(function (o) {
+        if (o.data.slice(0, 7) !== mes) return;
+        q[o.t] = (q[o.t] || 0) + (o.tipo === "compra" ? o.q : -o.q);
+        fluxo += (o.tipo === "compra" ? 1 : -1) * o.q * o.preco;
+      });
+      datadas.forEach(function (o) { if (o.data.slice(0, 7) === mes) ultimoPreco[o.t] = o.preco; });
+      var v = 0;
+      // sem preco de fim de mes (ativo fora do historico), usa o ultimo preco das suas operacoes
+      Object.keys(q).forEach(function (t) { var p = precoNoMes(ativos[t], mes, cache) || ultimoPreco[t]; if (p && q[t] > 0) v += q[t] * p; });
+      // Dietz modificado: aportes e retiradas contam como feitos no meio do mes
+      var denom = vAnt + 0.5 * fluxo, r = denom > 0 ? (v - vAnt - fluxo) / denom : 0;
+      indice *= 1 + r; carteira.push(indice * 100); vAnt = v;
+    });
+    var serieRef = function (lista) {
+      var mapa = {}; (lista || []).forEach(function (p) { mapa[p[0]] = p[1]; });
+      var antes = Object.keys(mapa).filter(function (k) { return k < ini; }).sort(), base = antes.length ? mapa[antes[antes.length - 1]] : mapa[ini];
+      return base ? meses.map(function (mes) { return mapa[mes] == null ? null : mapa[mes] / base * 100; }) : null;
+    };
+    var series = [{ nome: "Sua carteira", v: carteira }], cdi = serieRef(D.cdiMensal), ibov = serieRef(D.ibovMensal);
+    if (cdi) series.push({ nome: "CDI", v: cdi });
+    if (ibov) series.push({ nome: "Ibovespa (BOVA11)", v: ibov });
+    var ultimo = function (v) { for (var i = v.length - 1; i >= 0; i--) if (v[i] != null) return v[i] / 100 - 1; return null; };
+    txt.textContent = "Desde " + mesBR(ini) + ": carteira " + pct(ultimo(carteira), 1) + (cdi ? ", CDI " + pct(ultimo(cdi), 1) : "") + (ibov ? ", Ibovespa " + pct(ultimo(ibov), 1) : "") +
+      ". Retorno ponderado pelo tempo, com preços de fim de mês e sem os dividendos recebidos" + (semData ? "; " + semData + (semData > 1 ? " operações sem data ficaram" : " operação sem data ficou") + " de fora" : "") + ".";
+    linhas(document.getElementById("rent-graf"), meses.map(mesBR), series, function (x) { return Math.round(x); });
+  }
+  function desenharCalendarioCarteira(pos) {
+    var hoje = D.dataCotacao || "";
+    var itens = (D.calendario || []).filter(function (c) { return pos[c.t] && (c.pagamento || c.dataCom) >= hoje; });
+    document.getElementById("cal-painel").hidden = !itens.length;
+    var total = 0;
+    document.getElementById("corpo-cal").innerHTML = itens.map(function (c) {
+      var rec = c.valor * pos[c.t].q; total += rec;
+      return '<tr><td class="num">' + (c.pagamento ? dataBR(c.pagamento) : "a definir") + "</td><td><b>" + c.t + '</b></td><td class="so-largo">' + esc(c.tipo) + '</td><td class="num so-largo">' + dataBR(c.dataCom) +
+        '</td><td class="d num">' + brl(c.valor) + '</td><td class="d num">' + brl(rec) + "</td></tr>";
+    }).join("") + (itens.length ? '<tr><td colspan="5"><b>Total</b></td><td class="d num"><b>' + brl(total) + "</b></td></tr>" : "");
+  }
+  function desenharRebalanceamento() {
+    var aporte = Math.max(0, +document.getElementById("reb-valor").value || 0), t = POS._tot;
+    var classes = [["acoes", "Ações Brasil", t.acoes], ["imoveis", "Imóveis (FIIs)", t.fiis], ["caixa", "Caixa", +carteira.caixa || 0], ["exterior", "Internacional", +carteira.exterior || 0]];
+    var total = classes.reduce(function (s2, c) { return s2 + c[2]; }, 0) + aporte, meta = total / 4;
+    var def = classes.map(function (c) { return Math.max(0, meta - c[2]); }), totDef = def.reduce(function (s2, x) { return s2 + x; }, 0);
+    var aloc = classes.map(function (c, i) { return totDef > 0 ? Math.min(def[i], aporte * def[i] / totDef) + (aporte > totDef ? (aporte - totDef) / 4 : 0) : aporte / 4; });
+    var linhasReb = [];
+    classes.forEach(function (c, i) {
+      linhasReb.push("<tr><td><b>" + c[1] + '</b></td><td class="d num">' + grande(c[2]) + '</td><td class="d num"><b>' + brl(aloc[i]) + '</b></td><td class="d num sem">–</td></tr>');
+      var tipo = c[0] === "acoes" ? "acao" : c[0] === "imoveis" ? "fii" : null;
+      if (!tipo) return;
+      var pos = (POS.linhas || []).filter(function (l) { return l.tipo === tipo; });
+      if (!pos.length) return;
+      var alvo = (c[2] + aloc[i]) / pos.length, nec = pos.map(function (l) { return Math.max(0, alvo - l.valor); }), totNec = nec.reduce(function (s2, x) { return s2 + x; }, 0);
+      pos.forEach(function (l, k) {
+        var v = totNec > 0 ? aloc[i] * nec[k] / totNec : aloc[i] / pos.length;
+        linhasReb.push('<tr><td style="padding-left:28px">' + l.t + '</td><td class="d num">' + grande(l.valor) + '</td><td class="d num">' + brl(v) + '</td><td class="d num">' + (l.preco ? Math.floor(v / l.preco) : "–") + "</td></tr>");
+      });
+    });
+    document.getElementById("corpo-reb").innerHTML = linhasReb.join("");
+  }
+  document.getElementById("reb-valor").addEventListener("input", desenharRebalanceamento);
+  function desenharIR() {
+    var A = apurar(null), sel = document.getElementById("ir-ano");
+    var anos = {}; A.vendas.forEach(function (v) { if (v.data) anos[v.data.slice(0, 4)] = 1; });
+    OPS.forEach(function (o) { if (o.data) anos[o.data.slice(0, 4)] = 1; });
+    anos[(D.dataCotacao || "").slice(0, 4)] = 1;
+    var lista = Object.keys(anos).filter(Boolean).sort().reverse(), atual = sel.value || lista[0];
+    sel.innerHTML = lista.map(function (a) { return "<option" + (a === atual ? " selected" : "") + ">" + a + "</option>"; }).join("");
+    var prej = { acao: 0, fii: 0 }, linhasIR = [];
+    var meses = {}; A.vendas.forEach(function (v) { if (!v.data) return; var k = v.data.slice(0, 7); (meses[k] = meses[k] || []).push(v); });
+    Object.keys(meses).sort().forEach(function (mes) {
+      ["acao", "fii"].forEach(function (tipo) {
+        var vs = meses[mes].filter(function (v) { return v.tipo === tipo; });
+        if (!vs.length) return;
+        var vendas = vs.reduce(function (s2, v) { return s2 + v.total; }, 0), lucro = vs.reduce(function (s2, v) { return s2 + v.lucro; }, 0), usado = 0, imposto = 0, sit;
+        if (lucro < 0) { prej[tipo] += -lucro; sit = "prejuízo guardado"; }
+        else if (tipo === "acao" && vendas <= 20000) sit = "isento (vendas até R$ 20 mil)";
+        else { usado = Math.min(prej[tipo], lucro); prej[tipo] -= usado; imposto = (lucro - usado) * (tipo === "acao" ? 0.15 : 0.20); sit = imposto >= 10 ? "pagar DARF 6015" : imposto > 0 ? "abaixo de R$ 10: acumula" : "sem imposto"; }
+        if (mes.slice(0, 4) === atual) linhasIR.push('<tr><td class="num">' + mesBR(mes) + "</td><td>" + (tipo === "acao" ? "Ações" : "FIIs") + '</td><td class="d num">' + brl(vendas) +
+          '</td><td class="d num ' + (lucro < 0 ? "negativo" : "") + '">' + brl(lucro) + '</td><td class="d num so-largo">' + brl(usado) + '</td><td class="d num"><b>' + brl(imposto) + "</b></td><td>" + sit + "</td></tr>");
+      });
+    });
+    document.getElementById("corpo-ir").innerHTML = linhasIR.join("") || '<tr><td colspan="7" class="sem">Nenhuma venda com data em ' + esc(atual) + ".</td></tr>";
+    var fimAno = apurar(atual + "-12-31").pos;
+    document.getElementById("corpo-bens").innerHTML = Object.keys(fimAno).sort().map(function (t) {
+      var fii = tipoDe(t) === "fii";
+      return "<tr><td><b>" + t + "</b></td><td>" + (fii ? "07 (fundos) · 03 (FII)" : "03 (participações) · 01 (ações)") + '</td><td class="d num">' + inteiro(fimAno[t].q) + '</td><td class="d num">' + brl(fimAno[t].custo) + "</td></tr>";
+    }).join("") || '<tr><td colspan="4" class="sem">Sem posições em 31/12/' + esc(atual) + ".</td></tr>";
+  }
+  document.getElementById("ir-ano").addEventListener("change", desenharIR);
+  document.getElementById("op-data").value = new Date().toISOString().slice(0, 10);
   document.getElementById("pos-form").addEventListener("submit", function (e) {
     e.preventDefault();
-    var t = document.getElementById("pos-ativo").value.trim().toUpperCase().split(" ")[0];
-    var q = +document.getElementById("pos-qtd").value, pm = +document.getElementById("pos-pm").value, msg = document.getElementById("pos-msg");
+    var t = document.getElementById("pos-ativo").value.trim().toUpperCase().split(" ")[0], tipo = document.getElementById("op-tipo").value;
+    var q = +document.getElementById("pos-qtd").value, preco = +document.getElementById("pos-pm").value, data = document.getElementById("op-data").value || null;
+    var msg = document.getElementById("pos-msg");
     if (!ativoPor(t)) { msg.textContent = t + " não está no painel. Use o código de uma ação ou fundo imobiliário com nota."; return; }
-    if (!(q > 0) || !(pm > 0)) { msg.textContent = "Informe quantidade e preço médio maiores que zero."; return; }
-    var ja = POS.filter(function (p) { return p.t === t; })[0];
-    if (ja) { ja.pm = (ja.pm * ja.q + pm * q) / (ja.q + q); ja.q += q; msg.textContent = t + ": quantidade somada e preço médio recalculado."; }
-    else { POS.push({ t: t, q: q, pm: pm }); msg.textContent = t + " adicionada."; }
-    gravar("radar-posicoes", POS); e.target.reset(); desenharPosicoes();
+    if (!(q > 0) || !(preco > 0)) { msg.textContent = "Informe quantidade e preço maiores que zero."; return; }
+    if (tipo === "venda") {
+      var tem = (apurar(data).pos[t] || { q: 0 }).q;
+      if (q > tem + 1e-9) { msg.textContent = "Você tinha " + inteiro(tem) + " de " + t + " nessa data: não dá para vender " + inteiro(q) + "."; return; }
+    }
+    OPS.push({ id: String(Date.now()), tipo: tipo, t: t, data: data, q: q, preco: preco });
+    gravar("radar-operacoes", OPS);
+    msg.textContent = (tipo === "compra" ? "Compra" : "Venda") + " de " + inteiro(q) + " " + t + " registrada.";
+    document.getElementById("pos-qtd").value = ""; document.getElementById("pos-pm").value = "";
+    desenharPosicoes();
   });
-  document.getElementById("corpo-pos").addEventListener("click", function (e) {
-    var b = e.target.closest("[data-rem]"); if (!b) return;
-    POS.splice(+b.dataset.rem, 1); gravar("radar-posicoes", POS); desenharPosicoes();
+  document.getElementById("corpo-ops").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-rem-op]"); if (!b) return;
+    if (!confirm("Apagar esta operação?")) return;
+    OPS = OPS.filter(function (o) { return o.id !== b.dataset.remOp; }); gravar("radar-operacoes", OPS); desenharPosicoes();
+  });
+  document.getElementById("cart-baixar").addEventListener("click", function () {
+    var conteudo = JSON.stringify({ app: "radar-investimentos", versao: 1, geradoEm: new Date().toISOString(), operacoes: OPS, classes: carteira, favoritos: FAV, comparar: CMP }, null, 1);
+    var url = URL.createObjectURL(new Blob([conteudo], { type: "application/json" })), a = document.createElement("a");
+    a.href = url; a.download = "carteira-radar-" + new Date().toISOString().slice(0, 10) + ".json"; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  });
+  document.getElementById("cart-importar").addEventListener("change", function (e) {
+    var arq = e.target.files && e.target.files[0]; if (!arq) return;
+    var leitor = new FileReader();
+    leitor.onload = function () {
+      var msg = document.getElementById("pos-msg");
+      try {
+        var x = JSON.parse(leitor.result);
+        if (x.app !== "radar-investimentos" || !Array.isArray(x.operacoes)) throw new Error("arquivo não é uma carteira do Radar");
+        var ok = x.operacoes.filter(function (o) { return o && (o.tipo === "compra" || o.tipo === "venda") && typeof o.t === "string" && o.q > 0 && o.preco > 0; });
+        if (!confirm("Substituir a carteira deste navegador pelas " + ok.length + " operações do arquivo?")) return;
+        OPS = ok.map(function (o, i) { return { id: String(o.id || "i" + i), tipo: o.tipo, t: o.t.toUpperCase().slice(0, 12), data: /^\d{4}-\d{2}-\d{2}$/.test(o.data || "") ? o.data : null, q: +o.q, preco: +o.preco }; });
+        gravar("radar-operacoes", OPS);
+        if (x.classes && typeof x.classes === "object") { carteira = x.classes; try { localStorage.setItem("radar-carteira", JSON.stringify(carteira)); } catch (e2) { /* sem armazenamento */ } }
+        if (Array.isArray(x.favoritos)) { FAV = x.favoritos.filter(function (t) { return typeof t === "string"; }); gravar("radar-favoritos", FAV); }
+        msg.textContent = "Carteira importada: " + OPS.length + " operações.";
+        CLASSES.forEach(function (c) { var el = document.getElementById("cart-" + c[0]); if (el) el.value = carteira[c[0]] > 0 ? carteira[c[0]] : ""; });
+        desenharPosicoes(); desenharCarteira(); desenharAcoes();
+      } catch (erro) { msg.textContent = "Não foi possível importar: " + erro.message + "."; }
+      e.target.value = "";
+    };
+    leitor.readAsText(arq);
   });
 
   // ---------- simulador ----------
@@ -1411,14 +1843,16 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
     if (!P.length) {
       res.innerHTML = '<div class="indic"><span>Teste no passado</span><b class="num">Em preparo</b><small>Aparece depois da próxima coleta, que busca 7 anos de cotações.</small></div>';
       document.getElementById("bt-graf-painel").hidden = true;
-      document.getElementById("corpo-bt").innerHTML = '<tr><td colspan="8" class="sem">Sem períodos ainda.</td></tr>';
+      document.getElementById("corpo-bt").innerHTML = '<tr><td colspan="10" class="sem">Sem períodos ainda.</td></tr>';
       return;
     }
     var A = B.acumulado || {}, n = B.anosAcumulados || 0, vu = B.venceuUniverso || [0, 0], vl = B.venceuLongo || [0, 0], AL = B.acumuladoLongo;
     var anosTxt = function (k) { return k ? "em " + k + (k > 1 ? " anos" : " ano") + ", trocando em maio · " : ""; };
     res.innerHTML = [
       ["10 maiores notas", A.top, anosTxt(n) + (vu[1] ? "melhor que todas as ações em " + vu[0] + " de " + vu[1] + " períodos" : "")],
+      ["Com pesos calibrados", A.calibrado, anosTxt(n) + "pesos tirados só dos outros períodos" + (B.venceuCalibrado && B.venceuCalibrado[1] ? " · melhor que todas em " + B.venceuCalibrado[0] + " de " + B.venceuCalibrado[1] : "")],
       ["Todas as ações", A.universo, anosTxt(n) + "média simples do ranking"],
+      ["Ibovespa", A.ibov, A.ibov == null ? "BOVA11 aparece depois da próxima coleta" : anosTxt(n) + "pelo fundo BOVA11, com dividendos"],
       ["CDI", A.cdi, anosTxt(n) + "renda fixa de referência"],
       ["10 de longo prazo", AL ? AL.longo : null, AL ? "desde " + mesBR(AL.desde.slice(0, 7)) + " (" + AL.anos + (AL.anos > 1 ? " anos" : " ano") + "): todas as ações " + pct(AL.universo, 1) +
         ", CDI " + pct(AL.cdi, 1) + (vl[1] ? " · melhor que todas em " + vl[0] + " de " + vl[1] + " períodos" : "") : "a nota precisa de 5 anos de balanço: ainda sem período de 12 meses fechado"]
@@ -1438,14 +1872,25 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
     document.getElementById("bt-graf-painel").hidden = !fechados.length;
     var cem = function (k) { return fechados.map(function (p) { return p[k] == null ? null : p[k] * 100; }); };
     if (fechados.length) colunas(document.getElementById("bt-graf"), fechados.map(function (p) { return mesBR(p.inicio); }),
-      [{ nome: "10 maiores notas", v: cem("top") }, { nome: "10 de longo prazo", v: cem("longo") }, { nome: "Todas as ações", v: cem("universo") }, { nome: "CDI", v: cem("cdi") }],
+      [{ nome: "10 maiores notas", v: cem("top") }, { nome: "Pesos calibrados", v: cem("calibrado") }, { nome: "Todas as ações", v: cem("universo") },
+       fechados.some(function (p) { return p.ibov != null; }) ? { nome: "Ibovespa", v: cem("ibov") } : { nome: "CDI", v: cem("cdi") }],
       function (x) { return Math.round(x) + "%"; });
     var cel = function (v) { return '<td class="d num ' + (v != null && v < 0 ? "negativo" : "") + '">' + (v == null ? "–" : pct(v, 1)) + "</td>"; };
+    var PM = B.porMetodo || {}, PP = B.pesosPadrao || {}, PS = B.pesosSugeridos || {};
+    var algumGanhou = METODOS.some(function (m) { return PM[m[0]] && PM[m[0]].excesso > 0; });
+    if (B.porMetodo && !algumGanhou) conc.innerHTML += " Nenhum método, sozinho, ganhou da média de todas as ações nos períodos fechados; por isso os pesos sugeridos ficam iguais aos padrão." +
+      (A.ibov != null && A.ibov > A.universo ? " No mesmo período, o Ibovespa (" + pct(A.ibov, 1) + ") rendeu mais que a média simples das ações do ranking, que dá o mesmo peso a empresas pequenas e grandes." : "");
+    document.getElementById("corpo-metodos").innerHTML = METODOS.map(function (m) {
+      var x = PM[m[0]] || {};
+      return "<tr><td>" + m[1] + (m[0] === "greenblatt" ? ' <span class="sem">(bancos: P/VP justo)</span>' : "") + "</td>" + cel(x.medio) + cel(x.excesso) +
+        '<td class="d num">' + (x.venceu && x.venceu[1] ? x.venceu[0] + " de " + x.venceu[1] : "–") + '</td><td class="d num">' + (PP[m[0]] == null ? "–" : PP[m[0]] + "%") +
+        '</td><td class="d num">' + (PS[m[0]] == null ? "–" : "<b>" + PS[m[0]] + "%</b>") + "</td></tr>";
+    }).join("");
     document.getElementById("corpo-bt").innerHTML = P.slice().reverse().map(function (p, i) {
       var lst = function (l) { return (l || []).map(function (x) { return x[0] + " (" + (x[2] == null ? "sem preço" : pct(x[2], 0)) + ")"; }).join(", "); };
       return '<tr><td class="num">' + dataBR(p.inicio) + '</td><td class="num">' + dataBR(p.fim) + (p.completo ? "" : ' <span class="etq">em andamento</span>') + "</td>" +
-        cel(p.top) + cel(p.longo) + cel(p.universo) + cel(p.cdi) + '<td class="d num so-largo">' + p.n + '</td><td><button type="button" class="btn" data-bt="' + i + '" aria-expanded="false">Ver ações</button></td></tr>' +
-        '<tr class="mais" id="bt-mais-' + i + '" hidden><td colspan="8"><b>10 maiores notas:</b> ' + esc(lst(p.acoesTop)) + "<br><b>10 de longo prazo:</b> " + esc(lst(p.acoesLongo) || "sem dados suficientes") + "</td></tr>";
+        cel(p.top) + cel(p.calibrado) + cel(p.longo) + cel(p.universo) + cel(p.ibov) + cel(p.cdi) + '<td class="d num so-largo">' + p.n + '</td><td><button type="button" class="btn" data-bt="' + i + '" aria-expanded="false">Ver ações</button></td></tr>' +
+        '<tr class="mais" id="bt-mais-' + i + '" hidden><td colspan="10"><b>10 maiores notas:</b> ' + esc(lst(p.acoesTop)) + "<br><b>10 de longo prazo:</b> " + esc(lst(p.acoesLongo) || "sem dados suficientes") + "</td></tr>";
     }).join("");
   }
   document.getElementById("corpo-bt").addEventListener("click", function (e) {
@@ -1478,10 +1923,53 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
     e.preventDefault(); document.getElementById("busca-ativo").focus();
   });
 
+  // ---------- agenda ----------
+  function desenharAgenda() {
+    var so = document.getElementById("ag-minhas").checked, minhas = {};
+    Object.keys(apurar(null).pos).concat(FAV).forEach(function (t) { minhas[t] = 1; });
+    var filtro = function (t) { return !so || minhas[t]; };
+    var hoje = D.dataCotacao || "", preco = {};
+    ACOES.forEach(function (a) { preco[a.t] = a.p; });
+    var prov = (D.calendario || []).filter(function (c) { return filtro(c.t); });
+    document.getElementById("corpo-ag-prov").innerHTML = prov.map(function (c) {
+      return '<tr><td class="num">' + (c.pagamento ? dataBR(c.pagamento) : "a definir") + '</td><td><span class="ativo"><b>' + c.t + "</b><span>" + esc(c.n) + '</span></span></td><td class="so-largo">' + esc(c.tipo) +
+        '</td><td class="num">' + dataBR(c.dataCom) + (c.dataCom >= hoje ? ' <span class="etq">ainda dá</span>' : "") + '</td><td class="d num">' + brl(c.valor) +
+        '</td><td class="d num so-largo">' + (preco[c.t] ? semSinal(c.valor / preco[c.t], 2) : "–") + "</td></tr>";
+    }).join("") || '<tr><td colspan="6" class="sem">' + ((D.calendario || []).length ? "Nada para a sua carteira e favoritos." : "Os proventos anunciados aparecem depois da próxima coleta.") + "</td></tr>";
+    var bal = ACOES.filter(function (a) { return a.proxPrazo && filtro(a.t); }).sort(function (x, y) { return x.proxPrazo < y.proxPrazo ? -1 : x.proxPrazo > y.proxPrazo ? 1 : (y.final || 0) - (x.final || 0); }).slice(0, so ? 200 : 40);
+    document.getElementById("corpo-ag-bal").innerHTML = bal.map(function (a) {
+      var tri = a.proxPeriodo ? (a.proxPeriodo.slice(5, 7) === "12" ? "ano de " + a.proxPeriodo.slice(0, 4) : Math.round(+a.proxPeriodo.slice(5, 7) / 3) + "º tri de " + a.proxPeriodo.slice(0, 4)) : "";
+      return '<tr><td class="num">' + dataBR(a.proxPrazo) + (a.proxPrazo < hoje ? ' <span class="etq">atrasado?</span>' : "") + '</td><td><span class="ativo"><b>' + a.t + "</b><span>" + esc(a.n) + "</span></span></td><td>" + tri +
+        '</td><td class="d num so-largo">' + inteiro(a.final) + "</td></tr>";
+    }).join("") || '<tr><td colspan="4" class="sem">Sem dados.</td></tr>';
+    var fatos = (D.fatos || []).filter(function (f) { return filtro(f.t); }).slice(0, so ? 200 : 60);
+    document.getElementById("corpo-ag-fatos").innerHTML = fatos.map(function (f) {
+      return '<tr><td class="num">' + dataBR(f.data) + "</td><td><b>" + f.t + '</b></td><td class="so-largo">' + esc(f.cat) + '</td><td class="txt">' +
+        (f.link ? '<a href="' + esc(f.link) + '" target="_blank" rel="noopener">' + esc(f.assunto || "abrir documento") + "</a>" : esc(f.assunto || "")) + "</td></tr>";
+    }).join("") || '<tr><td colspan="4" class="sem">' + ((D.fatos || []).length ? "Nada para a sua carteira e favoritos." : (DETALHES ? "Os comunicados aparecem depois da próxima coleta." : "Carregando…")) + "</td></tr>";
+  }
+  document.getElementById("ag-minhas").addEventListener("change", desenharAgenda);
+
+  // ---------- tema ----------
+  function aplicarTema(t) {
+    if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
+    Array.prototype.forEach.call(document.querySelectorAll("[data-tema]"), function (b) { if (b.tagName === "BUTTON") b.setAttribute("aria-pressed", b.dataset.tema === (t || "auto")); });
+    try { localStorage.setItem("radar-tema", t || "auto"); } catch (e) { /* sem armazenamento */ }
+    redesenhar();
+  }
+  document.querySelector(".tema").addEventListener("click", function (e) { var b = e.target.closest("button[data-tema]"); if (b) aplicarTema(b.dataset.tema); });
+  aplicarTema((function () { try { return localStorage.getItem("radar-tema") || "auto"; } catch (e) { return "auto"; } })());
+
+  // ---------- aplicativo instalavel e uso sem internet ----------
+  if ("serviceWorker" in navigator && location.protocol !== "file:") {
+    window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () { /* segue sem cache offline */ }); });
+  }
+
   // ---------- abas ----------
-  var ABAS = ["destaques", "longo", "acoes", "fiis", "cripto", "renda", "comparar", "carteira", "simulador", "desempenho", "coleta"];
+  var ABAS = ["destaques", "longo", "acoes", "fiis", "cripto", "renda", "agenda", "comparar", "carteira", "simulador", "desempenho", "metodologia", "coleta", "termos"];
   var TITULOS = { destaques: "Destaques", longo: "Longo prazo", acoes: "Ações", fiis: "Fundos imobiliários", cripto: "Cripto", renda: "Renda fixa",
-                  comparar: "Comparar ações", carteira: "Carteira", simulador: "Simulador", desempenho: "Desempenho das notas", coleta: "Coleta" };
+                  agenda: "Agenda", comparar: "Comparar ações", carteira: "Carteira", simulador: "Simulador", desempenho: "Desempenho das notas",
+                  metodologia: "Metodologia", coleta: "Coleta", termos: "Termos e privacidade" };
   function abrir(nome) {
     if (ABAS.indexOf(nome) < 0) nome = "destaques";
     document.getElementById("titulo").textContent = document.getElementById("titulo-migalha").textContent = TITULOS[nome];
@@ -1497,7 +1985,7 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
   var abaAtual = null;
   function redesenhar() {
     if (!D) return;
-    var f = { acoes: desenharDetalhe, fiis: desenharFii, comparar: desenharComparar, simulador: desenharSimulador, desempenho: desenharDesempenho }[abaAtual];
+    var f = { acoes: desenharDetalhe, fiis: desenharFii, comparar: desenharComparar, simulador: desenharSimulador, desempenho: desenharDesempenho, carteira: desenharPosicoes, agenda: desenharAgenda }[abaAtual];
     if (f) f();
   }
   var esperaTam = null;
@@ -1511,7 +1999,12 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
   var SITUACAO = { ok: ["Em dia", "ok"], avisos: ["Com avisos", "av"], erro: ["Com erro", "er"] };
 
   function iniciar(dados) {
-    D = dados; ACOES = D.acoes || []; CRIPTO = D.cripto || []; PESOS = D.pesos || {}; FIIS = D.fiis || [];
+    // checklists chegam como [indice do texto, sim/nao]; os textos vem uma vez so
+    ["check", "lpCheck"].forEach(function (campo) {
+      var rot = dados["rotulos_" + campo];
+      if (rot) (dados.acoes || []).forEach(function (a) { if (a[campo]) a[campo] = a[campo].map(function (c) { return typeof c[0] === "number" ? [rot[c[0]], c[1]] : c; }); });
+    });
+    D = dados; ACOES = D.acoes || []; CRIPTO = D.cripto || []; PESOS = D.pesos || {}; PESOS_ATIVOS = PESOS; FIIS = D.fiis || [];
     var gerado = D.geradoEm ? new Date(D.geradoEm) : null;
     document.getElementById("sub").textContent = "Triagem de ações, fundos imobiliários, Tesouro Direto e cripto. Cotações de " + dataBR(D.dataCotacao) +
       (gerado ? ", atualizado em " + gerado.toLocaleDateString("pt-BR") + " às " + gerado.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "") + ".";
@@ -1577,14 +2070,25 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
     document.getElementById("sim-dica").textContent = "Dividendos de " + numBR(dyMedio * 100, 1) + "% ao ano: média do dividendo típico das 10 maiores notas de longo prazo" +
       (top.length ? " (" + top.map(function (a) { return a.t; }).join(", ") + ")" : "") + ", limitado a 15% por ação. CDI de hoje, sem imposto.";
     desenharAcoes(); desenharDestaques(); desenharLongo(); desenharCarteira();
-    desenharFiis(); desenharRenda(); desenharComparar(); desenharPosicoes(); desenharSimulador(); desenharDesempenho();
+    desenharFiis(); desenharRenda(); desenharComparar(); desenharPosicoes(); desenharSimulador(); desenharDesempenho(); desenharAgenda();
+    document.getElementById("met-pesos").innerHTML = METODOS.map(function (p) { return '<span class="chip">' + p[1] + ' <b class="num">' + (PESOS[p[0]] || 0) + "%</b></span>"; }).join("");
     document.getElementById("app").hidden = false; document.getElementById("abas").hidden = false;
     abrir((location.hash || "").replace("#", "") || "destaques");
   }
 
   fetch("dados.json", { cache: "no-store" })
     .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
-    .then(iniciar)
+    .then(function (dados) {
+      iniciar(dados);
+      // series longas (preco de 5 anos, historico da nota, dados anuais) chegam depois da primeira tela
+      return fetch("detalhes.json", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; })
+        .then(function (det) {
+          ACOES.concat(FIIS).forEach(function (x) { if (det[x.t]) Object.assign(x, det[x.t]); });
+          if (det._fatos) D.fatos = det._fatos;
+          DETALHES = true;
+          redesenhar(); desenharComparar(); desenharPosicoes(); desenharAgenda();
+        });
+    })
     .catch(function (e) {
       document.getElementById("sub").textContent = "Triagem de ações da B3 e criptomoedas.";
       var v = document.getElementById("vazio");
