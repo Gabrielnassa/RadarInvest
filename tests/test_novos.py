@@ -117,11 +117,16 @@ class TestProventos(unittest.TestCase):
         conn.execute("INSERT INTO dividendos VALUES ('BBBB3', '2025-03-11', 0.5, 'yahoo')")
         conn.execute("INSERT INTO proventos_b3_controle VALUES ('AAAA', '2026-10-01', 'ok')")
         divs, consultados, fonte = notas.carregar_proventos(conn)
-        self.assertEqual(divs["AAAA3"], [("2025-03-10", 1.0)])
+        self.assertEqual(divs["AAAA3"], [("2025-03-10", 1.0)])          # Yahoo do mesmo periodo fica de fora
         self.assertEqual(divs["BBBB3"], [("2025-03-11", 0.5)])
         self.assertEqual((fonte["AAAA3"], fonte["BBBB3"]), ("B3", "Yahoo"))
         self.assertIn("AAAA3", consultados)
         self.assertEqual(notas.carregar_proventos(conn, "2025-01-01")[0], {})
+        # B3 so traz os anos recentes: o Yahoo completa o historico anterior
+        conn.execute("INSERT INTO dividendos VALUES ('AAAA3', '2022-05-11', 0.7, 'yahoo')")
+        divs, _, fonte = notas.carregar_proventos(conn)
+        self.assertEqual(divs["AAAA3"], [("2022-05-11", 0.7), ("2025-03-10", 1.0)])
+        self.assertEqual(fonte["AAAA3"], "B3 e Yahoo")
 
 
 class TestPublicacao(unittest.TestCase):
@@ -136,6 +141,10 @@ class TestPublicacao(unittest.TestCase):
         self.assertTrue(exportar.validar(self._dados(preco=0), None))                   # preco zerado
         velho = self._dados(); velho["dataCotacao"] = "2026-10-07"
         self.assertTrue(exportar.validar(self._dados(), velho))                         # data voltou
+        caiu = self._dados()
+        for x in caiu["acoes"]:
+            x["final"] = 20
+        self.assertTrue(exportar.validar(caiu, self._dados()))                          # notas despencaram
 
     def test_separar_e_historico(self):
         d = self._dados(n=2)

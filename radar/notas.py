@@ -356,10 +356,17 @@ def carregar_proventos(conn, limite: str = "9999-12-31") -> tuple[dict, set, dic
         b3[t][d] = b3[t].get(d, 0.0) + v / fator
     saida: dict[str, list] = {t: sorted(v.items()) for t, v in b3.items()}
     fonte = {t: "B3" for t in saida}
+    # a consulta da B3 so traz os anos recentes: antes do primeiro provento dela, vale o historico do Yahoo
+    inicio_b3 = {t: v[0][0] for t, v in saida.items() if v}
     for t, d, v in conn.execute("SELECT ticker, data, valor FROM dividendos WHERE data <= ? ORDER BY data", (limite,)):
-        if t not in fonte or fonte[t] == "Yahoo":
+        if t not in inicio_b3:
             saida.setdefault(t, []).append((d, v))
             fonte[t] = "Yahoo"
+        elif d < inicio_b3[t]:
+            saida[t].append((d, v))
+            fonte[t] = "B3 e Yahoo"
+    for t in inicio_b3:
+        saida[t].sort()
     consultados = {t for (t,) in conn.execute("SELECT ticker FROM dividendos_controle WHERE situacao LIKE 'ok%'")}
     raizes_b3 = {r for (r,) in conn.execute("SELECT raiz FROM proventos_b3_controle WHERE situacao = 'ok'")}
     consultados |= {t for (t,) in conn.execute("SELECT ticker FROM ativos WHERE tipo IN ('acao', 'unit')") if t[:4] in raizes_b3}

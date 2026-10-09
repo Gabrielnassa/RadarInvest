@@ -195,6 +195,13 @@ def validar(novo: dict, anterior: dict | None) -> list[str]:
         erros.append(f"preco ou nota fora do esperado em {len(ruins)} acoes (ex.: {', '.join(ruins[:5])})")
     if anterior and anterior.get("fiis") and len(novo.get("fiis") or []) < 0.5 * len(anterior["fiis"]):
         erros.append(f"FIIs cairam de {len(anterior['fiis'])} para {len(novo.get('fiis') or [])}")
+    if anterior and anterior.get("acoes"):
+        antes = {a["t"]: a.get("final") for a in anterior["acoes"] if a.get("final") is not None}
+        comuns = [(antes[a["t"]], a["final"]) for a in acoes if a["t"] in antes and a.get("final") is not None]
+        if len(comuns) >= 30:
+            queda = sum(x - y for x, y in comuns) / len(comuns)
+            if queda > 15:
+                erros.append(f"a nota media das mesmas acoes caiu {queda:.0f} pontos de uma coleta para outra")
     if anterior and anterior.get("dataCotacao") and novo.get("dataCotacao") and novo["dataCotacao"] < anterior["dataCotacao"]:
         erros.append(f"data das cotacoes voltou de {anterior['dataCotacao']} para {novo['dataCotacao']}")
     return erros
