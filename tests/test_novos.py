@@ -382,3 +382,31 @@ class TestFundosETesouro(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestInternacional(unittest.TestCase):
+    def _conn(self):
+        conn = db.conectar(":memory:")
+        dias = _dias("2023-01-02", "2026-10-02")
+        for t, preco, vol in (("IVVB11", lambda i: 200 * 1.01 ** i, 5e6), ("XINA11", lambda i: 10.0, 1e5), ("NASD11", lambda i: 10.0, 5e6)):
+            conn.executemany("INSERT INTO cotacoes (ticker, data, fechamento, volume) VALUES (?, ?, ?, ?)",
+                             [(t, d, preco(i), vol) for i, d in enumerate(dias) if t != "NASD11" or d < "2026-06-01"])
+        return conn
+
+    def test_filtra_e_calcula(self):
+        cfg = {"volume_medio_minimo": 1e6, "fundos": [{"t": "IVVB11", "n": "S&P 500", "nucleo": True}, {"t": "XINA11"}, {"t": "NASD11"}, {"t": "NADA11"}]}
+        saida = exportar.internacional(self._conn(), cfg)
+        self.assertEqual([f["t"] for f in saida], ["IVVB11"])          # XINA11 pouco liquido, NASD11 sem cotacao recente
+        f = saida[0]
+        self.assertTrue(f["nucleo"])
+        self.assertGreater(f["var12"], 0.5)                               # sobe 1% por semana
+        self.assertGreater(f["retAno"], 0.5)
+        self.assertIsNotNone(f["volat"])
+        self.assertLessEqual(len(f["serie"]), 13)
+
+    def test_salto_de_preco_sem_desdobramento(self):
+        conn = db.conectar(":memory:")
+        conn.executemany("INSERT INTO cotacoes (ticker, data, fechamento, volume) VALUES ('IVVB11', ?, ?, 5e6)",
+                         [(d, 300.0 if d < "2025-06-01" else 30.0) for d in _dias("2023-01-02", "2026-10-02")])
+        f = exportar.internacional(conn, {"fundos": [{"t": "IVVB11"}]})[0]
+        self.assertIsNone(f["var12"]); self.assertIsNone(f["retAno"])

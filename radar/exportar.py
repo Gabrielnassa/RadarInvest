@@ -76,6 +76,43 @@ def precos_mensais(conn, tickers: list[str], anos: int = 5) -> dict[str, list]:
     return {t: [[m, v] for m, v in sorted(meses.items())] for t, meses in saida.items()}
 
 
+def internacional(conn, cfg: dict) -> list[dict]:
+    """Fundos de indice com ativos fora do Brasil, na ordem do config: preco, liquidez e retornos pelos fechamentos mensais."""
+    fundos = [f for f in (cfg.get("fundos") or []) if f.get("t")]
+    if not fundos:
+        return []
+    ultima = conn.execute("SELECT max(data) FROM cotacoes").fetchone()[0]
+    if not ultima:
+        return []
+    recente = (date.fromisoformat(ultima) - timedelta(days=10)).isoformat()
+    minimo = float(cfg.get("volume_medio_minimo", 1000000))
+    mensais = precos_mensais(conn, [f["t"] for f in fundos])
+    saida = []
+    for f in fundos:
+        t = str(f["t"]).upper()
+        linhas = conn.execute("SELECT data, fechamento, volume FROM cotacoes WHERE ticker = ? ORDER BY data DESC LIMIT 60", (t,)).fetchall()
+        if not linhas or linhas[0][0] < recente or not linhas[0][1]:
+            continue
+        vol = sum(v or 0 for _, _, v in linhas) / 60.0
+        if vol < minimo:
+            continue
+        serie = mensais.get(t, [])
+        precos = [v for _, v in serie]
+        rets = [b / a - 1 for a, b in zip(precos, precos[1:]) if a]
+        saltos = any(r < -0.5 or r > 1.0 for r in rets)      # desdobramento que o Yahoo nao trouxe: retornos ficam sem dado
+        ret12 = precos[-1] / precos[-13] - 1 if len(precos) >= 13 and precos[-13] and not saltos else None
+        anos = (len(precos) - 1) / 12
+        ret_aa = (precos[-1] / precos[0]) ** (1 / anos) - 1 if anos >= 1 and precos[0] and not saltos else None
+        volat = None
+        if len(rets) >= 12 and not saltos:
+            m = sum(rets) / len(rets)
+            volat = (sum((r - m) ** 2 for r in rets) / (len(rets) - 1)) ** 0.5 * 12 ** 0.5
+        saida.append({"t": t, "n": f.get("n") or t, "d": f.get("d") or "", "nucleo": bool(f.get("nucleo")), "p": linhas[0][1],
+                      "data": linhas[0][0], "vol": vol, "var12": ret12, "retAno": ret_aa, "anos": round(anos, 1), "volat": volat,
+                      "serie": precos[-13:]})
+    return saida
+
+
 def cdi_mensal(conn, anos: int = 6) -> list:
     """Indice do CDI acumulado no fim de cada mes (base 1 no inicio): [[aaaa-mm, indice]]."""
     desde = (date.today() - timedelta(days=365 * anos)).isoformat()
@@ -166,6 +203,7 @@ def montar(conn, cfg: dict) -> dict:
         "cripto": cripto,
         "fiis": fiis,
         "tesouro": tesouro(conn),
+        "internacional": internacional(conn, cfg.get("internacional") or {}),
         "backtest": teste,
         "ibovMensal": mensais.get(backtest.REFERENCIA, []),
         "cdiMensal": cdi_mensal(conn),
