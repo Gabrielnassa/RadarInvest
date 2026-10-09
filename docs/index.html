@@ -1866,7 +1866,11 @@ footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line)
       conc.innerHTML = "<strong>Resultado até aqui.</strong>&nbsp;Em " + n + (n > 1 ? " anos" : " ano") + ", as 10 maiores notas renderam " + pct(A.top, 1) +
         (ganhou ? ", mais que " : ", menos que ") + "a média de todas as ações (" + pct(A.universo, 1) + ")" +
         (A.cdi != null ? (A.top > A.cdi ? " e mais que o CDI (" : (ganhou ? ", mas menos que o CDI (" : " e menos que o CDI (")) + pct(A.cdi, 1) + ")" : "") +
-        ". " + (ganhou ? "É um sinal a favor das notas, ainda com poucos anos de teste." : "Por enquanto, as notas não mostraram vantagem: use-as como triagem, não como escolha final.");
+        ". " + (ganhou ? "É um sinal a favor das notas, ainda com poucos anos de teste." : "Por enquanto, as notas não mostraram vantagem: use-as como triagem, não como escolha final.") +
+        (A.calibrado != null ? (A.calibrado < A.top ? " Os pesos calibrados, medidos fora da amostra, renderam " + pct(A.calibrado, 1) + ", menos que os pesos padrão: o ajuste não se sustentou, prefira os pesos padrão."
+          : " Os pesos calibrados, medidos fora da amostra, renderam " + pct(A.calibrado, 1) + ", mais que os pesos padrão.") : "");
+      var opc = document.querySelector('#f-pesos option[value="calibrado"]');
+      if (opc && A.calibrado != null && A.calibrado < A.top) opc.textContent = "Calibrados pelo teste (piores fora da amostra)";
     }
     var fechados = P.filter(function (p) { return p.completo; });
     document.getElementById("bt-graf-painel").hidden = !fechados.length;
