@@ -1,4 +1,4 @@
-Coleta iniciada em 2026-10-09 06:12 UTC
+Coleta iniciada em 2026-10-09 06:22 UTC
 
 Diagnostico das fontes de dados
 
@@ -14,25 +14,25 @@ Diagnostico das fontes de dados
   OK     CVM (fatos relevantes) HTTP 200, application/zip
 
 Todas as fontes responderam.
-[06:12:24] Cotacoes da B3: coletando...
-[06:12:24] Cotacoes da B3: 0 registros
-[06:12:24] Cadastro e demonstrativos da CVM: coletando...
-[06:13:07] Cadastro e demonstrativos da CVM: 2157950 registros
-[06:13:07] Dividendos (Yahoo, nao oficial): coletando...
-[06:14:10] Dividendos (Yahoo, nao oficial): 1287 registros
-[06:14:10] Proventos informados a B3: coletando...
-[06:14:10] Proventos informados a B3: 0 registros
-[06:14:10] Criptomoedas (CoinGecko): coletando...
-[06:14:16] Criptomoedas (CoinGecko): 36 registros
-[06:14:16] Indicadores do Banco Central: coletando...
-[06:14:18] Indicadores do Banco Central: 1 registros
-[06:14:18] Informe mensal dos fundos imobiliarios (CVM): coletando...
-[06:14:18] Informe mensal dos fundos imobiliarios (CVM): 24040 registros
-[06:14:18] Tesouro Direto (Tesouro Transparente): coletando...
-[06:14:18] Tesouro Direto (Tesouro Transparente): 16099 registros
-[06:14:18] Fatos relevantes e comunicados (CVM): coletando...
-[06:14:19] Fatos relevantes e comunicados (CVM): 4589 registros
-[06:14:19] Acoes ligadas a empresas: 412 pelo codigo, 29 pelas 4 letras iniciais
+[06:22:52] Cotacoes da B3: coletando...
+[06:22:52] Cotacoes da B3: 0 registros
+[06:22:52] Cadastro e demonstrativos da CVM: coletando...
+[06:24:11] Cadastro e demonstrativos da CVM: 2157950 registros
+[06:24:11] Dividendos (Yahoo, nao oficial): coletando...
+[06:25:11] Dividendos (Yahoo, nao oficial): 1279 registros
+[06:25:11] Proventos informados a B3: coletando...
+[06:25:11] Proventos informados a B3: 0 registros
+[06:25:11] Criptomoedas (CoinGecko): coletando...
+[06:25:17] Criptomoedas (CoinGecko): 36 registros
+[06:25:17] Indicadores do Banco Central: coletando...
+[06:25:19] Indicadores do Banco Central: 1 registros
+[06:25:19] Informe mensal dos fundos imobiliarios (CVM): coletando...
+[06:25:19] Informe mensal dos fundos imobiliarios (CVM): 24040 registros
+[06:25:19] Tesouro Direto (Tesouro Transparente): coletando...
+[06:25:20] Tesouro Direto (Tesouro Transparente): 16099 registros
+[06:25:20] Fatos relevantes e comunicados (CVM): coletando...
+[06:25:20] Fatos relevantes e comunicados (CVM): 4589 registros
+[06:25:20] Acoes ligadas a empresas: 412 pelo codigo, 29 pelas 4 letras iniciais
 
 Radar de Investimentos 0.1.0 - situacao do banco
 Arquivo: /home/runner/work/RadarInvest/RadarInvest/dados/radar.db
@@ -55,11 +55,11 @@ CVM
   linhas de demonstrativos   2.129.833   (2020-02-29 a 2026-06-30, 882 empresas)
 
 Dividendos
-  pagamentos ..............       9095   (339 acoes)
+  pagamentos ..............       9087   (339 acoes)
 
 Cripto
   moedas no universo ......         30
-  cotacoes diarias ........      11557   (2025-10-07 a 2026-10-09)
+  cotacoes diarias ........      11558   (2025-10-07 a 2026-10-09)
 
 Banco Central (valor mais recente)
   cdi_anual         13.6500   em 2026-10-07
@@ -68,15 +68,15 @@ Banco Central (valor mais recente)
   selic_meta        13.7500   em 2026-10-09
 
 Ultima coleta de cada fonte
-  b3          2026-10-09T06:12:24  ok      0 registros
-  cripto      2026-10-09T06:14:16  ok      36 registros
-  cvm         2026-10-09T06:13:07  ok      2157950 registros
-  dividendos  2026-10-09T06:14:10  ok      1287 registros
-  fii         2026-10-09T06:14:18  ok      24040 registros
-  ipe         2026-10-09T06:14:19  ok      4589 registros
-  macro       2026-10-09T06:14:18  ok      1 registros
-  proventos   2026-10-09T06:14:10  ok      0 registros
-  tesouro     2026-10-09T06:14:18  ok      16099 registros
+  b3          2026-10-09T06:22:52  ok      0 registros
+  cripto      2026-10-09T06:25:17  ok      36 registros
+  cvm         2026-10-09T06:24:11  ok      2157950 registros
+  dividendos  2026-10-09T06:25:11  ok      1279 registros
+  fii         2026-10-09T06:25:19  ok      24040 registros
+  ipe         2026-10-09T06:25:20  ok      4589 registros
+  macro       2026-10-09T06:25:19  ok      1 registros
+  proventos   2026-10-09T06:25:11  ok      0 registros
+  tesouro     2026-10-09T06:25:20  ok      16099 registros
 
 190 acoes, 127 FIIs e 30 criptos gravados em /home/runner/work/RadarInvest/RadarInvest/docs/dados.json
 Backtest: 11 periodos; acumulado {'top': 0.4093, 'calibrado': 0.0923, 'universo': 0.423, 'cdi': 0.7458, 'ibov': 0.6092}
