@@ -8,7 +8,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 from . import __version__, config, db, exportar
-from .fontes import b3_cotahist, cripto_coingecko, cvm, cvm_fii, dividendos_yahoo, macro_bcb, tesouro
+from .fontes import b3_cotahist, cripto_coingecko, cvm, cvm_fii, cvm_ipe, dividendos_yahoo, macro_bcb, proventos_b3, tesouro
 from .rede import ErroRede, Rede
 
 FONTES = {
@@ -19,8 +19,10 @@ FONTES = {
     "macro": ("Indicadores do Banco Central", macro_bcb.coletar),
     "fii": ("Informe mensal dos fundos imobiliarios (CVM)", cvm_fii.coletar),
     "tesouro": ("Tesouro Direto (Tesouro Transparente)", tesouro.coletar),
+    "proventos": ("Proventos informados a B3", proventos_b3.coletar),
+    "ipe": ("Fatos relevantes e comunicados (CVM)", cvm_ipe.coletar),
 }
-ORDEM = ["b3", "cvm", "dividendos", "cripto", "macro", "fii", "tesouro"]
+ORDEM = ["b3", "cvm", "dividendos", "proventos", "cripto", "macro", "fii", "tesouro", "ipe"]
 
 
 def _agora() -> str:
@@ -153,6 +155,10 @@ def cmd_diagnostico(cfg) -> int:
         testes.append(("CVM (FII)", f"{cfg['fii']['url_base'].rstrip('/')}/inf_mensal_fii_{hoje.year}.zip", None))
     if cfg.get("tesouro"):
         testes.append(("Tesouro Direto", cfg["tesouro"]["url"], None))
+    if cfg.get("proventos"):
+        testes.append(("B3 (proventos)", proventos_b3.url_consulta(cfg["proventos"]["url_base"], "PETR"), None))
+    if cfg.get("ipe"):
+        testes.append(("CVM (fatos relevantes)", f"{cfg['ipe']['url_base'].rstrip('/')}/IPE/DADOS/ipe_cia_aberta_{hoje.year}.zip", None))
     print("\nDiagnostico das fontes de dados\n")
     falhas = 0
     for nome, url, params in testes:
@@ -261,6 +267,8 @@ def main(argv=None) -> int:
     sub.add_parser("inspecionar", help="mostra o formato dos arquivos baixados")
     sub.add_parser("exportar", help="calcula as notas e grava docs/dados.json para o painel")
     sub.add_parser("painel", help="abre o painel no navegador")
+    sub.add_parser("alertas", help="envia alertas por Telegram (precisa de TELEGRAM_TOKEN e TELEGRAM_CHAT_ID)")
+    sub.add_parser("falhas", help="lista as fontes cuja ultima coleta deu erro (para o aviso automatico)")
     args = p.parse_args(argv)
 
     config.carregar_env()
@@ -273,8 +281,24 @@ def main(argv=None) -> int:
         return cmd_inspecionar(cfg)
     if args.comando == "painel":
         return cmd_painel(cfg)
+    if args.comando == "alertas":
+        from . import alertas
+        print(alertas.enviar(cfg, Path(cfg["_banco"]).parent.parent / "docs"))
+        return 0
+    if args.comando == "falhas":
+        conn = db.conectar(cfg["_banco"])
+        for fonte, fim, msg in conn.execute(
+                """SELECT fonte, fim, mensagem FROM coletas WHERE situacao = 'erro'
+                   AND id IN (SELECT max(id) FROM coletas GROUP BY fonte) ORDER BY fonte"""):
+            print(f"- **{fonte}** ({fim}): {msg}")
+        conn.close()
+        return 0
     if args.comando == "exportar":
-        destino, dados = exportar.exportar(cfg)
+        try:
+            destino, dados = exportar.exportar(cfg)
+        except exportar.ErroValidacao as e:
+            print(f"Dados novos NAO publicados, o painel continua com os anteriores: {e}")
+            return 2
         print(f"{len(dados['acoes'])} acoes, {len(dados.get('fiis') or [])} FIIs e {len(dados['cripto'])} criptos gravados em {destino}")
         bt = dados.get("backtest") or {}
         print(f"Backtest: {len(bt.get('periodos') or [])} periodos; acumulado {bt.get('acumulado')}")

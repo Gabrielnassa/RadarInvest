@@ -12,15 +12,16 @@ from datetime import date, timedelta
 
 PADRAO = {
     "volume_minimo": 500000,          # R$/dia para entrar no ranking
-    "pesos": {"barsi": 20, "bazin": 15, "qualidade": 30, "graham": 15, "greenblatt": 20},
+    "pesos": {"barsi": 15, "bazin": 10, "qualidade": 25, "graham": 15, "greenblatt": 15, "setor": 10, "tendencia": 10},
     "dy_minimo": 0.06,
     "roe_minimo": 0.15,
     "divida_ebit_max": 3.0,
     "liquidez_boa": 2000000,
     "crescimento_receita_min": 0.05,
     "nucleo_cripto": ["bitcoin", "ethereum"],
+    "custo_capital": 0.14,            # retorno exigido pelo acionista, usado no P/VP justo de bancos
 }
-METODOS = ["barsi", "bazin", "qualidade", "graham", "greenblatt"]
+METODOS = ["barsi", "bazin", "qualidade", "graham", "greenblatt", "setor", "tendencia"]
 
 
 # ---------------------------------------------------------------- utilidades
@@ -269,6 +270,109 @@ def conferir_dividendos(dpa_yahoo: float | None, acoes: float | None, pago_cvm: 
     return dpa_yahoo * acoes / pago_cvm
 
 
+def nota_banco(p_vp, roe, custo_capital=0.14):
+    """P/VP justo de banco ou seguradora = retorno sobre o patrimonio / custo de capital (modelo de Gordon
+    sem crescimento). Devolve (nota, P/VP justo, margem); a nota segue a mesma escala de Graham."""
+    if p_vp is None or roe is None or p_vp <= 0:
+        return None, None, None
+    if roe <= 0:
+        return 0.0, None, None
+    justo = roe / custo_capital
+    margem = (justo - p_vp) / justo
+    return nota_margem(margem), justo, margem
+
+
+def percentis(valores: dict) -> dict:
+    """{chave: valor} -> {chave: posicao de 0 a 100}; o maior valor fica com 100."""
+    ordem = sorted(valores, key=lambda k: valores[k])
+    n = len(ordem)
+    return {k: (100.0 if n == 1 else 100.0 * i / (n - 1)) for i, k in enumerate(ordem)}
+
+
+def notas_setor(itens: dict, minimo: int = 4) -> dict:
+    """itens: {chave: (setor, P/L, P/VP)}. Compara lucro/preco e patrimonio/preco com as empresas do mesmo
+    setor (ou com todas, se o setor tiver menos de `minimo`). Prejuizo ou patrimonio negativo leva 0."""
+    validos = {k: v for k, v in itens.items() if v[1] and v[2] and v[1] > 0 and v[2] > 0}
+    saida = {k: 0.0 for k, v in itens.items() if k not in validos and v[1] is not None and v[2] is not None}
+    por_setor: dict[str, list] = {}
+    for k, (setor, _, _) in validos.items():
+        por_setor.setdefault(setor, []).append(k)
+    todos = list(validos)
+    for k in validos:
+        grupo = por_setor[validos[k][0]]
+        grupo = grupo if len(grupo) >= minimo else todos
+        ey = percentis({g: 1 / validos[g][1] for g in grupo})
+        by = percentis({g: 1 / validos[g][2] for g in grupo})
+        saida[k] = (ey[k] + by[k]) / 2
+    return saida
+
+
+def indicadores_tendencia(dias: list, hoje: date) -> dict:
+    """dias: [(data, preco)] em ordem. Momento de 12 meses sem o ultimo mes, distancia da media de 200
+    pregoes e volatilidade anualizada de 60 pregoes."""
+    precos = [f for _, f in dias if f]
+    if len(precos) < 200:
+        return {}
+    ate1 = [f for d, f in dias if d <= (hoje - timedelta(days=30)).isoformat()]
+    ate12 = [f for d, f in dias if d <= (hoje - timedelta(days=365)).isoformat()]
+    mom = (ate1[-1] / ate12[-1] - 1) if ate1 and ate12 and ate12[-1] else None
+    media200 = sum(precos[-200:]) / 200
+    ret = [math.log(precos[i] / precos[i - 1]) for i in range(len(precos) - 60, len(precos)) if precos[i - 1] > 0 and precos[i] > 0]
+    vol = None
+    if len(ret) >= 40:
+        mu = sum(ret) / len(ret)
+        vol = math.sqrt(sum((r - mu) ** 2 for r in ret) / (len(ret) - 1)) * math.sqrt(252)
+    return {"mom": mom, "acima200": precos[-1] / media200 - 1, "vol": vol}
+
+
+def notas_tendencia(itens: dict) -> dict:
+    """itens: {chave: indicadores}. 50% momento (posicao entre todas), 25% distancia da media de 200
+    pregoes (na media vale 50; 20% acima vale 100) e 25% volatilidade baixa (posicao entre todas)."""
+    com_mom = {k: v["mom"] for k, v in itens.items() if v.get("mom") is not None}
+    com_vol = {k: -v["vol"] for k, v in itens.items() if v.get("vol") is not None}
+    pm, pv = percentis(com_mom), percentis(com_vol)
+    saida = {}
+    for k, v in itens.items():
+        if k not in pm or k not in pv:
+            continue
+        saida[k] = 0.5 * pm[k] + 0.25 * limitar(50 + v["acima200"] * 250) + 0.25 * pv[k]
+    return saida
+
+
+def carregar_proventos(conn, limite: str = "9999-12-31") -> tuple[dict, set, dict]:
+    """Proventos por acao na base de acoes de hoje: {ticker: [(data, valor)]}, os tickers consultados e a
+    fonte de cada um. Usa a B3 quando a empresa tem proventos la; senao, o Yahoo (que ja vem ajustado).
+    O valor da B3 e o da data do anuncio: divide pelos desdobramentos posteriores."""
+    splits: dict[str, list] = {}
+    for t, d, f in conn.execute("SELECT ticker, data, fator FROM desdobramentos WHERE fator > 0"):
+        splits.setdefault(t, []).append((d, f))
+    b3: dict[str, dict] = {}
+    for t, d, v in conn.execute("SELECT ticker, data_com, valor FROM proventos_b3 WHERE data_com <= ? ORDER BY data_com", (limite,)):
+        fator = 1.0
+        for quando, f in splits.get(t, ()):
+            if quando > d:
+                fator *= f
+        b3.setdefault(t, {})
+        b3[t][d] = b3[t].get(d, 0.0) + v / fator
+    saida: dict[str, list] = {t: sorted(v.items()) for t, v in b3.items()}
+    fonte = {t: "B3" for t in saida}
+    # a consulta da B3 so traz os anos recentes: antes do primeiro provento dela, vale o historico do Yahoo
+    inicio_b3 = {t: v[0][0] for t, v in saida.items() if v}
+    for t, d, v in conn.execute("SELECT ticker, data, valor FROM dividendos WHERE data <= ? ORDER BY data", (limite,)):
+        if t not in inicio_b3:
+            saida.setdefault(t, []).append((d, v))
+            fonte[t] = "Yahoo"
+        elif d < inicio_b3[t]:
+            saida[t].append((d, v))
+            fonte[t] = "B3 e Yahoo"
+    for t in inicio_b3:
+        saida[t].sort()
+    consultados = {t for (t,) in conn.execute("SELECT ticker FROM dividendos_controle WHERE situacao LIKE 'ok%'")}
+    raizes_b3 = {r for (r,) in conn.execute("SELECT raiz FROM proventos_b3_controle WHERE situacao = 'ok'")}
+    consultados |= {t for (t,) in conn.execute("SELECT ticker FROM ativos WHERE tipo IN ('acao', 'unit')") if t[:4] in raizes_b3}
+    return saida, consultados, fonte
+
+
 def nota_final(notas: dict, pesos: dict) -> float | None:
     soma = peso = 0.0
     for metodo, p in pesos.items():
@@ -362,13 +466,10 @@ def calcular_acoes(conn, cfg: dict | None = None, ate: str | None = None) -> lis
             (publicado,)):
         capital[cnpj] = (refer, on_t or 0.0, pn_t or 0.0, tot or 0.0, on_x or 0.0, pn_x or 0.0, tes or 0.0)
 
-    # ----- dividendos por ticker
-    divs: dict[str, list] = {}
-    for ticker, dia, valor in conn.execute("SELECT ticker, data, valor FROM dividendos WHERE data <= ? ORDER BY data", (limite,)):
-        divs.setdefault(ticker, []).append((dia, valor))
-    consultados = {t for (t,) in conn.execute("SELECT ticker FROM dividendos_controle WHERE situacao LIKE 'ok%'")}
+    # ----- dividendos por ticker (B3 quando houver; senao Yahoo); proventos anunciados para o futuro ficam de fora
+    divs, consultados, fonte_div = carregar_proventos(conn, ultima)
 
-    resultado, gb_entrada = [], {}
+    resultado, gb_entrada, tend_entrada, setor_entrada = [], {}, {}, {}
     for cnpj, e in empresas.items():
         ticker = max(e["tickers"], key=lambda t: mercado[t]["volume"])
         m = mercado[ticker]
@@ -480,9 +581,12 @@ def calcular_acoes(conn, cfg: dict | None = None, ate: str | None = None) -> lis
         if notas["qualidade"] is None:
             nulo["qualidade"] = "Menos de 5 itens do checklist com dados."
 
+        banco_justo = None
         if financeiro:
-            notas["greenblatt"] = None
-            nulo["greenblatt"] = "Não se aplica a bancos e seguradoras."
+            # bancos e seguradoras: no lugar de Greenblatt, P/VP justo pelo retorno sobre o patrimonio
+            notas["greenblatt"], banco_justo, _ = nota_banco(p_vp, roe, p["custo_capital"])
+            if notas["greenblatt"] is None:
+                nulo["greenblatt"] = "Falta retorno sobre o patrimônio ou preço sobre o patrimônio."
         elif ebit12 is None or valor_mercado is None or divida_liq is None or not f.get("pl_total"):
             notas["greenblatt"] = None
             nulo["greenblatt"] = "Falta lucro operacional, dívida ou valor de mercado."
@@ -540,6 +644,10 @@ def calcular_acoes(conn, cfg: dict | None = None, ate: str | None = None) -> lis
         # sinais de evento isolado: o ativo continua no ranking, mas sai da lista de destaques
         distorcao = bool(lucro_fora or ebit_fora or variacao_estranha or (dy12 is not None and dy12 > 0.15))
 
+        tend_entrada[ticker] = indicadores_tendencia([(d, f) for d, f, _ in m["dias"]], hoje)
+        if p_l_base is not None and p_vp is not None:
+            setor_entrada[ticker] = (setor, p_l_base, p_vp)
+
         dados = [preco, m["volume"] > 0, lucro12, pl, valor_mercado, dpa12, f.get("balanco_em"),
                  True if financeiro else ebit12, True if financeiro else divida, len(anos) >= 5 or None]
         resultado.append({
@@ -551,16 +659,25 @@ def calcular_acoes(conn, cfg: dict | None = None, ate: str | None = None) -> lis
             "check": [[txt, ok] for txt, ok in check], "al": alertas,
             "conf": [sum(1 for d in dados if d is not None and d is not False), len(dados)],
             "serie": m["serie"], "lucroAte": lucro_fim, "lucroBase": lucro_origem, "balancoEm": f.get("balanco_em"),
-            "aplicaveis": 4 if financeiro else 5, "lucroNormalizado": lucro_fora or ebit_fora, "distorcao": distorcao,
-            "baseDivida": base_divida, "tr12": tr12, "confDiv": conf_div,
+            "aplicaveis": len(METODOS), "banco": financeiro, "pvpJusto": banco_justo,
+            "tend": tend_entrada[ticker] or None, "lucroNormalizado": lucro_fora or ebit_fora, "distorcao": distorcao,
+            "baseDivida": base_divida, "tr12": tr12, "confDiv": conf_div, "fonteDiv": fonte_div.get(ticker),
             "anual": _serie_anual(lucros_ano, receitas_ano, pagos, hoje) if completo else None,
             "lp": nota_longo_prazo(lp, prejuizo), "lpCheck": [[txt, v] for txt, v, _ in lp],
         })
 
     gb = notas_greenblatt(gb_entrada)
+    st = notas_setor(setor_entrada)
+    td = notas_tendencia({k: v for k, v in tend_entrada.items() if v})
     for r in resultado:
         if r["t"] in gb:
             r["m"]["greenblatt"] = gb[r["t"]]
+        r["m"]["setor"] = st.get(r["t"])
+        r["m"]["tendencia"] = td.get(r["t"])
+        if r["m"]["setor"] is None:
+            r["nulo"]["setor"] = "Falta lucro ou patrimônio para comparar com o setor."
+        if r["m"]["tendencia"] is None:
+            r["nulo"]["tendencia"] = "Menos de 200 pregões de histórico."
         r["final"] = nota_final(r["m"], pesos)
         if r["lp"] is not None:
             r["lp"] = round(r["lp"])

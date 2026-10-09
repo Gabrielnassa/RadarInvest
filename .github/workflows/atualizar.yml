@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: atualizar-${{ github.ref }}
@@ -22,6 +23,7 @@ jobs:
     env:
       PYTHONUTF8: "1"
       COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -46,7 +48,9 @@ jobs:
             python -m radar status || true
           } 2>&1 | tee docs/coleta.log
       - name: Calcular notas e exportar
-        run: python -m radar exportar 2>&1 | tee -a docs/coleta.log
+        run: |
+          set -o pipefail
+          python -m radar exportar 2>&1 | tee -a docs/coleta.log
       - name: Publicar
         run: |
           git config user.name "github-actions[bot]"
@@ -55,3 +59,22 @@ jobs:
           git diff --cached --quiet || git commit -m "Atualiza dados da coleta"
           git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
           git push
+      - name: Alertas por Telegram (se configurado)
+        continue-on-error: true
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python -m radar alertas
+      - name: Avisar falha da coleta
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          falhas="$(python -m radar falhas || true)"
+          if [ "${{ job.status }}" != "success" ]; then
+            falhas="${falhas}"$'\n'"- a etapa de calculo ou publicacao falhou; o painel continua com os dados anteriores"
+          fi
+          [ -z "$falhas" ] && { echo "sem falhas"; exit 0; }
+          corpo="Coleta de $(date -u +%Y-%m-%d) com problema. Detalhes: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"$'\n\n'"${falhas}"
+          numero="$(gh issue list --state open --search 'Coleta com problema in:title' --json number --jq '.[0].number')"
+          if [ -n "$numero" ]; then gh issue comment "$numero" --body "$corpo"; else gh issue create --title "Coleta com problema" --body "$corpo"; fi

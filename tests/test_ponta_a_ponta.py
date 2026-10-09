@@ -86,6 +86,17 @@ class TestPontaAPonta(unittest.TestCase):
             ["Tesouro Selic", "01/03/2029", "02/10/2026", "0,08", "0,10", "17654,21", "17640,00", "17640,00"],
             ["Tesouro IPCA+", "15/08/2035", "02/10/2020", "3,10", "3,20", "1000,00", "990,00", "990,00"]])
 
+        fabrica.zip_ipe(site / "ipe" / "IPE" / "DADOS" / "ipe_cia_aberta_2026.zip", 2026, [
+            [PETRO, "PETROBRAS", "9512", "2026-09-30", "Fato Relevante", "", "", "Aprovação de dividendos", "2026-09-30", "AP", "001", "1", "https://cvm/1"],
+            [PETRO, "PETROBRAS", "9512", "2026-09-29", "Calendário de Eventos Corporativos", "", "", "", "2026-09-29", "AP", "002", "1", ""],
+            [PETRO, "PETROBRAS", "9512", "2025-01-10", "Fato Relevante", "", "", "Antigo", "2025-01-10", "AP", "003", "1", ""]])
+        from radar.fontes import proventos_b3
+        caminho = proventos_b3.url_consulta("PROV", "PETR").split("/", 1)[1]
+        fabrica.gravar_json(site / "prov" / caminho, fabrica.json_proventos_b3([
+            ("BRPETRACNPR6", "21/08/2026", "20/09/2026", "DIVIDENDO", "0,71"),
+            ("BRPETRACNPR6", "20/11/2026", "20/12/2026", "JRS CAP PROPRIO", "0,35"),
+            ("BRXXXXACNOR0", "21/08/2026", "20/09/2026", "DIVIDENDO", "9,99")]))
+
         manipulador = functools.partial(Silencioso, directory=str(site))
         cls.servidor = http.server.ThreadingHTTPServer(("127.0.0.1", 0), manipulador)
         threading.Thread(target=cls.servidor.serve_forever, daemon=True).start()
@@ -101,6 +112,8 @@ class TestPontaAPonta(unittest.TestCase):
             "macro": {"url_base": f"{base}/bcb", "anos": 1, "series": {"selic_meta": 432, "dolar_ptax": 1, "ipca_mensal": 433}},
             "fii": {"url_base": f"{base}/fii"},
             "tesouro": {"url": f"{base}/tesouro/PrecoTaxaTesouroDireto.csv"},
+            "proventos": {"url_base": f"{base}/prov", "volume_medio_minimo": 1, "pausa_segundos": 0},
+            "ipe": {"url_base": f"{base}/ipe"},
         }
         cls.caminho_cfg = raiz / "config.yaml"
         cls.caminho_cfg.write_text(yaml.safe_dump(cfg), encoding="utf-8")
@@ -150,8 +163,14 @@ class TestPontaAPonta(unittest.TestCase):
             ("Tesouro IPCA+", "2035-08-15", "2026-10-02", 7.45, 2154.32),
             ("Tesouro Selic", "2029-03-01", "2026-10-02", 0.08, 17654.21)])
 
+        # proventos da B3: ligados pelo ISIN; o de outro papel fica de fora; inclui o anunciado para o futuro
+        self.assertEqual(q("SELECT ticker, data_com, tipo, valor, pagamento FROM proventos_b3 ORDER BY data_com"), [
+            ("PETR4", "2026-08-21", "DIVIDENDO", 0.71, "2026-09-20"), ("PETR4", "2026-11-20", "JRS CAP PROPRIO", 0.35, "2026-12-20")])
+        # IPE: so as categorias acompanhadas e os ultimos 180 dias
+        self.assertEqual(q("SELECT protocolo, categoria, assunto FROM ipe"), [("001", "Fato Relevante", "Aprovação de dividendos")])
+
         situacoes = dict(q("SELECT fonte, situacao FROM coletas"))
-        self.assertEqual(set(situacoes), {"b3", "cvm", "dividendos", "cripto", "macro", "fii", "tesouro"})
+        self.assertEqual(set(situacoes), {"b3", "cvm", "dividendos", "proventos", "cripto", "macro", "fii", "tesouro", "ipe"})
         self.assertNotIn("erro", situacoes.values())
         avisos = dict(q("SELECT fonte, mensagem FROM coletas"))
         self.assertIn("COTAHIST_A2025.ZIP", avisos["b3"])       # ano sem arquivo vira aviso, nao erro
@@ -186,7 +205,7 @@ class TestPontaAPonta(unittest.TestCase):
         self.assertEqual(conn.execute("SELECT count(*) FROM demonstrativos").fetchone()[0], 4)
         self.assertEqual(conn.execute("SELECT count(*) FROM dividendos").fetchone()[0], 2)
         self.assertEqual(conn.execute("SELECT count(*) FROM macro").fetchone()[0], 4)
-        self.assertEqual(conn.execute("SELECT count(*) FROM coletas").fetchone()[0], 21)
+        self.assertEqual(conn.execute("SELECT count(*) FROM coletas").fetchone()[0], 27)
         conn.close()
 
     def test_3_status_e_fonte_fora_do_ar(self):

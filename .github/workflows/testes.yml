@@ -1,0 +1,26 @@
+name: Testes
+
+on:
+  pull_request:
+  push:
+    branches-ignore: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install --quiet -r requirements.txt
+      - name: Testes automatizados
+        run: python -m unittest discover -s tests -t . -v
+      - name: Sintaxe do painel
+        run: |
+          node -e "const fs=require('fs');const h=fs.readFileSync('docs/index.html','utf8');new Function(h.split('<script>')[1].split('</script>')[0]);console.log('index.html ok')"
+          node -e "new Function(require('fs').readFileSync('docs/sw.js','utf8'));console.log('sw.js ok')"

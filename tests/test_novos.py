@@ -1,9 +1,12 @@
 """Backtest, fundos imobiliarios, Tesouro, Ebitda e conferencia de dividendos."""
+import json
+import tempfile
 import unittest
 from datetime import date, timedelta
+from pathlib import Path
 from unittest import mock
 
-from radar import backtest, db, exportar, notas
+from radar import alertas, backtest, db, exportar, notas, resumos
 
 
 def _dias(inicio: str, fim: str, passo: int = 7) -> list[str]:
@@ -89,6 +92,167 @@ class TestFluxoDeCaixa(unittest.TestCase):
         self.assertEqual(r["anual"]["lucro"][-1], 100e6)
 
 
+class TestHistoricoDeCodigos(unittest.TestCase):
+    def test_codigo_encerrado_liga_pela_tabela_historica(self):
+        conn = db.conectar(":memory:")
+        self.addCleanup(conn.close)
+        conn.executemany("INSERT INTO ativos (ticker, tipo) VALUES (?, 'acao')", [("SAIU3",), ("DUPL3",)])
+        conn.executemany("INSERT INTO empresa_tickers_hist VALUES (?, ?, NULL, '2023-05-01')",
+                         [("SAIU3", "111"), ("DUPL3", "222"), ("DUPL3", "333")])
+        db.vincular_ativos(conn)
+        r = dict((t, (c, v)) for t, c, v in conn.execute("SELECT ticker, cnpj, vinculo FROM ativos"))
+        self.assertEqual(r["SAIU3"], ("111", "historico"))
+        self.assertEqual(r["DUPL3"], (None, None))          # codigo que passou por duas empresas fica sem vinculo
+
+
+class TestProventos(unittest.TestCase):
+    def test_b3_tem_preferencia_e_e_ajustada(self):
+        conn = db.conectar(":memory:")
+        self.addCleanup(conn.close)
+        conn.execute("INSERT INTO ativos (ticker, tipo) VALUES ('AAAA3', 'acao'), ('BBBB3', 'acao')")
+        # B3: 2,00 anunciado antes de um desdobramento de 1 para 2 => 1,00 na base de hoje
+        conn.execute("INSERT INTO proventos_b3 VALUES ('AAAA3', '2025-03-10', 'DIVIDENDO', 2.0, '2025-04-01', NULL)")
+        conn.execute("INSERT INTO desdobramentos VALUES ('AAAA3', '2025-06-01', 2.0, 'yahoo')")
+        conn.execute("INSERT INTO dividendos VALUES ('AAAA3', '2025-03-11', 0.9, 'yahoo')")
+        conn.execute("INSERT INTO dividendos VALUES ('BBBB3', '2025-03-11', 0.5, 'yahoo')")
+        conn.execute("INSERT INTO proventos_b3_controle VALUES ('AAAA', '2026-10-01', 'ok')")
+        divs, consultados, fonte = notas.carregar_proventos(conn)
+        self.assertEqual(divs["AAAA3"], [("2025-03-10", 1.0)])          # Yahoo do mesmo periodo fica de fora
+        self.assertEqual(divs["BBBB3"], [("2025-03-11", 0.5)])
+        self.assertEqual((fonte["AAAA3"], fonte["BBBB3"]), ("B3", "Yahoo"))
+        self.assertIn("AAAA3", consultados)
+        self.assertEqual(notas.carregar_proventos(conn, "2025-01-01")[0], {})
+        # B3 so traz os anos recentes: o Yahoo completa o historico anterior
+        conn.execute("INSERT INTO dividendos VALUES ('AAAA3', '2022-05-11', 0.7, 'yahoo')")
+        divs, _, fonte = notas.carregar_proventos(conn)
+        self.assertEqual(divs["AAAA3"], [("2022-05-11", 0.7), ("2025-03-10", 1.0)])
+        self.assertEqual(fonte["AAAA3"], "B3 e Yahoo")
+
+
+class TestPublicacao(unittest.TestCase):
+    def _dados(self, n=40, preco=10.0):
+        return {"dataCotacao": "2026-10-06", "acoes": [{"t": f"A{i:03d}3", "p": preco, "final": 50, "lp": 60, "precos5": [["2026-09", 10]],
+                                                         "hist": [], "anual": None} for i in range(n)], "fiis": [{"t": "F11", "nota": 70}]}
+
+    def test_validar(self):
+        self.assertEqual(exportar.validar(self._dados(), None), [])
+        self.assertTrue(exportar.validar(self._dados(n=10), None))                     # poucas acoes
+        self.assertTrue(exportar.validar(self._dados(n=40), self._dados(n=100)))        # queda forte
+        self.assertTrue(exportar.validar(self._dados(preco=0), None))                   # preco zerado
+        velho = self._dados(); velho["dataCotacao"] = "2026-10-07"
+        self.assertTrue(exportar.validar(self._dados(), velho))                         # data voltou
+        caiu = self._dados()
+        for x in caiu["acoes"]:
+            x["final"] = 20
+        self.assertTrue(exportar.validar(caiu, self._dados()))                          # notas despencaram
+
+    def test_separar_e_historico(self):
+        d = self._dados(n=2)
+        d["fatos"] = [{"t": "A0003"}]
+        d["acoes"][0]["check"] = [["Lucro", True], ["Divida", None]]
+        det = exportar.separar(d)
+        self.assertEqual(det["_fatos"], [{"t": "A0003"}])
+        self.assertEqual(d["rotulos_check"], ["Lucro", "Divida"])
+        self.assertEqual(d["acoes"][0]["check"], [[0, True], [1, None]])
+        self.assertEqual(det["A0003"]["precos5"], [["2026-09", 10]])
+        self.assertNotIn("precos5", d["acoes"][0])
+        with tempfile.TemporaryDirectory() as tmp:
+            exportar.gravar_historico(Path(tmp), d)
+            foto = json.loads((Path(tmp) / "2026-10-06.json").read_text())
+            self.assertEqual(foto["acoes"][0], ["A0003", 50, 60])
+            self.assertEqual(json.loads((Path(tmp) / "indice.json").read_text()), ["2026-10-06"])
+
+    def test_prazo_do_balanco(self):
+        self.assertEqual(exportar.prazo_balanco("2026-06-30"), ("2026-09-30", "2026-11-14"))
+        self.assertEqual(exportar.prazo_balanco("2026-09-30"), ("2026-12-31", "2027-03-31"))
+        self.assertEqual(exportar.prazo_balanco(None), (None, None))
+
+
+class _Bloco:
+    def __init__(self, texto):
+        self.type, self.text = "text", texto
+
+
+class _ClienteFalso:
+    """Imita client.beta.messages.create e conta as chamadas."""
+    def __init__(self):
+        self.chamadas = []
+        self.beta = self
+        self.messages = self
+
+    def create(self, **kw):
+        self.chamadas.append(kw)
+        r = type("R", (), {})()
+        r.stop_reason, r.content = "end_turn", [_Bloco("Resumo de teste.")]
+        return r
+
+
+class TestOpcionais(unittest.TestCase):
+    def test_resumos_reaproveitam_quando_os_numeros_nao_mudam(self):
+        dados = {"acoes": [{"t": "AAAA3", "n": "A", "s": "Bancos", "p": 10.0, "final": 80, "lp": 90, "m": {}, "al": []}]}
+        cli = _ClienteFalso()
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(resumos.aplicar(dados, Path(tmp), cli), 1)
+            self.assertEqual(dados["acoes"][0]["resumo"], "Resumo de teste.")
+            self.assertEqual(cli.chamadas[0]["model"], "claude-opus-5-5")
+            self.assertEqual(cli.chamadas[0]["fallbacks"], "default")
+            self.assertEqual(resumos.aplicar(dados, Path(tmp), cli), 0)       # mesmos numeros: sem chamada nova
+            dados["acoes"][0]["p"] = 12.0
+            self.assertEqual(resumos.aplicar(dados, Path(tmp), cli), 1)
+        self.assertEqual(len(cli.chamadas), 2)
+
+    def test_sem_chave_nao_faz_nada(self):
+        import os
+        antes = os.environ.pop("ANTHROPIC_API_KEY", None)
+        try:
+            self.assertEqual(resumos.aplicar({"acoes": []}, Path("."), None), 0)
+        finally:
+            if antes:
+                os.environ["ANTHROPIC_API_KEY"] = antes
+
+    def test_mensagem_de_alerta(self):
+        dados = {"dataCotacao": "2026-10-06", "acoes": [{"t": "BBSE3", "final": 62.4, "al": []}, {"t": "OUTR3", "final": 10, "al": []}],
+                 "fatos": [{"t": "BBSE3", "data": "2026-10-06", "cat": "Fato Relevante", "assunto": "Novo acordo"}],
+                 "coleta": [{"fonte": "b3", "situacao": "erro"}]}
+        anterior = {"data": "2026-10-05", "acoes": [["BBSE3", 77, 100], ["OUTR3", 90, 50]]}
+        texto = alertas.montar_mensagem(dados, anterior, ["BBSE3"])
+        self.assertIn("BBSE3: nota 77 -> 62", texto)
+        self.assertIn("fato relevante", texto)
+        self.assertIn("Coleta com erro: b3", texto)
+        self.assertNotIn("OUTR3", texto)
+        self.assertEqual(alertas.montar_mensagem({"acoes": []}, None, []), "")
+
+
+class TestMetodosNovos(unittest.TestCase):
+    def test_banco(self):
+        nota, justo, margem = notas.nota_banco(1.0, 0.21, 0.14)      # justo 1,5 => margem 1/3
+        self.assertAlmostEqual(justo, 1.5)
+        self.assertAlmostEqual(nota, 50 + 100 / 3)
+        self.assertEqual(notas.nota_banco(1.0, -0.05)[0], 0.0)
+        self.assertEqual(notas.nota_banco(None, 0.2), (None, None, None))
+
+    def test_setor(self):
+        itens = {"A": ("Bancos", 5, 1), "B": ("Bancos", 10, 2), "C": ("Bancos", 20, 4), "D": ("Bancos", 8, 3),
+                 "E": ("Varejo", -3, 1), "F": ("Varejo", 12, 1.5)}
+        r = notas.notas_setor(itens)
+        self.assertEqual(r["A"], 100.0)               # mais barata do setor nos dois indicadores
+        self.assertEqual(r["C"], 0.0)
+        self.assertEqual(r["E"], 0.0)                 # prejuizo
+        self.assertIn("F", r)                         # setor com menos de 4 empresas: compara com todas
+
+    def test_tendencia(self):
+        hoje = date(2026, 10, 2)
+        subindo = [((hoje - timedelta(days=400 - i)).isoformat(), 10 + i * 0.05) for i in range(400)]
+        caindo = [(d, 40 - i * 0.05) for i, (d, _) in enumerate(subindo)]
+        a, b = notas.indicadores_tendencia(subindo, hoje), notas.indicadores_tendencia(caindo, hoje)
+        self.assertGreater(a["mom"], 0)
+        self.assertGreater(a["acima200"], 0)
+        self.assertLess(b["acima200"], 0)
+        r = notas.notas_tendencia({"A": a, "B": b})
+        self.assertGreater(r["A"], r["B"])
+        self.assertEqual(notas.indicadores_tendencia(subindo[:100], hoje), {})
+
+
 class TestBacktest(unittest.TestCase):
     def test_datas(self):
         self.assertEqual(backtest.datas_teste("2024-01-02", "2026-10-02"),
@@ -112,6 +276,12 @@ class TestBacktest(unittest.TestCase):
         r = backtest.retorno_cdi(conn, "2025-05-01", "2025-05-28")
         self.assertAlmostEqual(r, 1.1 ** (27 / 252) - 1)
         self.assertIsNone(backtest.retorno_cdi(conn, "2024-01-01", "2024-12-31"))   # sem taxa no periodo
+
+    def test_sugerir_pesos(self):
+        padrao = {"a": 50, "b": 50}
+        # so "a" ganhou da media: metade do peso segue o padrao, metade vai para quem ganhou
+        self.assertEqual(backtest.sugerir_pesos({"a": 0.10, "b": -0.05}, padrao), {"a": 75, "b": 25})
+        self.assertEqual(backtest.sugerir_pesos({"a": -0.1, "b": None}, padrao), {"a": 50, "b": 50})
 
     def test_encadear(self):
         self.assertAlmostEqual(backtest.encadear([0.1, 0.2]), 0.32)
@@ -153,6 +323,10 @@ class TestBacktest(unittest.TestCase):
         self.assertEqual(r["anosAcumulados"], 1)
         self.assertIsNone(r["acumuladoLongo"])     # balancos de menos de 5 anos: sem nota de longo prazo
         self.assertEqual(len(r["historico"]["EMPB3"]), 3)
+        self.assertIn("graham", r["porMetodo"])
+        self.assertEqual(sum(r["pesosSugeridos"].values()), 100)
+        self.assertIn("calibrado", p)
+        self.assertIsNone(p["ibov"])                  # sem BOVA11 no banco de teste
 
 
 class TestFundosETesouro(unittest.TestCase):
@@ -201,6 +375,9 @@ class TestFundosETesouro(unittest.TestCase):
         t = dados["tesouro"]["titulos"][0]
         self.assertEqual((t["taxaVenda"], t["taxaAnoAntes"], t["aVenda"]), (7.5, 7.0, True))
         self.assertIn("periodos", dados["backtest"])
+        self.assertIn("calendario", dados)
+        self.assertIn("fatos", dados)
+        self.assertEqual(len(dados["cdiMensal"]), 0)
 
 
 if __name__ == "__main__":

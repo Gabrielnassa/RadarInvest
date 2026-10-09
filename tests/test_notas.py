@@ -176,7 +176,9 @@ class TestCasosReais(unittest.TestCase):
         self.assertAlmostEqual(r["valorMercado"], 100e6 * 30 + 200e6 * 20)
         self.assertAlmostEqual(r["pl"], 20 * 300e6 / 600e6)             # preco do papel x todas as acoes / lucro = 10
         self.assertAlmostEqual(r["pvp"], 2.0)
-        self.assertIsNone(r["m"]["greenblatt"])                         # banco
+        # banco: P/VP justo = ROE 20% / custo de capital 14% = 1,43; P/VP de 2,0 => margem de -40% => nota 10
+        self.assertEqual(r["m"]["greenblatt"], 10)
+        self.assertAlmostEqual(r["pvpJusto"], 0.2 / 0.14)
         self.assertIsNone(r["m"]["barsi"])                              # dividendos nao consultados
 
 
@@ -274,7 +276,7 @@ class TestCalculoCompleto(unittest.TestCase):
         self.assertEqual(r["al"], ["Último balanço tem mais de 9 meses"])
         self.assertEqual(r["conf"], [10, 10])
         self.assertFalse(r["distorcao"])
-        self.assertEqual(r["aplicaveis"], 5)
+        self.assertEqual(r["aplicaveis"], 7)
         lp = dict(r["lpCheck"])
         self.assertTrue(lp["Pagou dividendos em todos os últimos 5 anos"])
         self.assertTrue(lp["Preço sobre o lucro entre 0 e 15"])           # P/L 10
