@@ -118,9 +118,7 @@ def rodar(conn, cfg: dict | None = None, meses=MESES_INICIO) -> dict:
     splits: dict[str, list] = {}
     for t, d, f in conn.execute("SELECT ticker, data, fator FROM desdobramentos WHERE fator > 0 ORDER BY data"):
         splits.setdefault(t, []).append((d, f))
-    divs: dict[str, list] = {}
-    for t, d, v in conn.execute("SELECT ticker, data, valor FROM dividendos ORDER BY data"):
-        divs.setdefault(t, []).append((d, v))
+    divs, _, _ = notas.carregar_proventos(conn)
 
     padrao = dict(notas.PADRAO["pesos"], **((cfg or {}).get("pesos") or {}))
     periodos, historico, guardados = [], {}, []

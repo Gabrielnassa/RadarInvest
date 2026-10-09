@@ -138,3 +138,21 @@ def csv_tesouro(destino: Path, linhas: list[list]) -> Path:
     destino.parent.mkdir(parents=True, exist_ok=True)
     destino.write_bytes(_csv(CAB_TESOURO, linhas))
     return destino
+
+
+CAB_IPE = ["CNPJ_Companhia", "Nome_Companhia", "Codigo_CVM", "Data_Referencia", "Categoria", "Tipo", "Especie",
+           "Assunto", "Data_Entrega", "Tipo_Apresentacao", "Protocolo_Entrega", "Versao", "Link_Download"]
+
+
+def zip_ipe(destino: Path, ano: int, linhas: list[list]) -> Path:
+    destino.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(destino, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(f"ipe_cia_aberta_{ano}.csv", _csv(CAB_IPE, linhas))
+    return destino
+
+
+def json_proventos_b3(itens: list[tuple]) -> list:
+    """itens: (isin, data_com dd/mm/aaaa, pagamento dd/mm/aaaa, tipo, valor '0,123')"""
+    return [{"stockDividends": [], "subscriptions": [], "cashDividends": [
+        {"assetIssued": i, "isinCode": i, "lastDatePrior": d, "paymentDate": p, "label": t, "rate": v,
+         "approvedOn": d, "relatedTo": "", "remarks": ""} for i, d, p, t, v in itens]}]

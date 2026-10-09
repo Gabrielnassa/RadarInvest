@@ -339,6 +339,33 @@ def notas_tendencia(itens: dict) -> dict:
     return saida
 
 
+def carregar_proventos(conn, limite: str = "9999-12-31") -> tuple[dict, set, dict]:
+    """Proventos por acao na base de acoes de hoje: {ticker: [(data, valor)]}, os tickers consultados e a
+    fonte de cada um. Usa a B3 quando a empresa tem proventos la; senao, o Yahoo (que ja vem ajustado).
+    O valor da B3 e o da data do anuncio: divide pelos desdobramentos posteriores."""
+    splits: dict[str, list] = {}
+    for t, d, f in conn.execute("SELECT ticker, data, fator FROM desdobramentos WHERE fator > 0"):
+        splits.setdefault(t, []).append((d, f))
+    b3: dict[str, dict] = {}
+    for t, d, v in conn.execute("SELECT ticker, data_com, valor FROM proventos_b3 WHERE data_com <= ? ORDER BY data_com", (limite,)):
+        fator = 1.0
+        for quando, f in splits.get(t, ()):
+            if quando > d:
+                fator *= f
+        b3.setdefault(t, {})
+        b3[t][d] = b3[t].get(d, 0.0) + v / fator
+    saida: dict[str, list] = {t: sorted(v.items()) for t, v in b3.items()}
+    fonte = {t: "B3" for t in saida}
+    for t, d, v in conn.execute("SELECT ticker, data, valor FROM dividendos WHERE data <= ? ORDER BY data", (limite,)):
+        if t not in fonte or fonte[t] == "Yahoo":
+            saida.setdefault(t, []).append((d, v))
+            fonte[t] = "Yahoo"
+    consultados = {t for (t,) in conn.execute("SELECT ticker FROM dividendos_controle WHERE situacao LIKE 'ok%'")}
+    raizes_b3 = {r for (r,) in conn.execute("SELECT raiz FROM proventos_b3_controle WHERE situacao = 'ok'")}
+    consultados |= {t for (t,) in conn.execute("SELECT ticker FROM ativos WHERE tipo IN ('acao', 'unit')") if t[:4] in raizes_b3}
+    return saida, consultados, fonte
+
+
 def nota_final(notas: dict, pesos: dict) -> float | None:
     soma = peso = 0.0
     for metodo, p in pesos.items():
@@ -432,11 +459,8 @@ def calcular_acoes(conn, cfg: dict | None = None, ate: str | None = None) -> lis
             (publicado,)):
         capital[cnpj] = (refer, on_t or 0.0, pn_t or 0.0, tot or 0.0, on_x or 0.0, pn_x or 0.0, tes or 0.0)
 
-    # ----- dividendos por ticker
-    divs: dict[str, list] = {}
-    for ticker, dia, valor in conn.execute("SELECT ticker, data, valor FROM dividendos WHERE data <= ? ORDER BY data", (limite,)):
-        divs.setdefault(ticker, []).append((dia, valor))
-    consultados = {t for (t,) in conn.execute("SELECT ticker FROM dividendos_controle WHERE situacao LIKE 'ok%'")}
+    # ----- dividendos por ticker (B3 quando houver; senao Yahoo); proventos anunciados para o futuro ficam de fora
+    divs, consultados, fonte_div = carregar_proventos(conn, ultima)
 
     resultado, gb_entrada, tend_entrada, setor_entrada = [], {}, {}, {}
     for cnpj, e in empresas.items():
@@ -630,7 +654,7 @@ def calcular_acoes(conn, cfg: dict | None = None, ate: str | None = None) -> lis
             "serie": m["serie"], "lucroAte": lucro_fim, "lucroBase": lucro_origem, "balancoEm": f.get("balanco_em"),
             "aplicaveis": len(METODOS), "banco": financeiro, "pvpJusto": banco_justo,
             "tend": tend_entrada[ticker] or None, "lucroNormalizado": lucro_fora or ebit_fora, "distorcao": distorcao,
-            "baseDivida": base_divida, "tr12": tr12, "confDiv": conf_div,
+            "baseDivida": base_divida, "tr12": tr12, "confDiv": conf_div, "fonteDiv": fonte_div.get(ticker),
             "anual": _serie_anual(lucros_ano, receitas_ano, pagos, hoje) if completo else None,
             "lp": nota_longo_prazo(lp, prejuizo), "lpCheck": [[txt, v] for txt, v, _ in lp],
         })

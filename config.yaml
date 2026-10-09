@@ -89,3 +89,22 @@ tesouro:
   ativo: true
   url: "https://www.tesourotransparente.gov.br/ckan/dataset/df56aa42-484a-4a59-8184-7676580c81e3/resource/796d2059-14e9-44e3-80c9-2d9e30b405c1/download/PrecoTaxaTesouroDireto.csv"
   cache_horas: 12
+
+# Proventos informados a B3 (consulta publica de empresas listadas). Se falhar, o painel usa o Yahoo.
+proventos:
+  ativo: true
+  url_base: "https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall"
+  volume_medio_minimo: 500000
+  atualizar_apos_dias: 7
+  pausa_segundos: 0.5
+
+# Fatos relevantes, comunicados ao mercado e avisos aos acionistas (dados abertos da CVM)
+ipe:
+  ativo: true
+  url_base: "https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC"
+  cache_horas: 12
+
+# Alertas por Telegram (opcional): precisa dos segredos TELEGRAM_TOKEN e TELEGRAM_CHAT_ID no GitHub.
+# Avisa quando a nota destes codigos muda 10 pontos ou mais, quando sai fato relevante e quando a coleta falha.
+alertas:
+  tickers: []     # exemplo: [BBSE3, CMIG4, ITUB4]

@@ -136,6 +136,35 @@ CREATE TABLE IF NOT EXISTS macro (
     PRIMARY KEY (serie, data)
 ) WITHOUT ROWID;
 
+CREATE TABLE IF NOT EXISTS proventos_b3 (
+    ticker    TEXT NOT NULL,
+    data_com  TEXT NOT NULL,              -- ultimo dia com direito
+    tipo      TEXT NOT NULL,              -- DIVIDENDO, JRS CAP PROPRIO, RENDIMENTO...
+    valor     REAL NOT NULL,              -- reais por acao na data do anuncio (sem ajuste por desdobramento)
+    pagamento TEXT,
+    aprovado  TEXT,
+    PRIMARY KEY (ticker, data_com, tipo, valor)
+) WITHOUT ROWID;
+
+CREATE TABLE IF NOT EXISTS proventos_b3_controle (
+    raiz          TEXT PRIMARY KEY,       -- 4 letras da empresa
+    atualizado_em TEXT NOT NULL,
+    situacao      TEXT
+);
+
+CREATE TABLE IF NOT EXISTS ipe (
+    protocolo    TEXT PRIMARY KEY,
+    cnpj         TEXT NOT NULL,
+    data_entrega TEXT NOT NULL,
+    data_ref     TEXT,
+    categoria    TEXT,
+    tipo         TEXT,
+    especie      TEXT,
+    assunto      TEXT,
+    link         TEXT
+) WITHOUT ROWID;
+CREATE INDEX IF NOT EXISTS ix_ipe_cnpj ON ipe(cnpj, data_entrega);
+
 CREATE TABLE IF NOT EXISTS controle (
     chave TEXT PRIMARY KEY,
     valor TEXT
