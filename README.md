@@ -150,6 +150,12 @@ Em Settings > Secrets and variables > Actions > New repository secret:
 3. No GitHub: Settings > Pages > Custom domain, digite o domínio e marque "Enforce HTTPS".
 O painel usa só caminhos relativos e funciona no domínio novo sem mudança no código.
 
+## Investir e Arca
+
+- **Investir**: você digita um valor e escolhe o perfil (conservador, moderado, arrojado, Arca ou só ações). O painel divide o valor entre ações, fundos imobiliários, internacional e renda fixa e escolhe os ativos com as maiores notas, com quantidade, valor e o motivo de cada um. O botão "Registrar estas compras" lança tudo na carteira.
+- **Arca**: ações brasileiras, real estate (FIIs), caixa (renda fixa) e ativos internacionais, 25% cada (metas ajustáveis). A partir do que você já tem, diz quanto do aporte vai para cada parte, sem vender nada, e em quais ativos.
+- Internacional usa fundos de índice negociados na B3 (lista em `internacional` no `config.yaml`).
+
 ## Carteira, privacidade e celular
 
 - Operações, favoritos e preferências ficam só no navegador. "Baixar arquivo da carteira" e "Importar arquivo" levam tudo para outro aparelho.
