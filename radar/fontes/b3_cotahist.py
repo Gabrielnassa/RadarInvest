@@ -144,8 +144,15 @@ def coletar(conn, rede, cfg, cache: Path, hoje: date | None = None):
         "SELECT max(fim) FROM coletas WHERE fonte = 'b3' AND situacao IN ('ok', 'avisos')").fetchone()[0]
     lido_em = datetime.fromisoformat(anterior).timestamp() if anterior else 0.0
 
+    # se a lista de tipos de papel mudou, os arquivos ja lidos precisam ser relidos (estao no cache)
+    tipos = ",".join(sorted(str(c).zfill(2) for c in cfg.get("codbdi", ["02", "12"])))
+    antes = conn.execute("SELECT valor FROM controle WHERE chave = 'b3_codbdi'").fetchone()
+    reler = antes is None or antes[0] != tipos
+
     total, avisos = 0, []
-    for ano in planejar_arquivos(presentes, ultima, hoje, int(cfg.get("anos_historico", 2))):
+    anos = int(cfg.get("anos_historico", 2))
+    plano = planejar_arquivos(set() if reler else presentes, ultima, hoje, anos)
+    for ano in plano:
         nome = nome_arquivo(ano)
         # arquivo de ano encerrado nao muda mais; o do ano corrente muda a cada pregao
         encerrado = ano < hoje.year and not (ultima and ultima.year == ano)
@@ -154,7 +161,9 @@ def coletar(conn, rede, cfg, cache: Path, hoje: date | None = None):
         if caminho is None:
             avisos.append(f"{nome} ainda nao publicado pela B3")
             continue
-        if ano in presentes and not rede.baixou_agora and caminho.stat().st_mtime <= lido_em + 1:
+        if not reler and ano in presentes and not rede.baixou_agora and caminho.stat().st_mtime <= lido_em + 1:
             continue  # mesmo arquivo ja lido na coleta anterior
         total += gravar(conn, ler_zip(caminho, cfg.get("codbdi", ["02", "12"])))
+    conn.execute("INSERT OR REPLACE INTO controle (chave, valor) VALUES ('b3_codbdi', ?)", (tipos,))
+    conn.commit()
     return total, avisos

@@ -46,6 +46,16 @@ CREATE TABLE IF NOT EXISTS empresa_tickers (
 );
 CREATE INDEX IF NOT EXISTS ix_empresa_tickers_cnpj ON empresa_tickers(cnpj);
 
+-- todos os codigos que cada empresa ja teve, inclusive os encerrados: liga cotacoes antigas a empresas
+-- que sairam da bolsa, para o teste no passado nao ignorar quem quebrou ou fechou o capital
+CREATE TABLE IF NOT EXISTS empresa_tickers_hist (
+    ticker TEXT NOT NULL,
+    cnpj   TEXT NOT NULL,
+    inicio TEXT,
+    fim    TEXT,
+    PRIMARY KEY (ticker, cnpj)
+) WITHOUT ROWID;
+
 CREATE TABLE IF NOT EXISTS demonstrativos (
     cnpj          TEXT NOT NULL,
     cd_cvm        TEXT,
@@ -126,6 +136,11 @@ CREATE TABLE IF NOT EXISTS macro (
     PRIMARY KEY (serie, data)
 ) WITHOUT ROWID;
 
+CREATE TABLE IF NOT EXISTS controle (
+    chave TEXT PRIMARY KEY,
+    valor TEXT
+);
+
 CREATE TABLE IF NOT EXISTS coletas (
     id        INTEGER PRIMARY KEY AUTOINCREMENT,
     fonte     TEXT NOT NULL,
@@ -205,5 +220,11 @@ def vincular_ativos(conn: sqlite3.Connection) -> tuple[int, int]:
         if cnpjs and len(cnpjs) == 1:
             conn.execute("UPDATE ativos SET cnpj = ?, vinculo = 'raiz' WHERE ticker = ?", (next(iter(cnpjs)), ticker))
             por_raiz += 1
+    # codigos que ja nao estao no cadastro atual: pelo historico, quando apontam para uma unica empresa
+    conn.execute(
+        """UPDATE ativos SET cnpj = (SELECT min(h.cnpj) FROM empresa_tickers_hist h WHERE h.ticker = ativos.ticker),
+                              vinculo = 'historico'
+           WHERE tipo IN ('acao', 'unit') AND cnpj IS NULL
+             AND (SELECT count(DISTINCT h.cnpj) FROM empresa_tickers_hist h WHERE h.ticker = ativos.ticker) = 1""")
     conn.commit()
     return exatos, por_raiz

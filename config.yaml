@@ -14,8 +14,9 @@ b3:
   ativo: true
   url_base: "https://bvmf.bmfbovespa.com.br/InstDados/SerHist"
   anos_historico: 7            # 7 anos para o teste das notas no passado
-  # 02 = lote padrao (acoes, units, BDRs) | 12 = fundos imobiliarios
-  codbdi: ["02", "12"]
+  # 02 = lote padrao (acoes, units, BDRs) | 12 = fundos imobiliarios | 14 = fundos de indice (BOVA11, referencia do Ibovespa)
+  # 07 e 08 = empresas em recuperacao extrajudicial e judicial (sem elas, o teste no passado so ve quem sobreviveu)
+  codbdi: ["02", "12", "14", "07", "08"]
   # Se a coleta da B3 falhar com "erro de certificado (SSL)", troque para false.
   # Isso desliga a conferencia do certificado so para este site da B3.
   verificar_certificado: true
@@ -59,7 +60,8 @@ cripto:
 # Regras das notas (etapa 2). Descomente e altere o que quiser.
 notas:
   volume_minimo: 500000        # R$/dia para a acao entrar no ranking
-  pesos: {barsi: 20, bazin: 15, qualidade: 30, graham: 15, greenblatt: 20}
+  pesos: {barsi: 15, bazin: 10, qualidade: 25, graham: 15, greenblatt: 15, setor: 10, tendencia: 10}
+  custo_capital: 0.14          # retorno exigido pelo acionista no P/VP justo de bancos e seguradoras
   dy_minimo: 0.06              # dividendo minimo de Barsi e Bazin
   roe_minimo: 0.15
   divida_ebit_max: 3.0         # divida liquida sobre Ebitda (ou lucro operacional, se faltar a depreciacao)

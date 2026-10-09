@@ -89,6 +89,49 @@ class TestFluxoDeCaixa(unittest.TestCase):
         self.assertEqual(r["anual"]["lucro"][-1], 100e6)
 
 
+class TestHistoricoDeCodigos(unittest.TestCase):
+    def test_codigo_encerrado_liga_pela_tabela_historica(self):
+        conn = db.conectar(":memory:")
+        self.addCleanup(conn.close)
+        conn.executemany("INSERT INTO ativos (ticker, tipo) VALUES (?, 'acao')", [("SAIU3",), ("DUPL3",)])
+        conn.executemany("INSERT INTO empresa_tickers_hist VALUES (?, ?, NULL, '2023-05-01')",
+                         [("SAIU3", "111"), ("DUPL3", "222"), ("DUPL3", "333")])
+        db.vincular_ativos(conn)
+        r = dict((t, (c, v)) for t, c, v in conn.execute("SELECT ticker, cnpj, vinculo FROM ativos"))
+        self.assertEqual(r["SAIU3"], ("111", "historico"))
+        self.assertEqual(r["DUPL3"], (None, None))          # codigo que passou por duas empresas fica sem vinculo
+
+
+class TestMetodosNovos(unittest.TestCase):
+    def test_banco(self):
+        nota, justo, margem = notas.nota_banco(1.0, 0.21, 0.14)      # justo 1,5 => margem 1/3
+        self.assertAlmostEqual(justo, 1.5)
+        self.assertAlmostEqual(nota, 50 + 100 / 3)
+        self.assertEqual(notas.nota_banco(1.0, -0.05)[0], 0.0)
+        self.assertEqual(notas.nota_banco(None, 0.2), (None, None, None))
+
+    def test_setor(self):
+        itens = {"A": ("Bancos", 5, 1), "B": ("Bancos", 10, 2), "C": ("Bancos", 20, 4), "D": ("Bancos", 8, 3),
+                 "E": ("Varejo", -3, 1), "F": ("Varejo", 12, 1.5)}
+        r = notas.notas_setor(itens)
+        self.assertEqual(r["A"], 100.0)               # mais barata do setor nos dois indicadores
+        self.assertEqual(r["C"], 0.0)
+        self.assertEqual(r["E"], 0.0)                 # prejuizo
+        self.assertIn("F", r)                         # setor com menos de 4 empresas: compara com todas
+
+    def test_tendencia(self):
+        hoje = date(2026, 10, 2)
+        subindo = [((hoje - timedelta(days=400 - i)).isoformat(), 10 + i * 0.05) for i in range(400)]
+        caindo = [(d, 40 - i * 0.05) for i, (d, _) in enumerate(subindo)]
+        a, b = notas.indicadores_tendencia(subindo, hoje), notas.indicadores_tendencia(caindo, hoje)
+        self.assertGreater(a["mom"], 0)
+        self.assertGreater(a["acima200"], 0)
+        self.assertLess(b["acima200"], 0)
+        r = notas.notas_tendencia({"A": a, "B": b})
+        self.assertGreater(r["A"], r["B"])
+        self.assertEqual(notas.indicadores_tendencia(subindo[:100], hoje), {})
+
+
 class TestBacktest(unittest.TestCase):
     def test_datas(self):
         self.assertEqual(backtest.datas_teste("2024-01-02", "2026-10-02"),
@@ -112,6 +155,12 @@ class TestBacktest(unittest.TestCase):
         r = backtest.retorno_cdi(conn, "2025-05-01", "2025-05-28")
         self.assertAlmostEqual(r, 1.1 ** (27 / 252) - 1)
         self.assertIsNone(backtest.retorno_cdi(conn, "2024-01-01", "2024-12-31"))   # sem taxa no periodo
+
+    def test_sugerir_pesos(self):
+        padrao = {"a": 50, "b": 50}
+        # so "a" ganhou da media: metade do peso segue o padrao, metade vai para quem ganhou
+        self.assertEqual(backtest.sugerir_pesos({"a": 0.10, "b": -0.05}, padrao), {"a": 75, "b": 25})
+        self.assertEqual(backtest.sugerir_pesos({"a": -0.1, "b": None}, padrao), {"a": 50, "b": 50})
 
     def test_encadear(self):
         self.assertAlmostEqual(backtest.encadear([0.1, 0.2]), 0.32)
@@ -153,6 +202,10 @@ class TestBacktest(unittest.TestCase):
         self.assertEqual(r["anosAcumulados"], 1)
         self.assertIsNone(r["acumuladoLongo"])     # balancos de menos de 5 anos: sem nota de longo prazo
         self.assertEqual(len(r["historico"]["EMPB3"]), 3)
+        self.assertIn("graham", r["porMetodo"])
+        self.assertEqual(sum(r["pesosSugeridos"].values()), 100)
+        self.assertIn("calibrado", p)
+        self.assertIsNone(p["ibov"])                  # sem BOVA11 no banco de teste
 
 
 class TestFundosETesouro(unittest.TestCase):

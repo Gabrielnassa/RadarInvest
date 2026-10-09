@@ -77,11 +77,12 @@ def _campo(linha: list, i: int | None) -> str:
 
 # ---------------------------------------------------------------- cadastro (FCA)
 
-def carregar_fca(conn, caminho: Path, hoje: date) -> tuple[int, int]:
-    """Grava empresas (CNPJ, codigo CVM, setor) e os codigos de negociacao de cada uma."""
+def carregar_fca(conn, caminho: Path, hoje: date, so_historico: bool = False) -> tuple[int, int]:
+    """Grava empresas (CNPJ, codigo CVM, setor) e os codigos de negociacao de cada uma.
+    Com so_historico, os codigos vao so para o historico (anos antigos nao mexem no cadastro atual)."""
     with zipfile.ZipFile(caminho) as zf:
         n_emp = _fca_geral(conn, zf)
-        n_tic = _fca_valores(conn, zf, hoje)
+        n_tic = _fca_valores(conn, zf, hoje, so_historico)
     conn.commit()
     return n_emp, n_tic
 
@@ -117,7 +118,7 @@ def _fca_geral(conn, zf) -> int:
     return len(melhores)
 
 
-def _fca_valores(conn, zf, hoje: date) -> int:
+def _fca_valores(conn, zf, hoje: date, so_historico: bool = False) -> int:
     membro = _membro(zf, "fca_cia_aberta_valor_mobiliario_")
     if not membro:
         raise ErroFormato("arquivo de valores mobiliarios nao encontrado no ZIP do FCA: " + ", ".join(zf.namelist()))
@@ -130,7 +131,9 @@ def _fca_valores(conn, zf, hoje: date) -> int:
     c_mer = _coluna(idx, membro, "MERCADO", obrigatoria=False)
     c_seg = _coluna(idx, membro, "SEGMENTO", obrigatoria=False)
     c_fim = _coluna(idx, membro, "DATA_FIM_NEGOCIACAO", obrigatoria=False)
+    c_ini = _coluna(idx, membro, "DATA_INICIO_NEGOCIACAO", obrigatoria=False)
     hoje_txt = hoje.isoformat()
+    historico: dict[tuple, tuple] = {}
 
     # o formulario mais recente de cada empresa define os codigos vigentes
     por_empresa: dict[str, tuple[str, list]] = {}
@@ -138,6 +141,9 @@ def _fca_valores(conn, zf, hoje: date) -> int:
         cnpj = so_digitos(_campo(linha, c_cnpj))
         if not cnpj:
             continue
+        cod = _campo(linha, c_tic).upper()
+        if RE_TICKER.match(cod):
+            historico[(cod, cnpj)] = (cod, cnpj, _campo(linha, c_ini) or None, _campo(linha, c_fim) or None)
         ref = _referencia(_campo(linha, c_ref), _campo(linha, c_ver))
         atual = por_empresa.get(cnpj)
         if atual is None or ref > atual[0]:
@@ -150,6 +156,12 @@ def _fca_valores(conn, zf, hoje: date) -> int:
             continue
         atual[1].append((ticker, cnpj, _campo(linha, c_vm), _campo(linha, c_mer), _campo(linha, c_seg), ref))
 
+    conn.executemany(
+        """INSERT INTO empresa_tickers_hist (ticker, cnpj, inicio, fim) VALUES (?, ?, ?, ?)
+           ON CONFLICT(ticker, cnpj) DO UPDATE SET inicio = coalesce(excluded.inicio, inicio), fim = coalesce(excluded.fim, fim)""",
+        list(historico.values()))
+    if so_historico:
+        return len(historico)
     gravados = 0
     for cnpj, (ref, itens) in por_empresa.items():
         conn.execute("DELETE FROM empresa_tickers WHERE cnpj = ? AND referencia < ?", (cnpj, ref))
@@ -282,6 +294,19 @@ def coletar(conn, rede, cfg, cache: Path, hoje: date | None = None):
     horas = float(cfg.get("cache_horas", 24))
     avisos: list[str] = []
     total = 0
+
+    # cadastros antigos: so o historico de codigos (para ligar empresas que sairam da bolsa)
+    for ano in range(hoje.year - max(2, int(cfg.get("anos_fundamentos", 6))), hoje.year - 1):
+        nome = f"fca_cia_aberta_{ano}.zip"
+        caminho = rede.baixar(f"{base}/FCA/DADOS/{nome}", pasta / nome, max_idade_horas=24 * 30)
+        if caminho is None:
+            continue
+        try:
+            carregar_fca(conn, caminho, hoje, so_historico=True)
+        except zipfile.BadZipFile:
+            caminho.unlink(missing_ok=True)
+        except ErroFormato as e:
+            avisos.append(str(e)[:300])
 
     tickers = 0
     for ano in (hoje.year - 1, hoje.year):
