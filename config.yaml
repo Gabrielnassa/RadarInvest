@@ -108,3 +108,18 @@ ipe:
 # Avisa quando a nota destes codigos muda 10 pontos ou mais, quando sai fato relevante e quando a coleta falha.
 alertas:
   tickers: []     # exemplo: [BBSE3, CMIG4, ITUB4]
+
+# Fundos de indice (ETFs) negociados na B3 que investem fora do Brasil: entram na classe "internacional"
+# das paginas Investir e Arca. Os de "nucleo: true" sao os sugeridos primeiro (mais diversificados).
+# Codigos sem cotacao recente ou com pouca liquidez ficam de fora sozinhos.
+internacional:
+  volume_medio_minimo: 1000000
+  fundos:
+    - {t: IVVB11, n: "S&P 500", d: "as 500 maiores empresas dos Estados Unidos", nucleo: true}
+    - {t: ACWI11, n: "MSCI ACWI", d: "ações do mundo todo, países ricos e emergentes", nucleo: true}
+    - {t: WRLD11, n: "Ações globais", d: "ações de países desenvolvidos", nucleo: true}
+    - {t: SPXI11, n: "S&P 500", d: "as 500 maiores empresas dos Estados Unidos", nucleo: true}
+    - {t: NASD11, n: "Nasdaq 100", d: "as 100 maiores empresas da Nasdaq, muito tecnologia"}
+    - {t: EURP11, n: "Europa", d: "grandes empresas europeias"}
+    - {t: XINA11, n: "China", d: "grandes empresas chinesas"}
+    - {t: GOLD11, n: "Ouro", d: "acompanha o preço do ouro em reais"}

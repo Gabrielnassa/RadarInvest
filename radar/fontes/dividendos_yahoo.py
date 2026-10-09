@@ -49,13 +49,13 @@ def extrair_desdobramentos(payload: dict) -> list[tuple[str, float]]:
 
 
 def selecionar_tickers(conn, volume_minimo: float, hoje: date, dias_validade: int) -> list[str]:
-    """Acoes, units e fundos imobiliarios com liquidez minima que ainda nao foram atualizadas dentro da validade."""
+    """Acoes, units, fundos imobiliarios e de indice com liquidez minima que ainda nao foram atualizadas dentro da validade."""
     limite = (hoje - timedelta(days=dias_validade)).isoformat()
     linhas = conn.execute(
         """WITH ultimos AS (SELECT DISTINCT data FROM cotacoes ORDER BY data DESC LIMIT 60)
            SELECT a.ticker
            FROM ativos a JOIN cotacoes c ON c.ticker = a.ticker
-           WHERE a.tipo IN ('acao', 'unit', 'fii') AND c.data IN (SELECT data FROM ultimos)
+           WHERE a.tipo IN ('acao', 'unit', 'fii', 'etf') AND c.data IN (SELECT data FROM ultimos)
            GROUP BY a.ticker
            HAVING sum(c.volume) / 60.0 >= ?
            ORDER BY sum(c.volume) DESC""",
