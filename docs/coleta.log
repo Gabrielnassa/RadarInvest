@@ -1,4 +1,4 @@
-Coleta iniciada em 2026-10-09 16:10 UTC
+Coleta iniciada em 2026-10-10 15:21 UTC
 
 Diagnostico das fontes de dados
 
@@ -14,25 +14,25 @@ Diagnostico das fontes de dados
   OK     CVM (fatos relevantes) HTTP 200, application/zip
 
 Todas as fontes responderam.
-[16:10:41] Cotacoes da B3: coletando...
-[16:12:14] Cotacoes da B3: 165300 registros
-[16:12:14] Cadastro e demonstrativos da CVM: coletando...
-[16:13:35] Cadastro e demonstrativos da CVM: 2157950 registros
-[16:13:35] Dividendos (Yahoo, nao oficial): coletando...
-[16:13:36] Dividendos (Yahoo, nao oficial): 0 registros
-[16:13:36] Proventos informados a B3: coletando...
-[16:13:36] Proventos informados a B3: 0 registros
-[16:13:36] Criptomoedas (CoinGecko): coletando...
-[16:13:36] Criptomoedas (CoinGecko): 30 registros
-[16:13:36] Indicadores do Banco Central: coletando...
-[16:13:36] Indicadores do Banco Central: 3 registros
-[16:13:36] Informe mensal dos fundos imobiliarios (CVM): coletando...
-[16:13:37] Informe mensal dos fundos imobiliarios (CVM): 24040 registros
-[16:13:37] Tesouro Direto (Tesouro Transparente): coletando...
-[16:13:37] Tesouro Direto (Tesouro Transparente): 16099 registros
-[16:13:37] Fatos relevantes e comunicados (CVM): coletando...
-[16:13:38] Fatos relevantes e comunicados (CVM): 4589 registros
-[16:13:38] Acoes ligadas a empresas: 412 pelo codigo, 29 pelas 4 letras iniciais
+[15:21:39] Cotacoes da B3: coletando...
+[15:22:04] Cotacoes da B3: ERRO - bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_A2026.ZIP: download interrompido (ChunkedEncodingError: ('Connection broken: IncompleteRead(15989002 bytes read, 74958108 more expected)', IncompleteRead(15989002 bytes read, 7)
+[15:22:04] Cadastro e demonstrativos da CVM: coletando...
+[15:23:24] Cadastro e demonstrativos da CVM: 2157950 registros
+[15:23:24] Dividendos (Yahoo, nao oficial): coletando...
+[15:23:25] Dividendos (Yahoo, nao oficial): 0 registros
+[15:23:25] Proventos informados a B3: coletando...
+[15:23:25] Proventos informados a B3: 0 registros
+[15:23:25] Criptomoedas (CoinGecko): coletando...
+[15:31:37] Criptomoedas (CoinGecko): 152 registros
+[15:31:37] Indicadores do Banco Central: coletando...
+[15:31:38] Indicadores do Banco Central: 3 registros
+[15:31:38] Informe mensal dos fundos imobiliarios (CVM): coletando...
+[15:31:39] Informe mensal dos fundos imobiliarios (CVM): 24040 registros
+[15:31:39] Tesouro Direto (Tesouro Transparente): coletando...
+[15:32:03] Tesouro Direto (Tesouro Transparente): 16157 registros
+[15:32:03] Fatos relevantes e comunicados (CVM): coletando...
+[15:32:03] Fatos relevantes e comunicados (CVM): 4587 registros
+[15:32:03] Acoes ligadas a empresas: 412 pelo codigo, 29 pelas 4 letras iniciais
 
 Radar de Investimentos 0.1.0 - situacao do banco
 Arquivo: /home/runner/work/RadarInvest/RadarInvest/dados/radar.db
@@ -59,24 +59,25 @@ Dividendos
 
 Cripto
   moedas no universo ......         30
-  cotacoes diarias ........      11558   (2025-10-07 a 2026-10-09)
+  cotacoes diarias ........      11590   (2025-10-07 a 2026-10-10)
 
 Banco Central (valor mais recente)
   cdi_anual         13.6500   em 2026-10-08
-  dolar_ptax         5.0119   em 2026-10-08
+  dolar_ptax         4.9892   em 2026-10-09
   ipca_mensal        0.8200   em 2026-09-01
-  selic_meta        13.7500   em 2026-10-09
+  selic_meta        13.7500   em 2026-10-10
 
 Ultima coleta de cada fonte
-  b3          2026-10-09T16:12:14  ok      165300 registros
-  cripto      2026-10-09T16:13:36  ok      30 registros
-  cvm         2026-10-09T16:13:35  ok      2157950 registros
-  dividendos  2026-10-09T16:13:36  ok      0 registros
-  fii         2026-10-09T16:13:37  ok      24040 registros
-  ipe         2026-10-09T16:13:38  ok      4589 registros
-  macro       2026-10-09T16:13:36  ok      3 registros
-  proventos   2026-10-09T16:13:36  ok      0 registros
-  tesouro     2026-10-09T16:13:37  ok      16099 registros
+  b3          2026-10-10T15:22:04  erro    0 registros
+      bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_A2026.ZIP: download interrompido (ChunkedEncodingError: ('Connection broken: IncompleteRead(15989002 bytes read, 74958108 more expected)', IncompleteRead(15989002 bytes read, 7)
+  cripto      2026-10-10T15:31:37  ok      152 registros
+  cvm         2026-10-10T15:23:24  ok      2157950 registros
+  dividendos  2026-10-10T15:23:25  ok      0 registros
+  fii         2026-10-10T15:31:39  ok      24040 registros
+  ipe         2026-10-10T15:32:03  ok      4587 registros
+  macro       2026-10-10T15:31:38  ok      3 registros
+  proventos   2026-10-10T15:23:25  ok      0 registros
+  tesouro     2026-10-10T15:32:03  ok      16157 registros
 
 190 acoes, 127 FIIs e 30 criptos gravados em /home/runner/work/RadarInvest/RadarInvest/docs/dados.json
 Backtest: 11 periodos; acumulado {'top': 0.4093, 'calibrado': 0.0923, 'universo': 0.423, 'cdi': 0.7458, 'ibov': 0.6092}
